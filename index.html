@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NO Mission Planner</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #12181d;
+      color: #e6edf3;
+    }
+    header {
+      padding: 12px 20px;
+      border-bottom: 1px solid #2a353d;
+      font-weight: 600;
+    }
+    main { padding: 20px; }
+    #drop {
+      border: 2px dashed #3d4a55;
+      border-radius: 6px;
+      padding: 60px 20px;
+      text-align: center;
+      color: #8b98a5;
+    }
+    #out {
+      margin-top: 20px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <header>Nuclear Option — Mission Planner</header>
+
+  <main>
+    <div id="drop">Drop a mission .json here</div>
+    <pre id="out"></pre>
+    <canvas id="map" width="800" height="800" style="border:1px solid #2a535d; margin-top:20px;"></canvas>
+  </main>
+
+  <script>
+  const drop = document.getElementById('drop');
+const out  = document.getElementById('out');
+
+function mapName(path) {
+    if (path ==='Terrain_naval') return 'Ignus Archipelago';
+    return 'Heartland';
+}
+
+const canvas = document.getElementById('map');
+const ctx = canvas.getContext('2d')
+
+const MAP_MIN = -40960;
+const MAP_MAX = 40960;
+
+function toScreen(x, z) {
+    const u = (x- MAP_MIN) / (MAP_MAX - MAP_MIN);
+    const v = (MAP_MAX - z) / (MAP_MAX - MAP_MIN );
+    return { x: u * canvas.width, y: v * canvas.height };
+}
+
+const basemap = new Image();
+basemap.src = 'Heartland_overview.png';
+
+function draw(mission) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(basemap, 0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#e6edf3' ;
+
+    for (const unit of mission.vehicles) {
+        const p = toScreen(unit.globalPosition.x, unit.globalPosition.z);
+        ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+    }
+}
+
+drop.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  drop.style.borderColor = '#5aa9d6';
+});
+
+drop.addEventListener('dragleave', () => {
+  drop.style.borderColor = '#3d4a55';
+});
+
+drop.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  drop.style.borderColor = '#3d4a55';
+
+  const file = e.dataTransfer.files[0];
+  const text = await file.text();
+
+  const mission = JSON.parse(text);
+
+out.textContent = `${file.name}
+
+
+map:       ${mapName(mission.MapKey.Path)}
+aircraft:  ${mission.aircraft.length}
+vehicles:  ${mission.vehicles.length}
+ships:     ${mission.ships.length}
+buildings: ${mission.buildings.length}`;
+draw(mission);
+});
+  </script>
+</body>
+</html>
