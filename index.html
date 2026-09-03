@@ -54,22 +54,77 @@ function mapName(path) {
 const canvas = document.getElementById('map');
 const ctx = canvas.getContext('2d')
 
-const MAP_MIN = -40960;
-const MAP_MAX = 40960;
+const MAPS = {
+    'Heartland': {
+        image: 'Heartland_overview.png',
+        minX: -40960,   maxX: 40960,
+        minZ: -40960,   maxZ: 40960
+    },
+    'Ignus Archipelago': {
+        image: 'Ignus_overview.png',
+        minX: -78072.9, maxX: 79573.5,
+        minZ: -39419.9, maxZ: 37316.3
+    }
+};
+
+let currentMap = null;
+const basemap  = new Image();
+let currentMission = null;
+
+basemap.onload = () => {
+  if (currentMission) draw(currentMission);
+};
+
+function setMap(name) {
+    currentMap  = MAPS[name];
+    basemap.src = currentMap.image;
+
+    const width  = 900;
+    const aspect = (currentMap.maxX - currentMap.minX) / (currentMap.maxZ - currentMap.minZ);
+    canvas.width  = width;
+    canvas.height = Math.round(width / aspect);
+}
 
 function toScreen(x, z) {
-    const u = (x- MAP_MIN) / (MAP_MAX - MAP_MIN);
-    const v = (MAP_MAX - z) / (MAP_MAX - MAP_MIN );
+    const m = currentMap;
+    const u = (x - m.minX) / (m.maxX - m.minX);
+    const v = (m.maxZ - z) / (m.maxZ - m.minZ);
     return { x: u * canvas.width, y: v * canvas.height };
 }
 
-const basemap = new Image();
-basemap.src = 'Heartland_overview.png';
+function collectUnits(mission) {
+    const units = [];
+
+    for (const category of ['aircraft', 'vehicles', 'ships', 'buildings']) {
+        for (const u of mission[category] || []) {
+            units.push({
+                category: category,
+                type:     u.type,
+                faction:  u.faction,
+                x:        u.globalPosition.x,
+                z:        u.globalPosition.z
+            });
+        }
+    }
+
+    return units;
+}
+
 
 function draw(mission) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(basemap, 0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#e6edf3' ;
+        ctx.fillStyle   = '#ffffff';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth   = 1.5;
+
+    for (const unit of collectUnits(mission)) {
+        const p = toScreen(unit.x, unit.z);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    }
 
     for (const unit of mission.vehicles) {
         const p = toScreen(unit.globalPosition.x, unit.globalPosition.z);
@@ -103,7 +158,12 @@ aircraft:  ${mission.aircraft.length}
 vehicles:  ${mission.vehicles.length}
 ships:     ${mission.ships.length}
 buildings: ${mission.buildings.length}`;
-draw(mission);
+
+  setMap(mapName(mission.MapKey.Path));
+  draw(mission);
+  currentMission = mission;
+  setMap(mapName(mission.MapKey.Path));
+  draw(mission);
 });
   </script>
 </body>
