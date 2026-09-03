@@ -38,6 +38,10 @@
 
   <main>
     <div id="drop">Drop a mission .json here</div>
+    <div style="margin-top:12px;">
+  Your faction:
+  <select id="faction" style="background:#1c262d; color:#e6edf3; border:1px solid #3d4a55; padding:4px;"></select>
+</div>
     <pre id="out"></pre>
     <canvas id="map" width="800" height="800" style="border:1px solid #2a535d; margin-top:20px;"></canvas>
   </main>
@@ -45,6 +49,8 @@
   <script>
   const drop = document.getElementById('drop');
 const out  = document.getElementById('out');
+
+const factionSelect = document.getElementById('faction');
 
 function mapName(path) {
     if (path ==='Terrain_naval') return 'Ignus Archipelago';
@@ -142,6 +148,31 @@ function drawFrame(ctx, x, y, size, affiliation) {
     ctx.fill();
     ctx.stroke();
 }
+const FACTION_LABELS = {
+    'Boscali': 'BDF',
+    'Primeva': 'PALA'
+};
+
+function factionLabel(name) {
+    return FACTION_LABELS[name] || name;
+}
+function populateFactions(mission) {
+    factionSelect.innerHTML = '';
+
+    for (const f of mission.factions) {
+        const option = document.createElement('option');
+        option.value       = f.factionName;
+        option.textContent = factionLabel(f.factionName);
+        factionSelect.appendChild(option);
+    }
+
+    factionSelect.value = myFaction;
+}
+
+factionSelect.addEventListener('change', () => {
+    myFaction = factionSelect.value;
+    if (currentMission) draw(currentMission);
+});
 
 function draw(mission) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -183,6 +214,7 @@ buildings: ${mission.buildings.length}`;
   setMap(mapName(mission.MapKey.Path));
   draw(mission);
     myFaction = mission.factions[0].factionName;
+      populateFactions(mission);
   currentMission = mission;
   setMap(mapName(mission.MapKey.Path));
   draw(mission);
