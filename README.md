@@ -5,8 +5,10 @@ APP-6 symbology, with filtering and hover identification.
 
 ## Running it
 
-**You must serve the folder over HTTP. Opening `index.html` directly will not
-work.**
+**Double-click `start.bat`.** It serves this folder and opens the planner.
+Close that window to stop the server.
+
+Or do it by hand:
 
 ```
 cd "path\to\Mission planner"
@@ -14,6 +16,8 @@ python -m http.server 8000
 ```
 
 Then open <http://localhost:8000>.
+
+**Opening `index.html` directly will not work.**
 
 Browsers treat a file opened from disk as its own isolated origin and block
 `fetch` across that boundary, so `units.json` cannot load from a `file://` page.

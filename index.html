@@ -94,6 +94,43 @@
       margin: 0;
     }
 
+    /* --- layer tree --- */
+    .ltRow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 4px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;              /* clicking to collapse shouldn't select text */
+      border-radius: 3px;
+    }
+    .ltRow:hover { background: #1d272e; }
+
+    .ltTwisty {
+      width: 10px;
+      flex: none;
+      color: #7d8b96;
+      font-size: 9px;
+      text-align: center;
+    }
+    .ltRow input { margin: 0; flex: none; }
+    .ltLabel { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ltCount {
+      color: #6f7d88;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ltAff  { font-weight: 600; letter-spacing: .02em; }
+    .ltRole { color: #b8c5d0; }
+    .ltType { color: #93a3b0; font-size: 12px; }
+    .ltUnit {
+      color: #7d8b96;
+      font-size: 11.5px;
+      font-family: ui-monospace, Consolas, monospace;
+    }
+
     /* Follows the cursor. position:fixed because it is placed from clientX/clientY,
        which are viewport coordinates. pointer-events:none so it can never sit
        under the cursor and steal the very mousemove that positions it. */
@@ -132,22 +169,12 @@
         </div>
 
         <div class="group">
-          <div class="title">Category</div>
-          <label><input type="checkbox" class="cat" value="aircraft"  checked> Aircraft</label>
-          <label><input type="checkbox" class="cat" value="vehicles"  checked> Vehicles</label>
-          <label><input type="checkbox" class="cat" value="ships"     checked> Ships</label>
-          <label><input type="checkbox" class="cat" value="buildings" checked> Buildings</label>
+          <div class="title">Layers</div>
+          <div id="layerTree"></div>
         </div>
 
         <div class="group">
-          <div class="title">Side</div>
-          <label><input type="checkbox" class="aff" value="friend"  checked> Friendly</label>
-          <label><input type="checkbox" class="aff" value="hostile" checked> Hostile</label>
-          <label><input type="checkbox" class="aff" value="unknown" checked> Unknown</label>
-        </div>
-
-        <div class="group">
-          <div class="title">Contents</div>
+          <div class="title">Mission</div>
           <pre id="out"></pre>
         </div>
       </div>
@@ -354,19 +381,25 @@ function roleOf(type, category) {
 
 function collectUnits(mission) {
     const units = [];
+    let uid = 0;
 
     for (const category of ['aircraft', 'vehicles', 'ships', 'buildings']) {
         for (const u of mission[category] || []) {
             const { group, role } = roleOf(u.type, category);
 
             units.push({
-                category: category,
-                type:     u.type,
-                faction:  u.faction,
-                group:    group,
-                role:     role,
-                x:        u.globalPosition.x,
-                z:        u.globalPosition.z
+                // A stable per-unit id. collectUnits always walks the mission in
+                // the same order, so a given unit keeps the same uid across
+                // calls - which is what lets the tree hide one instance.
+                uid:        uid++,
+                unitName:   u.UniqueName || u.type,
+                category:   category,
+                type:       u.type,
+                faction:    u.faction,
+                group:      group,
+                role:       role,
+                x:          u.globalPosition.x,
+                z:          u.globalPosition.z
             });
         }
     }
@@ -429,21 +462,193 @@ function populateFactions(mission) {
 
 factionSelect.addEventListener('change', () => {
     myFaction = factionSelect.value;
-    if (currentMission) draw(currentMission);
+
+    // Swapping sides moves every unit between the Hostile and Friendly branches,
+    // so the tree has to be rebuilt, not just the map redrawn. Hidden paths are
+    // cleared because "hostile/Air Defence/SAM" now means the opposite side.
+    hiddenPaths.clear();
+    refreshTree();
 });
 
-function checkedValues(selector) {
-    const shown = [];
-    for (const box of document.querySelectorAll(selector)) {
-        if (box.checked) shown.push(box.value);
-    }
-    return shown;
+// ---------------------------------------------------------------------------
+// Layer tree:  affiliation -> group -> role
+//
+// Visibility is stored as a set of HIDDEN leaf paths ("hostile/Air Defence/SAM")
+// rather than as checkbox states. Two reasons: the checkboxes are rebuilt from
+// scratch on every render, so state kept on them would be lost; and a parent's
+// state is then always derivable from its leaves rather than being a third
+// thing that can disagree with them.
+// ---------------------------------------------------------------------------
+const layerTree    = document.getElementById('layerTree');
+const hiddenPaths  = new Set();
+const collapsedKeys = new Set();
+
+const AFF_ORDER = ['hostile', 'friend', 'unknown'];
+const AFF_LABEL = { hostile: 'Hostile', friend: 'Friendly', unknown: 'Unknown' };
+
+// The leaf is an individual unit, not a type - so a single emplacement can be
+// switched off when another flight is tasked to clear it.
+function unitPath(u) {
+    return typePath(u) + '/' + u.uid;
 }
 
-for (const box of document.querySelectorAll('.cat, .aff')) {
+function rolePath(u) {
+    return affiliationOf(u) + '/' + u.group + '/' + u.role;
+}
+
+function typePath(u) {
+    return rolePath(u) + '/' + u.type;
+}
+
+function isVisible(u) {
+    return !hiddenPaths.has(unitPath(u));
+}
+
+// One row plus an empty container for its children, which is returned so the
+// caller can add them.
+function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit) {
+    const row = document.createElement('div');
+    row.className = 'ltRow';
+    row.style.paddingLeft = (depth * 11 + 4) + 'px';   // five levels in 300px
+
+    const twisty = document.createElement('span');
+    twisty.className = 'ltTwisty';
+    twisty.textContent = collapseKey
+        ? (collapsedKeys.has(collapseKey) ? '▶' : '▼')
+        : '';
+    row.appendChild(twisty);
+
+    // A parent is checked if ANY leaf under it is shown, and indeterminate if
+    // only some are - the standard tri-state you get in a file browser.
+    const shown = paths.filter(p => !hiddenPaths.has(p)).length;
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = shown > 0;
+    box.indeterminate = shown > 0 && shown < paths.length;
+    row.appendChild(box);
+
+    const lab = document.createElement('span');
+    lab.className = 'ltLabel' + (cssClass ? ' ' + cssClass : '');
+    lab.textContent = label;
+    row.appendChild(lab);
+
+    const cnt = document.createElement('span');
+    cnt.className = 'ltCount';
+    cnt.textContent = count;
+    row.appendChild(cnt);
+
+    // Hovering an individual unit's row rings it on the map, so you can tell
+    // which of five identical emplacements this row refers to.
+    if (unit) {
+        row.addEventListener('mouseenter', () => {
+            hoveredUnit = unit;
+            if (currentMission) draw(currentMission);
+        });
+        row.addEventListener('mouseleave', () => {
+            hoveredUnit = null;
+            if (currentMission) draw(currentMission);
+        });
+    }
+
+    const kids = document.createElement('div');
+    if (collapseKey && collapsedKeys.has(collapseKey)) kids.style.display = 'none';
+
     box.addEventListener('change', () => {
-        if (currentMission) draw(currentMission);
+        if (box.checked) paths.forEach(p => hiddenPaths.delete(p));
+        else             paths.forEach(p => hiddenPaths.add(p));
+        refreshTree();
     });
+
+    if (collapseKey) {
+        row.addEventListener('click', (e) => {
+            if (e.target === box) return;      // the checkbox handles its own clicks
+            if (collapsedKeys.has(collapseKey)) collapsedKeys.delete(collapseKey);
+            else collapsedKeys.add(collapseKey);
+            renderTree(collectUnits(currentMission));
+        });
+    }
+
+    parent.appendChild(row);
+    parent.appendChild(kids);
+    return kids;
+}
+
+function renderTree(units) {
+    // Count into affiliation -> group -> role. Only what the mission actually
+    // contains gets a branch, so there are never empty rows to wade through.
+    // affiliation -> group -> role -> type -> [units]
+    // Storing the units themselves rather than counts, because the deepest
+    // level needs each individual unit to hover and toggle.
+    const tree = {};
+    for (const u of units) {
+        const a = affiliationOf(u);
+        tree[a] = tree[a] || {};
+        tree[a][u.group] = tree[a][u.group] || {};
+        tree[a][u.group][u.role] = tree[a][u.group][u.role] || {};
+        const types = tree[a][u.group][u.role];
+        types[u.type] = types[u.type] || [];
+        types[u.type].push(u);
+    }
+
+    layerTree.innerHTML = '';
+
+    // Collect every unit sitting under part of the tree, at any depth.
+    function under(node) {
+        if (Array.isArray(node)) return node;
+        let out = [];
+        for (const key of Object.keys(node)) out = out.concat(under(node[key]));
+        return out;
+    }
+    const pathsOf = list => list.map(unitPath);
+
+    for (const aff of AFF_ORDER) {
+        if (!tree[aff]) continue;
+        const groups   = tree[aff];
+        const affUnits = under(groups);
+
+        const affKids = addNode(layerTree, 0, AFF_LABEL[aff], affUnits.length,
+                                pathsOf(affUnits), aff, 'ltAff');
+
+        for (const g of Object.keys(groups).sort()) {
+            const roles   = groups[g];
+            const gKey    = aff + '/' + g;
+            const gUnits  = under(roles);
+            const gKids   = addNode(affKids, 1, g, gUnits.length,
+                                    pathsOf(gUnits), gKey, null);
+
+            for (const r of Object.keys(roles).sort()) {
+                const types  = roles[r];
+                const rKey   = gKey + '/' + r;
+                const rUnits = under(types);
+                const rKids  = addNode(gKids, 2, r, rUnits.length,
+                                       pathsOf(rUnits), rKey, 'ltRole');
+
+                // Sorted by display name, not by key - the key is an internal
+                // identifier and sorting by it would look arbitrary.
+                const sortedTypes = Object.keys(types)
+                    .sort((a, b) => unitName(a).localeCompare(unitName(b)));
+
+                for (const t of sortedTypes) {
+                    const list  = types[t];
+                    const tKey  = rKey + '/' + t;
+                    const tKids = addNode(rKids, 3, unitName(t), list.length,
+                                          pathsOf(list), tKey, 'ltType');
+
+                    for (const u of list) {
+                        addNode(tKids, 4, u.unitName, '',
+                                [unitPath(u)], null, 'ltUnit', u);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Redraw the map and rebuild the tree, so counts and tri-states stay honest.
+function refreshTree() {
+    if (!currentMission) return;
+    draw(currentMission);
+    renderTree(collectUnits(currentMission));
 }
 
 // Falls back to the raw key if the catalogue has not loaded yet, or if this is a
@@ -451,34 +656,6 @@ for (const box of document.querySelectorAll('.cat, .aff')) {
 function unitName(type) {
     const entry = unitCatalogue[type];
     return entry ? entry.name : type;
-}
-
-// A text version of the layer tree, so the classification can be checked before
-// it drives any UI. Group -> role -> type, with counts.
-function typeBreakdown(units) {
-    const tree = {};
-    for (const u of units) {
-        tree[u.group] = tree[u.group] || {};
-        tree[u.group][u.role] = tree[u.group][u.role] || {};
-        tree[u.group][u.role][u.type] = (tree[u.group][u.role][u.type] || 0) + 1;
-    }
-
-    const lines = [];
-    for (const group of Object.keys(tree).sort()) {
-        lines.push(group.toUpperCase());
-
-        for (const role of Object.keys(tree[group]).sort()) {
-            const types = tree[group][role];
-            const total = Object.values(types).reduce((a, b) => a + b, 0);
-            lines.push('  ' + role + '  (' + total + ')');
-
-            for (const type of Object.keys(types).sort()) {
-                lines.push('      ' + String(types[type]).padStart(3) + '  ' + unitName(type));
-            }
-        }
-        lines.push('');
-    }
-    return lines.join('\n');
 }
 
 function draw(mission) {
@@ -489,12 +666,7 @@ function draw(mission) {
     ctx.strokeStyle = '#101418';
     ctx.lineWidth   = 1.5;
 
-       const cats = checkedValues('.cat');
-    const affs = checkedValues('.aff');
-
-    const units = collectUnits(mission)
-        .filter(u => cats.includes(u.category))
-        .filter(u => affs.includes(affiliationOf(u)));
+    const units = collectUnits(mission).filter(isVisible);
 
     // Remember where each marker actually landed. Hover then tests against what
     // is genuinely on screen, so filtered-out units can never be picked, and
@@ -637,24 +809,37 @@ drop.addEventListener('drop', async (e) => {
 
   const mission = JSON.parse(text);
 
-out.textContent = `${file.name}
+  // Order matters here. Affiliation depends on myFaction, and the tree is built
+  // from affiliations - so the faction has to be settled before anything is
+  // counted or drawn.
+  myFaction      = mission.factions[0].factionName;
+  currentMission = mission;
+  populateFactions(mission);
 
+  // A new mission starts with everything visible. Without this, layers hidden
+  // in the previous mission would stay hidden in this one.
+  hiddenPaths.clear();
 
+  // Roles and types start collapsed, so you see affiliation -> group -> role
+  // and drill in only where you need to. Five levels open at once would be
+  // hundreds of rows.
+  collapsedKeys.clear();
+  for (const u of collectUnits(mission)) {
+      collapsedKeys.add(rolePath(u));
+      collapsedKeys.add(typePath(u));
+  }
+
+  setMap(mapName(mission.MapKey.Path));
+
+  out.textContent = `${file.name}
 
 map:       ${mapName(mission.MapKey.Path)}
 aircraft:  ${mission.aircraft.length}
 vehicles:  ${mission.vehicles.length}
 ships:     ${mission.ships.length}
-buildings: ${mission.buildings.length}
+buildings: ${mission.buildings.length}`;
 
-${typeBreakdown(collectUnits(mission))}`;
-
-  setMap(mapName(mission.MapKey.Path));
-  draw(mission);
-    myFaction = mission.factions[0].factionName;
-      populateFactions(mission);
-  currentMission = mission;
-  setMap(mapName(mission.MapKey.Path));
+  renderTree(collectUnits(mission));
   draw(mission);
 });
   </script>
