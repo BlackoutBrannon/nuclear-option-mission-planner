@@ -89,13 +89,18 @@ function setMap(name) {
     const aspect = (currentMap.maxX - currentMap.minX) / (currentMap.maxZ - currentMap.minZ);
     canvas.width  = width;
     canvas.height = Math.round(width / aspect);
+    view = { scale: 1, panX: 0, panY: 0 };
 }
+let view = { scale: 1, panX: 0, panY: 0 };
 
 function toScreen(x, z) {
     const m = currentMap;
     const u = (x - m.minX) / (m.maxX - m.minX);
     const v = (m.maxZ - z) / (m.maxZ - m.minZ);
-    return { x: u * canvas.width, y: v * canvas.height };
+    return {
+        x: u * canvas.width  * view.scale + view.panX,
+        y: v * canvas.height * view.scale + view.panY
+    };
 }
 
 function collectUnits(mission) {
@@ -176,7 +181,9 @@ factionSelect.addEventListener('change', () => {
 
 function draw(mission) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(basemap, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(basemap,
+        view.panX, view.panY,
+        canvas.width * view.scale, canvas.height * view.scale);
     ctx.strokeStyle = '#101418';
     ctx.lineWidth   = 1.5;
 
@@ -192,7 +199,46 @@ drop.addEventListener('dragover', (e) => {
     drop.addEventListener('dragleave', () => {
   drop.style.borderColor = '#3d4a55';
 });
+let dragging = false;
+let lastX = 0, lastY = 0;
 
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    const mx = e.offsetX;
+    const my = e.offsetY;
+
+    const desired = view.scale * factor;
+    const clamped = Math.min(25, Math.max(1, desired));
+    const actual  = clamped / view.scale;
+
+    view.panX = mx - (mx - view.panX) * actual;
+    view.panY = my - (my - view.panY) * actual;
+    view.scale = clamped;
+
+    if (currentMission) draw(currentMission);
+});
+
+
+canvas.addEventListener('mousedown', (e) => {
+    dragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    view.panX += e.clientX - lastX;
+    view.panY += e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (currentMission) draw(currentMission);
+});
+
+window.addEventListener('mouseup', () => {
+    dragging = false;
+});
 drop.addEventListener('drop', async (e) => {
   e.preventDefault();
   drop.style.borderColor = '#3d4a55';
@@ -203,6 +249,7 @@ drop.addEventListener('drop', async (e) => {
   const mission = JSON.parse(text);
 
 out.textContent = `${file.name}
+
 
 
 map:       ${mapName(mission.MapKey.Path)}
