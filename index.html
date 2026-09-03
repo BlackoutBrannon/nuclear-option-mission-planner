@@ -110,34 +110,55 @@ function collectUnits(mission) {
     return units;
 }
 
+let myFaction = null;
+
+function affiliationOf(unit) {
+    if (!myFaction) return 'unknown';
+    return unit.faction === myFaction ? 'friend' : 'hostile';
+}
+
+const AFFIL_FILL = {
+    friend:  '#8ecbff',
+    hostile: '#ff9a9a',
+    unknown: '#ffe08a'
+};
+
+function drawFrame(ctx, x, y, size, affiliation) {
+    ctx.beginPath();
+
+    if (affiliation === 'hostile') {
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x + size, y);
+        ctx.lineTo(x, y + size);
+        ctx.lineTo(x - size, y);
+        ctx.closePath();
+    } else if (affiliation === 'friend') {
+        ctx.rect(x - size, y - size * 0.7, size * 2, size * 1.4);
+    } else {
+        ctx.rect(x - size, y - size, size * 2, size * 2);
+    }
+
+    ctx.fillStyle = AFFIL_FILL[affiliation];
+    ctx.fill();
+    ctx.stroke();
+}
 
 function draw(mission) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(basemap, 0, 0, canvas.width, canvas.height);
-        ctx.fillStyle   = '#ffffff';
-    ctx.strokeStyle = '#000000';
+    ctx.strokeStyle = '#101418';
     ctx.lineWidth   = 1.5;
 
     for (const unit of collectUnits(mission)) {
         const p = toScreen(unit.x, unit.z);
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-    }
-
-    for (const unit of mission.vehicles) {
-        const p = toScreen(unit.globalPosition.x, unit.globalPosition.z);
-        ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
-    }
-}
+        drawFrame(ctx, p.x, p.y, 5, affiliationOf(unit));
+    }};
 
 drop.addEventListener('dragover', (e) => {
   e.preventDefault();
   drop.style.borderColor = '#5aa9d6';
 });
-
-drop.addEventListener('dragleave', () => {
+    drop.addEventListener('dragleave', () => {
   drop.style.borderColor = '#3d4a55';
 });
 
@@ -161,6 +182,7 @@ buildings: ${mission.buildings.length}`;
 
   setMap(mapName(mission.MapKey.Path));
   draw(mission);
+    myFaction = mission.factions[0].factionName;
   currentMission = mission;
   setMap(mapName(mission.MapKey.Path));
   draw(mission);
