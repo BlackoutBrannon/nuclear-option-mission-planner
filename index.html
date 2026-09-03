@@ -5,62 +5,161 @@
   <title>NO Mission Planner</title>
 
   <style>
-    body {
+    * { box-sizing: border-box; }
+
+    html, body {
       margin: 0;
+      height: 100%;
+      overflow: hidden;                 /* the page never scrolls; panels scroll */
       font-family: system-ui, sans-serif;
       background: #12181d;
       color: #e6edf3;
     }
-    header {
-      padding: 12px 20px;
+
+    /* Whole window: a fixed-width panel beside a map that takes the rest. */
+    #app {
+      display: flex;
+      height: 100%;
+    }
+
+    #panel {
+      width: 300px;
+      flex: none;                       /* never shrink to make room for the map */
+      border-right: 1px solid #2a353d;
+      display: flex;
+      flex-direction: column;
+      background: #151c22;
+    }
+
+    #panelHead {
+      padding: 10px 14px;
       border-bottom: 1px solid #2a353d;
       font-weight: 600;
+      font-size: 14px;
     }
-    main { padding: 20px; }
+
+    #panelBody {
+      flex: 1;                          /* soak up remaining height */
+      overflow-y: auto;                 /* scroll here, not the page */
+      padding: 12px 14px;
+    }
+
+    #mapArea {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #0d1216;
+    }
+
+    #map { display: block; }
+
     #drop {
       border: 2px dashed #3d4a55;
       border-radius: 6px;
-      padding: 60px 20px;
+      padding: 14px 10px;
       text-align: center;
       color: #8b98a5;
-    }
-    #out {
-      margin-top: 20px;
-      font-family: ui-monospace, Consolas, monospace;
       font-size: 13px;
-      white-space: pre-wrap;
+      cursor: pointer;
     }
+
+    .group { margin-top: 16px; }
+    .group > .title {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #7d8b96;
+      margin-bottom: 6px;
+    }
+
+    label { display: block; font-size: 13px; padding: 2px 0; cursor: pointer; }
+
+    select {
+      width: 100%;
+      background: #1c262d;
+      color: #e6edf3;
+      border: 1px solid #3d4a55;
+      padding: 5px;
+      border-radius: 3px;
+    }
+
+    #out {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11.5px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      color: #9fb0bd;
+      margin: 0;
+    }
+
+    /* Follows the cursor. position:fixed because it is placed from clientX/clientY,
+       which are viewport coordinates. pointer-events:none so it can never sit
+       under the cursor and steal the very mousemove that positions it. */
+    #tip {
+      position: fixed;
+      display: none;
+      pointer-events: none;
+      z-index: 10;
+      background: #0b1014;
+      border: 1px solid #3d4a55;
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 260px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.5);
+    }
+    #tip .n { font-weight: 600; }
+    #tip .r { color: #8ecbff; }
+    #tip .k { color: #6f7d88; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
   </style>
 </head>
 
 <body>
-  <header>Nuclear Option — Mission Planner</header>
+  <div id="app">
 
-  <main>
-    <div id="drop">Drop a mission .json here</div>
-    <div style="margin-top:12px;">
-  Your faction:
-  <select id="faction" style="background:#1c262d; color:#e6edf3; border:1px solid #3d4a55; padding:4px;"></select>
-</div>
+    <aside id="panel">
+      <div id="panelHead">Nuclear Option — Mission Planner</div>
 
-<div style="margin-top:10px;">
-  Show:
-  <label><input type="checkbox" class="cat" value="aircraft" checked> Aircraft</label>
-  <label><input type="checkbox" class="cat" value="vehicles" checked> Vehicles</label>
-  <label><input type="checkbox" class="cat" value="ships" checked> Ships</label>
-  <label><input type="checkbox" class="cat" value="buildings" checked> Buildings</label>
-</div>
+      <div id="panelBody">
+        <div id="drop">Drop a mission .json here</div>
 
-<div style="margin-top:10px;">
-  Side:
-  <label><input type="checkbox" class="aff" value="friend"  checked> Friendly</label>
-  <label><input type="checkbox" class="aff" value="hostile" checked> Hostile</label>
-  <label><input type="checkbox" class="aff" value="unknown" checked> Unknown</label>
-</div>
+        <div class="group">
+          <div class="title">Your faction</div>
+          <select id="faction"></select>
+        </div>
 
-    <pre id="out"></pre>
-    <canvas id="map" width="800" height="800" style="border:1px solid #2a535d; margin-top:20px;"></canvas>
-  </main>
+        <div class="group">
+          <div class="title">Category</div>
+          <label><input type="checkbox" class="cat" value="aircraft"  checked> Aircraft</label>
+          <label><input type="checkbox" class="cat" value="vehicles"  checked> Vehicles</label>
+          <label><input type="checkbox" class="cat" value="ships"     checked> Ships</label>
+          <label><input type="checkbox" class="cat" value="buildings" checked> Buildings</label>
+        </div>
+
+        <div class="group">
+          <div class="title">Side</div>
+          <label><input type="checkbox" class="aff" value="friend"  checked> Friendly</label>
+          <label><input type="checkbox" class="aff" value="hostile" checked> Hostile</label>
+          <label><input type="checkbox" class="aff" value="unknown" checked> Unknown</label>
+        </div>
+
+        <div class="group">
+          <div class="title">Contents</div>
+          <pre id="out"></pre>
+        </div>
+      </div>
+    </aside>
+
+    <main id="mapArea">
+      <canvas id="map"></canvas>
+    </main>
+
+  </div>
+
+  <div id="tip"></div>
 
   <script>
   const drop = document.getElementById('drop');
@@ -68,6 +167,32 @@ const out  = document.getElementById('out');
 
 const factionSelect = document.getElementById('faction');
 
+// Display names and descriptions for every unit type, extracted from the game's
+// own files by tools/extract_units.py. Starts empty and fills in once the file
+// arrives, so anything reading it has to cope with it being empty for a moment.
+let unitCatalogue = {};
+
+async function loadCatalogue() {
+    try {
+        // fetch does NOT throw on 404 or 500 - it resolves with a response whose
+        // ok is false. Without this check a missing file sails on to .json(),
+        // which then fails on the error page's HTML with a confusing message.
+        const response = await fetch('units.json?v=' + Date.now());
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' ' + response.statusText);
+
+        unitCatalogue = await response.json();
+        console.log('catalogue loaded:', Object.keys(unitCatalogue).length, 'unit types');
+    } catch (err) {
+        // Loud, and visible without opening the console. Until this is fixed,
+        // every unit shows its raw key instead of a name.
+        console.error('units.json failed to load:', err);
+        out.textContent =
+            'units.json did not load\n\n' + err.message +
+            '\n\nUnit names will fall back to raw keys.';
+    }
+}
+
+loadCatalogue();
 
 function mapName(path) {
     if (path ==='Terrain_naval') return 'Ignus Archipelago';
@@ -98,16 +223,41 @@ basemap.onload = () => {
   if (currentMission) draw(currentMission);
 };
 
+const mapArea = document.getElementById('mapArea');
+
+// The canvas no longer has a fixed size - it fills whatever the window gives it.
+// Keeping its shape identical to the map's means toScreen needs no changes:
+// the map still occupies exactly the whole canvas.
+function sizeCanvas() {
+    if (!currentMap) return;
+
+    const aspect = (currentMap.maxX - currentMap.minX) / (currentMap.maxZ - currentMap.minZ);
+
+    // Largest box with the map's aspect ratio that fits the available area.
+    let w = mapArea.clientWidth;
+    let h = w / aspect;
+    if (h > mapArea.clientHeight) {
+        h = mapArea.clientHeight;
+        w = h * aspect;
+    }
+
+    canvas.width  = Math.round(w);
+    canvas.height = Math.round(h);
+}
+
 function setMap(name) {
     currentMap  = MAPS[name];
     basemap.src = currentMap.image;
 
-    const width  = 900;
-    const aspect = (currentMap.maxX - currentMap.minX) / (currentMap.maxZ - currentMap.minZ);
-    canvas.width  = width;
-    canvas.height = Math.round(width / aspect);
+    sizeCanvas();
     view = { scale: 1, panX: 0, panY: 0 };
 }
+
+// Setting canvas.width wipes the canvas, so a resize always needs a redraw.
+window.addEventListener('resize', () => {
+    sizeCanvas();
+    if (currentMission) draw(currentMission);
+});
 let view = { scale: 1, panX: 0, panY: 0 };
 
 function toScreen(x, z) {
@@ -120,15 +270,101 @@ function toScreen(x, z) {
     };
 }
 
+// ---------------------------------------------------------------------------
+// Role classification.
+//
+// APP-6 draws an icon by FUNCTION, not by vehicle model, and you brief off
+// function too - a Spearhead and a Linebreaker are both armour. So every type
+// is binned into a group and a role.
+//
+// Air defence splits three ways, and the distinction matters:
+//   SAM     radar-guided, medium to long range
+//   SHORAD  short range, IR-guided or mixed gun/missile mounts
+//   AAA     guns only
+// Radar and fire control live under Air Defence rather than beside it, because
+// this game can network almost any sensor to almost any shooter - killing the
+// sensor degrades the battery.
+// ---------------------------------------------------------------------------
+
+// Used where the key carries no hint of the role - aircraft, ships, buildings.
+const ROLE_OVERRIDES = {
+    Fighter1: 'Air/Fighter',        SmallFighter1: 'Air/Fighter',
+    // Trainers are flown in the multirole role rather than as support.
+    Multirole1:'Air/Multirole',     trainer:       'Air/Multirole',
+    CAS1:     'Air/Strike',         COIN:          'Air/Strike',
+    Darkreach:'Air/Bomber',         FastBomber1:   'Air/Bomber',
+    AttackHelo1:'Air/Rotary',       UtilityHelo1:  'Air/Rotary',
+    EW1:      'Air/Support',        QuadVTOL1:     'Air/Support',
+
+    FleetCarrier1:'Naval/Carrier',  AssaultCarrier1:'Naval/Carrier', SmallCarrier1:'Naval/Carrier',
+    Destroyer1:'Naval/Combatant',   Frigate1:'Naval/Combatant',      Corvette1:'Naval/Combatant',
+    PatrolBoat1:'Naval/Patrol',     LandingCraft1:'Naval/Amphibious',
+    Aryx_SupplyShip1:'Naval/Support',
+
+    Helipad:'Structure/Airbase',    hangar_med:'Structure/Airbase',  revetment1:'Structure/Airbase',
+    shelter1:'Structure/Airbase',   controlTower1:'Structure/Airbase', fuelTank1:'Structure/Airbase',
+    pillbox:'Structure/Defensive',  gabionBunker1:'Structure/Defensive', guardTower1:'Structure/Defensive',
+    factory_large:'Structure/Industry', factory_tall:'Structure/Industry',
+    refinery_main:'Structure/Industry', enrichmentPlant1:'Structure/Industry',
+    storageTank:'Structure/Industry',
+    ammoDump:'Structure/Logistics', ammunitionBunker:'Structure/Logistics',
+    VehicleDepot1:'Structure/Logistics',
+
+    radarStation1:'Air Defence/Radar',
+    Emplacement1_23mm:'Air Defence/AAA',
+    Emplacement1_MANPADS:'Air Defence/SHORAD',
+    Emplacement1_ATGM:'Ground/Anti-tank'
+};
+
+// Order matters: the first rule that matches wins, so specific before general.
+// RSAM must be tested before _SAM, or every launcher would read as SHORAD.
+const ROLE_RULES = [
+    [/RSAM|SAMTrailer|RadarSAM/i, 'Air Defence/SAM'],
+    [/_SAM$|MANPADS|_AA$/i,       'Air Defence/SHORAD'],
+    [/SPAAG|CRAM|23mm/i,          'Air Defence/AAA'],
+    [/LADS|Laser|HEL$/i,          'Air Defence/Laser'],
+    [/-R$|RadarContainer/i,       'Air Defence/Radar'],
+    [/-FC$/i,                     'Air Defence/Fire control'],
+    [/MART|MLRS/i,                'Ground/Artillery'],
+    [/_AT$|ATGM/i,                'Ground/Anti-tank'],
+    [/MBT/i,                      'Ground/Armour'],
+    [/_IFV$/i,                    'Ground/IFV'],
+    [/_APC$|MRAP/i,               'Ground/APC'],
+    [/LCV45|Recon/i,              'Ground/Recon'],
+    [/-FT$|-L$|-M$|-T$|Dozer|Supply/i, 'Ground/Logistics']
+];
+
+const FALLBACK_GROUP = {
+    aircraft: 'Air', ships: 'Naval', buildings: 'Structure', vehicles: 'Ground'
+};
+
+function roleOf(type, category) {
+    let path = ROLE_OVERRIDES[type];
+
+    if (!path) {
+        for (const [pattern, result] of ROLE_RULES) {
+            if (pattern.test(type)) { path = result; break; }
+        }
+    }
+    if (!path) path = (FALLBACK_GROUP[category] || 'Ground') + '/Other';
+
+    const [group, role] = path.split('/');
+    return { group, role };
+}
+
 function collectUnits(mission) {
     const units = [];
 
     for (const category of ['aircraft', 'vehicles', 'ships', 'buildings']) {
         for (const u of mission[category] || []) {
+            const { group, role } = roleOf(u.type, category);
+
             units.push({
                 category: category,
                 type:     u.type,
                 faction:  u.faction,
+                group:    group,
+                role:     role,
                 x:        u.globalPosition.x,
                 z:        u.globalPosition.z
             });
@@ -210,6 +446,41 @@ for (const box of document.querySelectorAll('.cat, .aff')) {
     });
 }
 
+// Falls back to the raw key if the catalogue has not loaded yet, or if this is a
+// modded unit the extractor never saw. Never blank, never crashes.
+function unitName(type) {
+    const entry = unitCatalogue[type];
+    return entry ? entry.name : type;
+}
+
+// A text version of the layer tree, so the classification can be checked before
+// it drives any UI. Group -> role -> type, with counts.
+function typeBreakdown(units) {
+    const tree = {};
+    for (const u of units) {
+        tree[u.group] = tree[u.group] || {};
+        tree[u.group][u.role] = tree[u.group][u.role] || {};
+        tree[u.group][u.role][u.type] = (tree[u.group][u.role][u.type] || 0) + 1;
+    }
+
+    const lines = [];
+    for (const group of Object.keys(tree).sort()) {
+        lines.push(group.toUpperCase());
+
+        for (const role of Object.keys(tree[group]).sort()) {
+            const types = tree[group][role];
+            const total = Object.values(types).reduce((a, b) => a + b, 0);
+            lines.push('  ' + role + '  (' + total + ')');
+
+            for (const type of Object.keys(types).sort()) {
+                lines.push('      ' + String(types[type]).padStart(3) + '  ' + unitName(type));
+            }
+        }
+        lines.push('');
+    }
+    return lines.join('\n');
+}
+
 function draw(mission) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(basemap,
@@ -225,10 +496,29 @@ function draw(mission) {
         .filter(u => cats.includes(u.category))
         .filter(u => affs.includes(affiliationOf(u)));
 
+    // Remember where each marker actually landed. Hover then tests against what
+    // is genuinely on screen, so filtered-out units can never be picked, and
+    // pan and zoom need no special handling.
+    drawnUnits = [];
+
     for (const unit of units) {
         const p = toScreen(unit.x, unit.z);
         drawFrame(ctx, p.x, p.y, 5, affiliationOf(unit));
-    }};
+        drawnUnits.push({ unit: unit, sx: p.x, sy: p.y });
+    }
+
+    // Ring the hovered marker last, so it sits on top of its neighbours. Drawn
+    // as a white ring rather than a colour change, so it reads by shape and
+    // brightness rather than hue.
+    if (hoveredUnit) {
+        const p = toScreen(hoveredUnit.x, hoveredUnit.z);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth   = 2;
+        ctx.stroke();
+    }
+}
 
 drop.addEventListener('dragover', (e) => {
   e.preventDefault();
@@ -237,6 +527,67 @@ drop.addEventListener('dragover', (e) => {
     drop.addEventListener('dragleave', () => {
   drop.style.borderColor = '#3d4a55';
 });
+// ---------------------------------------------------------------------------
+// Hover to identify
+// ---------------------------------------------------------------------------
+const tip = document.getElementById('tip');
+
+// Filled by draw(): every marker currently on screen and where it landed.
+let drawnUnits = [];
+
+// The unit under the cursor, or null. draw() rings it.
+let hoveredUnit = null;
+
+function unitAt(mx, my) {
+    let best = null;
+    let bestDist = 12;               // pixels - generous, markers are ~10 across
+
+    for (const d of drawnUnits) {
+        // Math.hypot is the distance between two points: sqrt(dx*dx + dy*dy)
+        const dist = Math.hypot(d.sx - mx, d.sy - my);
+        if (dist < bestDist) { bestDist = dist; best = d.unit; }
+    }
+    return best;
+}
+
+function showTip(unit, clientX, clientY) {
+    if (!unit) { tip.style.display = 'none'; return; }
+
+    const entry = unitCatalogue[unit.type] || {};
+    const affil = affiliationOf(unit);
+
+    tip.innerHTML =
+        '<div class="n">' + unitName(unit.type) + '</div>' +
+        '<div class="r">' + unit.group + ' &middot; ' + unit.role + '</div>' +
+        '<div>' + factionLabel(unit.faction) + ' &middot; ' + affil + '</div>' +
+        (entry.description ? '<div style="margin-top:5px;color:#9fb0bd;">'
+                             + entry.description + '</div>' : '') +
+        '<div class="k" style="margin-top:5px;">' + unit.type + '</div>';
+
+    tip.style.display = 'block';
+    tip.style.left = (clientX + 14) + 'px';
+    tip.style.top  = (clientY + 14) + 'px';
+}
+
+canvas.addEventListener('mousemove', (e) => {
+    if (dragging) { tip.style.display = 'none'; return; }
+
+    const found = unitAt(e.offsetX, e.offsetY);
+
+    // Only repaint when the hovered unit actually CHANGES. Redrawing on every
+    // mousemove would mean ~60 full redraws a second for no visible difference.
+    if (found !== hoveredUnit) {
+        hoveredUnit = found;
+        if (currentMission) draw(currentMission);
+    }
+
+    showTip(found, e.clientX, e.clientY);
+});
+
+canvas.addEventListener('mouseleave', () => {
+    tip.style.display = 'none';
+});
+
 let dragging = false;
 let lastX = 0, lastY = 0;
 
@@ -294,7 +645,9 @@ map:       ${mapName(mission.MapKey.Path)}
 aircraft:  ${mission.aircraft.length}
 vehicles:  ${mission.vehicles.length}
 ships:     ${mission.ships.length}
-buildings: ${mission.buildings.length}`;
+buildings: ${mission.buildings.length}
+
+${typeBreakdown(collectUnits(mission))}`;
 
   setMap(mapName(mission.MapKey.Path));
   draw(mission);

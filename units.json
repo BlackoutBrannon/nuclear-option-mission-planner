@@ -1,0 +1,433 @@
+{
+  "6x6_1_AA": {
+    "name": "AFV6 AA",
+    "description": "The AFV6 is a fast, lightweight multipurpose armoured vehicle. This is a short range air-defence variant, with a potent 20mm rotary c",
+    "category": "vehicles"
+  },
+  "6x6_1_APC": {
+    "name": "6x6_1_APC",
+    "description": "6x6_1_APC",
+    "category": "vehicles"
+  },
+  "6x6_1_AT": {
+    "name": "AFV6 AT",
+    "description": "The AFV6 is a fast, lightweight multipurpose armoured vehicle. This is an anti-armour variant, equipped with a large, long range multiple ATGM launcher. Internal stores of extra missiles reduce seating capacity substantially.",
+    "category": "vehicles"
+  },
+  "6x6_1_IFV": {
+    "name": "AFV6 IFV",
+    "description": "The AFV6 is a fast, lightweight multipurpose armoured vehicle. This variant is an infantry fighting vehicle with a 25mm cannon.",
+    "category": "vehicles"
+  },
+  "AFV8_APC": {
+    "name": "AFV8 APC",
+    "description": "The AFV8 Armored Personnel Carrier is a fast troop transport with a roof mounted machine gun to counter low-flying aerial threats and soft ground targets",
+    "category": "vehicles"
+  },
+  "AFV8_IFV": {
+    "name": "AFV8 IFV",
+    "description": "This upfit for the AFV8 chassis features a 25mm cannon and anti-armor missile launcher, turning it into a fast infantry fighting vehicle.",
+    "category": "vehicles"
+  },
+  "AFV8_SAM": {
+    "name": "AFV8 Mobile Air Defense",
+    "description": "Featuring 8 IR missile launchers, this air defense system is capable of intercepting missiles and aircraft at a range of up to 5km",
+    "category": "vehicles"
+  },
+  "Aryx_SupplyShip1": {
+    "name": "Aryx Supply Ship",
+    "description": "",
+    "category": "ships",
+    "unresolved": true
+  },
+  "AssaultCarrier1": {
+    "name": "Annex Class Carrier",
+    "description": "An amphibious assault ship which can support rotary wing and V/STOL aircraft operations. It has a well deck from",
+    "category": "ships"
+  },
+  "AttackHelo1": {
+    "name": "SAH-46 Chicane",
+    "description": "The SAH-46 Chicane retains a traditional attack helicopter configuation while incorporating upgrades that keep it a form",
+    "category": "aircraft"
+  },
+  "CAS1": {
+    "name": "A-19 Brawler",
+    "description": "The Brawler is a reliable and rugged platform built to carry large quantities of precision weapons. Advanced propfan engines combine endurance with respectable speed, while redundant control surfaces, isolated engines, and heavy cockpit armor provide excellent survivability. The A-19 is in its element when attacking convoys of vehicles, distributed short-range air defenses, or vessels operating in coastal waters.",
+    "category": "aircraft"
+  },
+  "COIN": {
+    "name": "CI-22 Cricket",
+    "description": "",
+    "category": "aircraft"
+  },
+  "CRAMTrailer1": {
+    "name": "HLT-CRAM",
+    "description": "This trailer is equipped with a 20mm rotary gun to provide point defence against shells, missiles, bombs, and low flying aircraft within a range of approximately 3km.",
+    "category": "vehicles"
+  },
+  "Corvette1": {
+    "name": "Shard Class Corvette",
+    "description": "This compact warship is well equipped for defending coastal areas, armed with a 57mm cannon, 20mm point defense sy",
+    "category": "ships"
+  },
+  "Darkreach": {
+    "name": "SFB-81 Darkreach",
+    "description": "Featuring powerful engines, a stealthy silhouette, and 4 large internal weapon bays, the SFB-81 Darkreach is a formidable bomber capable of deploying both conventional an",
+    "category": "aircraft"
+  },
+  "Destroyer1": {
+    "name": "Dynamo Class Destroyer",
+    "description": "This guided missile destroyer is armed with a battery of vertically launched cruise missiles and a 155mm railgu",
+    "category": "ships"
+  },
+  "EW1": {
+    "name": "EW-25 Medusa",
+    "description": "The EW-25 is a short take-off, vertical landing (STOVL) support aircraft with a variety of powerful electronic warfare systems. Able to triangulate radar positions, jam enemy radar installations, suppress air defences, and even shoot down missiles with a high energy laser, a single Medusa can easily turn the tide of a battle.",
+    "category": "aircraft"
+  },
+  "Emplacement1_23mm": {
+    "name": "23mm AAA Emplacement",
+    "description": "This manually aimed static air defense position is a simple and low-cost means of defending point targets ",
+    "category": "buildings"
+  },
+  "Emplacement1_ATGM": {
+    "name": "AT-145 Emplacement",
+    "description": "The AT-145 is a short-range anti-tank guided missile designed for knocking out vehicles, emplacements and small buildings.",
+    "category": "buildings"
+  },
+  "Emplacement1_MANPADS": {
+    "name": "IRM-S1 Emplacement",
+    "description": "The IRM-S1 is a man-portable air defense system (MANPADS) effective at countering air threats within 5km. An ",
+    "category": "buildings"
+  },
+  "FastBomber1": {
+    "name": "Alkyon AB-4",
+    "description": "The Alkyon AB-4 is an advanced supersonic bomber with electronic warfare capabilities, designed to stealthily deliver nuclea",
+    "category": "aircraft"
+  },
+  "Fighter1": {
+    "name": "FS-12 Revoker",
+    "description": "",
+    "category": "aircraft"
+  },
+  "FleetCarrier1": {
+    "name": "Hyperion Class Carrier",
+    "description": "The Hyperion class features a short take-off ramp and arrestor gear on its landing runway, and can accommo",
+    "category": "ships"
+  },
+  "Frigate1": {
+    "name": "Argus Class Frigate",
+    "description": "Bristling with air defense weapons, the Argus class is a missile frigate designed to protect valuable assets from air att",
+    "category": "ships"
+  },
+  "HLT-FC": {
+    "name": "HLT Fire Control",
+    "description": "Command vehicle capable of distributing targets from a radar to individual SAM launchers in a battery",
+    "category": "vehicles"
+  },
+  "HLT-FT": {
+    "name": "HLT Fuel Tanker",
+    "description": "Airbase support vehicle capable of refueling aircraft parked within 300m",
+    "category": "vehicles"
+  },
+  "HLT-L": {
+    "name": "HLT Flatbed",
+    "description": "Logistics vehicle with a loading system capable of handling a variety of tasks",
+    "category": "vehicles"
+  },
+  "HLT-M": {
+    "name": "HLT Munitions Truck",
+    "description": "Support vehicle capable of rearming friendly units within 300m",
+    "category": "vehicles"
+  },
+  "HLT-MART": {
+    "name": "HLT Mobile Artillery",
+    "description": "This advanced and highly mobile long-range artillery system fires 155mm laser guided shells. Capable of bombarding target",
+    "category": "vehicles"
+  },
+  "HLT-R": {
+    "name": "HLT Radar Truck",
+    "description": "Capable of tracking multiple aerial units at ranges of up to 100km (60m).",
+    "category": "vehicles"
+  },
+  "HLT-T": {
+    "name": "HLT Tractor",
+    "description": "Heavy duty tractor cab for hauling large trailer systems",
+    "category": "vehicles"
+  },
+  "Helipad": {
+    "name": "Takeoff point for VTOL aircraft",
+    "description": "HPAD",
+    "category": "buildings"
+  },
+  "LCV45": {
+    "name": "LCV45 Recon Truck",
+    "description": "Though lightly armed and armored, the LCV45 is a fast vehicle ideal for forward scouting",
+    "category": "vehicles"
+  },
+  "LandingCraft1": {
+    "name": "OTB-31 landing craft",
+    "description": "Designed for rapidly delivering vehicles from Annex class assault carriers to landing points, this fast hovercraft can carry up to 80 tons of cargo and is equipped with an IRM-S1 launcher and heavy machine gun for self defense.",
+    "category": "ships"
+  },
+  "LaserTrailer1": {
+    "name": "HLT-HEL",
+    "description": "A Laser Air Defence System capable of destroying small calibre aerial munitions.",
+    "category": "vehicles"
+  },
+  "LightTruck1_AA": {
+    "name": "LCV25 AA",
+    "description": "The LCV25 is a 4x4 all terrain vehicle, offered in AA or AT configurations, combining the agility of a light recon vehicle with the firepower of heavier fighting vehicles. It is air transportable, with 2 units fitting inside the cargo bay of a VL-49 Tarantula.",
+    "category": "vehicles"
+  },
+  "LightTruck1_AT": {
+    "name": "LCV25 AT",
+    "description": "The LCV25 is a 4x4 all terrain vehicle, offered in AA or AT configurations, combining the agility of a light recon vehicle with the firepower of heavier fighting vehicles. It is air transportable, with 2 units fitting inside the cargo bay of a VL-49 Tarantula.",
+    "category": "vehicles"
+  },
+  "Linebreaker_APC": {
+    "name": "Linebreaker APC",
+    "description": "An armored personnel carrier upfit for the Linebreaker chassis, this troop transport is well protected with good off-road mobility",
+    "category": "vehicles"
+  },
+  "Linebreaker_IFV": {
+    "name": "Linebreaker IFV",
+    "description": "Sporting a powerful autocannon and anti-armor missiles, the Linebreaker Infantry Fighting Vehicle is a versatile unit capable of engaging both air and ground threats",
+    "category": "vehicles"
+  },
+  "Linebreaker_SAM": {
+    "name": "Linebreaker SAM",
+    "description": "This armored air defense vehicle combines off-road mobility with 12 short-range IR missiles capable of engaging low-",
+    "category": "vehicles"
+  },
+  "MBT": {
+    "name": "Type-12 MBT",
+    "description": "While the Type 12 may be a legacy design, it still remains a formidable presence on the battlefield. It offers better protection per",
+    "category": "vehicles"
+  },
+  "MBT1": {
+    "name": "Spearhead MBT",
+    "description": "With a liberal application of armour and weapon modules, the latest iterations of the Spearhead are as protected as they are powe",
+    "category": "vehicles"
+  },
+  "MC260_RadarContainer": {
+    "name": "MC260 Radar Container",
+    "description": "",
+    "category": "vehicles",
+    "unresolved": true
+  },
+  "Multirole1": {
+    "name": "KR-67 Ifrit",
+    "description": "A large, carrier capable, twin engine multirole fighter, the Ifrit is equally suited to air superiority and ground attack missions. It features excellent thrust and maneuverability alongside reduced radar signature and powerful sensors. Two internal weapon bays plus two additional side bays for heat-seeking missiles allow the Ifrit to carry a significant internal payload without impacting stealth or top speed",
+    "category": "aircraft"
+  },
+  "PatrolBoat1": {
+    "name": "Surf Class Patrol Boat",
+    "description": "The Surf Class is an inshore patrol vessel, nominally used for border protection and anti-piracy duties. While i",
+    "category": "ships"
+  },
+  "QuadVTOL1": {
+    "name": "VL-49 Tarantula",
+    "description": "Combining vertical lift capability with a 20 ton cargo capacity, this large quad tiltwing can deliver crucial supplies",
+    "category": "aircraft"
+  },
+  "RadarSAM1": {
+    "name": "T9K41 Boltstrike",
+    "description": "This formidable anti-air unit incorporates a radar capable of tracking multiple aerial targets at a range of up to 15k",
+    "category": "vehicles"
+  },
+  "SAMTrailer1": {
+    "name": "StratoLance R9 Launcher",
+    "description": "Long range air defense trailer capable of engaging aerial targets detected by nearby radar trucks",
+    "category": "vehicles"
+  },
+  "SPAAG1": {
+    "name": "AeroSentry SPAAG",
+    "description": "This self-propelled anti-aircraft gun sports twin 30mm autocannons firing proximity-fused shells, capable of accurately str",
+    "category": "vehicles"
+  },
+  "SPAAG2": {
+    "name": "FGA-57 Anvil",
+    "description": "Firing 57mm proximity fused explosive shells, the Anvil is capable of dealing devastating volleys against both air and land tar",
+    "category": "vehicles"
+  },
+  "SmallCarrier1": {
+    "name": "Cursor Class LFD",
+    "description": "The Cursor class represents the vanguard of the BDF fleet. This littoral flight deck (LFD) is designed to rapidly ",
+    "category": "ships"
+  },
+  "SmallFighter1": {
+    "name": "FS-20 Vortex",
+    "description": "",
+    "category": "aircraft"
+  },
+  "Truck2-CRAM": {
+    "name": "MSV CRAM",
+    "description": "A Modular Support Vehicle equipped with a 20mm rotary gun to provide point defence against shells, missiles, bombs, and low flying aircraft within a range of approximately 3km.",
+    "category": "vehicles"
+  },
+  "Truck2-FC": {
+    "name": "MSV Fire Control",
+    "description": "Command vehicle capable of distributing targets from a radar to individual SAM launchers in a battery",
+    "category": "vehicles"
+  },
+  "Truck2-FT": {
+    "name": "MSV Fuel Tanker",
+    "description": "Airbase support vehicle capable of refueling aircraft parked within 300m",
+    "category": "vehicles"
+  },
+  "Truck2-L": {
+    "name": "MSV Flatbed",
+    "description": "Logistics vehicle with a loading system capable of handling a variety of tasks",
+    "category": "vehicles"
+  },
+  "Truck2-LADS": {
+    "name": "MSV LADS",
+    "description": "Modular Support Vehicle carrying a Laser Air Defence System capable of destroying small calibre aerial munitions.",
+    "category": "vehicles"
+  },
+  "Truck2-M": {
+    "name": "MSV Munitions",
+    "description": "Support vehicle capable of rearming friendly units within 300m",
+    "category": "vehicles"
+  },
+  "Truck2-MLRS": {
+    "name": "MSV MLRS",
+    "description": "18-tube Multiple Launch Rocket System installed on an MSV chassis, providing mobile rocket artillery.",
+    "category": "vehicles"
+  },
+  "Truck2-MRAP": {
+    "name": "MSV MRAP",
+    "description": "A lightly armed and armored personnel carrier built on the Modular Support Vehicle chassis",
+    "category": "vehicles"
+  },
+  "Truck2-R": {
+    "name": "MSV Radar",
+    "description": "Capable of tracking multiple aerial units at ranges of up to 100km (60m).",
+    "category": "vehicles"
+  },
+  "Truck2-RSAM": {
+    "name": "MSV R9 Stratolance Launcher",
+    "description": "Long range air defense unit capable of engaging aerial targets detected by nearby radar trucks",
+    "category": "vehicles"
+  },
+  "Truck2-T": {
+    "name": "MSV Tractor",
+    "description": "Tractor unit for hauling trailer systems",
+    "category": "vehicles"
+  },
+  "UGV1_SAM": {
+    "name": "Hexhound SAM",
+    "description": "A Hexhound equipped with a four-shot IRM-S1 launcher. Its small profile makes it hard to detect, allowing it to ambush low flying",
+    "category": "vehicles"
+  },
+  "UGV1_grenade": {
+    "name": "Hexhound GMG",
+    "description": "A Hexhound equipped with an automatic grenade launcher. The grenade launcher is able to rain indirect fire on datalink targets within 2km.",
+    "category": "vehicles"
+  },
+  "UGVDozer1": {
+    "name": "M12 Jackknife",
+    "description": "CEV",
+    "category": "vehicles"
+  },
+  "UtilityHelo1": {
+    "name": "UH-90 Ibis",
+    "description": "Designed for a PALA fast vertical lift program in the 2050s, the UH-90 was conceptualized as a medium-sized compound utility ",
+    "category": "aircraft"
+  },
+  "VehicleDepot1": {
+    "name": "Vehicle Depot",
+    "description": "Vehicle deployment facility. Can defend itself with small arms fire.",
+    "category": "buildings"
+  },
+  "ammoDump": {
+    "name": "Ammo Dump",
+    "description": "Ammo Dump",
+    "category": "buildings"
+  },
+  "ammunitionBunker": {
+    "name": "Munitions Bunker",
+    "description": "Munitions Bunker",
+    "category": "buildings"
+  },
+  "controlTower1": {
+    "name": "Control Tower",
+    "description": "",
+    "category": "buildings",
+    "unresolved": true
+  },
+  "enrichmentPlant1": {
+    "name": "Enrichment Plant",
+    "description": "Supplies fissile material for nuclear weapons. Having an enrichment plant ensures a steady supply of nuclear warheads",
+    "category": "buildings"
+  },
+  "factory_large": {
+    "name": "Large Factory",
+    "description": "A vehicle manufacturing facility, housing a production line and its associated machinery. Factory buildings supply a specific type of vehicle to a faction's inventory.",
+    "category": "buildings"
+  },
+  "factory_tall": {
+    "name": "Factory Tall",
+    "description": "",
+    "category": "buildings",
+    "unresolved": true
+  },
+  "fuelTank1": {
+    "name": "Fuel Depot",
+    "description": "Aviation fuel depot that can fill empty aircraft tanks within 300m.",
+    "category": "buildings"
+  },
+  "gabionBunker1": {
+    "name": "Infantry Bunker",
+    "description": "A concealed front line fighting position of an infantry team armed with light machine guns, grenades, and rocket l",
+    "category": "buildings"
+  },
+  "guardTower1": {
+    "name": "Guard Tower",
+    "description": "An elevated, air conditioned chair for a human sentry. Reveals targets within a 5km radius, and will defend itself with small arms fire within a 1km radius.",
+    "category": "buildings"
+  },
+  "hangar_med": {
+    "name": "Medium Aircraft Hangar",
+    "description": "Hangar for storing medium-sized aircraft",
+    "category": "buildings"
+  },
+  "pillbox": {
+    "name": "Pillbox",
+    "description": "",
+    "category": "buildings",
+    "unresolved": true
+  },
+  "radarStation1": {
+    "name": "Radar Station",
+    "description": "",
+    "category": "buildings",
+    "unresolved": true
+  },
+  "refinery_main": {
+    "name": "Refinery Structure",
+    "description": "Synthetic fuel production unit capable of converting a large variety of organic feedstocks into fertilizer and combustible fuels.",
+    "category": "buildings"
+  },
+  "revetment1": {
+    "name": "Aircraft Revetment",
+    "description": "Protected parking area for aircraft, shielded from shrapnel",
+    "category": "buildings"
+  },
+  "shelter1": {
+    "name": "Hardened Aircraft Shelter",
+    "description": "A reinforced hangar which stores fighter aircraft and a small complement of nuclear warheads. It is resistant to bombs and missiles, often requiring multiple direct hits or large/penetrating munitions to destroy it.",
+    "category": "buildings"
+  },
+  "storageTank": {
+    "name": "Storage Tank",
+    "description": "Refrigerated, in-ground bulk liquid gas storage. Thick concrete for insulation makes it difficult to damage with weapons fir",
+    "category": "buildings"
+  },
+  "trainer": {
+    "name": "T/A-30 Compass",
+    "description": "An advanced jet trainer which is well suited for light combat duty, the T/A-30 is highly maneuverable at low to medium speed",
+    "category": "aircraft"
+  }
+}
