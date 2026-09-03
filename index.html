@@ -42,6 +42,22 @@
   Your faction:
   <select id="faction" style="background:#1c262d; color:#e6edf3; border:1px solid #3d4a55; padding:4px;"></select>
 </div>
+
+<div style="margin-top:10px;">
+  Show:
+  <label><input type="checkbox" class="cat" value="aircraft" checked> Aircraft</label>
+  <label><input type="checkbox" class="cat" value="vehicles" checked> Vehicles</label>
+  <label><input type="checkbox" class="cat" value="ships" checked> Ships</label>
+  <label><input type="checkbox" class="cat" value="buildings" checked> Buildings</label>
+</div>
+
+<div style="margin-top:10px;">
+  Side:
+  <label><input type="checkbox" class="aff" value="friend"  checked> Friendly</label>
+  <label><input type="checkbox" class="aff" value="hostile" checked> Hostile</label>
+  <label><input type="checkbox" class="aff" value="unknown" checked> Unknown</label>
+</div>
+
     <pre id="out"></pre>
     <canvas id="map" width="800" height="800" style="border:1px solid #2a535d; margin-top:20px;"></canvas>
   </main>
@@ -51,6 +67,7 @@
 const out  = document.getElementById('out');
 
 const factionSelect = document.getElementById('faction');
+
 
 function mapName(path) {
     if (path ==='Terrain_naval') return 'Ignus Archipelago';
@@ -179,6 +196,20 @@ factionSelect.addEventListener('change', () => {
     if (currentMission) draw(currentMission);
 });
 
+function checkedValues(selector) {
+    const shown = [];
+    for (const box of document.querySelectorAll(selector)) {
+        if (box.checked) shown.push(box.value);
+    }
+    return shown;
+}
+
+for (const box of document.querySelectorAll('.cat, .aff')) {
+    box.addEventListener('change', () => {
+        if (currentMission) draw(currentMission);
+    });
+}
+
 function draw(mission) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(basemap,
@@ -187,7 +218,14 @@ function draw(mission) {
     ctx.strokeStyle = '#101418';
     ctx.lineWidth   = 1.5;
 
-    for (const unit of collectUnits(mission)) {
+       const cats = checkedValues('.cat');
+    const affs = checkedValues('.aff');
+
+    const units = collectUnits(mission)
+        .filter(u => cats.includes(u.category))
+        .filter(u => affs.includes(affiliationOf(u)));
+
+    for (const unit of units) {
         const p = toScreen(unit.x, unit.z);
         drawFrame(ctx, p.x, p.y, 5, affiliationOf(unit));
     }};
