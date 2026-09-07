@@ -16,19 +16,24 @@
       color: #e6edf3;
     }
 
-    /* Whole window: a fixed-width panel beside a map that takes the rest. */
+    /* The map is the page. Everything else floats on top of it, the way a GIS
+       client works - rather than the map living in a box beside a sidebar. */
     #app {
-      display: flex;
+      position: relative;
       height: 100%;
     }
 
     #panel {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
       width: 300px;
-      flex: none;                       /* never shrink to make room for the map */
-      border-right: 1px solid #2a353d;
+      z-index: 5;
       display: flex;
       flex-direction: column;
-      background: #151c22;
+      border-right: 1px solid #2a353d;
+      background: rgba(19, 26, 32, 0.94);
+      backdrop-filter: blur(3px);       /* map faintly visible behind the panel */
+      box-shadow: 2px 0 12px rgba(0,0,0,.45);
     }
 
     #panelHead {
@@ -45,10 +50,8 @@
     }
 
     #mapArea {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute;
+      inset: 0;                         /* fills the whole window, under the panel */
       overflow: hidden;
       background: #0d1216;
     }
@@ -131,20 +134,13 @@
       font-family: ui-monospace, Consolas, monospace;
     }
 
-    .lgRow {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 1px 0;
+    .sheetLink {
+      display: inline-block;
+      font-size: 12px;
+      color: #8ecbff;
+      text-decoration: none;
     }
-    .lgSym { width: 30px; flex: none; display: flex; justify-content: center; }
-    .lgSym svg { width: 26px; height: 26px; }
-    .lgName { flex: 1; font-size: 12px; }
-    .lgCode {
-      font-family: ui-monospace, Consolas, monospace;
-      font-size: 10px;
-      color: #6f7d88;
-    }
+    .sheetLink:hover { text-decoration: underline; }
 
     /* Follows the cursor. position:fixed because it is placed from clientX/clientY,
        which are viewport coordinates. pointer-events:none so it can never sit
@@ -189,13 +185,12 @@
         </div>
 
         <div class="group">
-          <div class="title">Symbology <span style="text-transform:none;letter-spacing:0">(hostile shown)</span></div>
-          <div id="legend"></div>
+          <div class="title">Mission</div>
+          <pre id="out"></pre>
         </div>
 
         <div class="group">
-          <div class="title">Mission</div>
-          <pre id="out"></pre>
+          <a href="symbols.html" target="_blank" class="sheetLink">Symbology sheet &rarr;</a>
         </div>
       </div>
     </aside>
@@ -247,8 +242,6 @@ async function loadCatalogue() {
 
 loadCatalogue();
 
-// Drawn once at startup - the legend depends on nothing but the SIDC mapping.
-window.addEventListener('DOMContentLoaded', renderLegend);
 
 function mapName(path) {
     if (path ==='Terrain_naval') return 'Ignus Archipelago';
@@ -281,24 +274,39 @@ basemap.onload = () => {
 
 const mapArea = document.getElementById('mapArea');
 
-// The canvas no longer has a fixed size - it fills whatever the window gives it.
-// Keeping its shape identical to the map's means toScreen needs no changes:
-// the map still occupies exactly the whole canvas.
-function sizeCanvas() {
+const PANEL_W = 300;   // must match #panel width in the CSS
+
+// The canvas is now the whole window, which is not the map's shape - so the map
+// has to be fitted into it rather than filling it. Two transforms stack:
+//
+//   fit    map metres  ->  canvas pixels   (scale to fit, centre, fixed)
+//   view   canvas      ->  screen          (pan and zoom, changes constantly)
+//
+// Keeping them separate means panning and zooming never has to know the map's
+// dimensions, and re-fitting on a window resize never disturbs where you had
+// scrolled to.
+let fit = { scale: 1, offsetX: 0, offsetY: 0 };
+
+function computeFit() {
     if (!currentMap) return;
 
-    const aspect = (currentMap.maxX - currentMap.minX) / (currentMap.maxZ - currentMap.minZ);
+    const mw = currentMap.maxX - currentMap.minX;
+    const mh = currentMap.maxZ - currentMap.minZ;
 
-    // Largest box with the map's aspect ratio that fits the available area.
-    let w = mapArea.clientWidth;
-    let h = w / aspect;
-    if (h > mapArea.clientHeight) {
-        h = mapArea.clientHeight;
-        w = h * aspect;
-    }
+    // Fit into the part of the window the panel does not cover, so a freshly
+    // loaded mission is not half hidden behind it.
+    const usableW = Math.max(50, canvas.width - PANEL_W);
+    const scale   = Math.min(usableW / mw, canvas.height / mh) * 0.96;   // margin
 
-    canvas.width  = Math.round(w);
-    canvas.height = Math.round(h);
+    fit.scale   = scale;
+    fit.offsetX = PANEL_W + (usableW - mw * scale) / 2;
+    fit.offsetY = (canvas.height - mh * scale) / 2;
+}
+
+function sizeCanvas() {
+    canvas.width  = mapArea.clientWidth;
+    canvas.height = mapArea.clientHeight;
+    computeFit();
 }
 
 function setMap(name) {
@@ -318,11 +326,16 @@ let view = { scale: 1, panX: 0, panY: 0 };
 
 function toScreen(x, z) {
     const m = currentMap;
-    const u = (x - m.minX) / (m.maxX - m.minX);
-    const v = (m.maxZ - z) / (m.maxZ - m.minZ);
+
+    // metres -> canvas pixels. The vertical flip is here: screen y grows down,
+    // world z grows north.
+    const cx = (x - m.minX) * fit.scale + fit.offsetX;
+    const cy = (m.maxZ - z) * fit.scale + fit.offsetY;
+
+    // canvas pixels -> screen, applying pan and zoom.
     return {
-        x: u * canvas.width  * view.scale + view.panX,
-        y: v * canvas.height * view.scale + view.panY
+        x: cx * view.scale + view.panX,
+        y: cy * view.scale + view.panY
     };
 }
 
@@ -406,6 +419,22 @@ function roleOf(type, category) {
 
     const [group, role] = path.split('/');
     return { group, role };
+}
+
+// collectUnits is not cheap - 300+ objects, each running roleOf's pattern list -
+// and draw() runs on every mousemove while panning. Cache the result per
+// mission and rebuild only when the mission itself changes.
+//
+// This is only safe because collectUnits depends on nothing that changes at
+// runtime: affiliation is derived at draw time rather than stored, so switching
+// sides cannot invalidate it. Store what is fixed, derive what moves.
+let unitsCache = { mission: null, units: [] };
+
+function unitsOf(mission) {
+    if (unitsCache.mission !== mission) {
+        unitsCache = { mission: mission, units: collectUnits(mission) };
+    }
+    return unitsCache.units;
 }
 
 function collectUnits(mission) {
@@ -625,32 +654,6 @@ function drawSymbol(ctx, x, y, unit) {
     ctx.drawImage(entry.canvas, x - entry.anchor.x, y - entry.anchor.y);
 }
 
-// A legend of the role-level fallbacks, shown hostile.
-function renderLegend() {
-    const el = document.getElementById('legend');
-    if (typeof ms === 'undefined') {
-        el.textContent = 'milsymbol did not load - falling back to plain frames.';
-        return;
-    }
-
-    const rows = Object.keys(ROLE_SIDC).map(key => {
-        const template = ROLE_SIDC[key];
-        const sidc = template[0] + 'H' + template.slice(2);   // shown hostile
-
-        let svg = '';
-        try { svg = new ms.Symbol(sidc, { size: 20, strokeWidth: 4 }).asSVG(); }
-        catch (e) { svg = ''; }
-
-        return '<div class="lgRow">' +
-               '<span class="lgSym">' + svg + '</span>' +
-               '<span class="lgName">' + key.split('/')[1] + '</span>' +
-               '<span class="lgCode">' + key.split('/')[0].slice(0, 4) + '</span>' +
-               '</div>';
-    });
-
-    el.innerHTML = rows.join('');
-}
-
 function drawFrame(ctx, x, y, size, affiliation) {
     ctx.beginPath();
 
@@ -795,7 +798,7 @@ function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit
             if (e.target === box) return;      // the checkbox handles its own clicks
             if (collapsedKeys.has(collapseKey)) collapsedKeys.delete(collapseKey);
             else collapsedKeys.add(collapseKey);
-            renderTree(collectUnits(currentMission));
+            renderTree(unitsOf(currentMission));
         });
     }
 
@@ -879,7 +882,7 @@ function renderTree(units) {
 function refreshTree() {
     if (!currentMission) return;
     draw(currentMission);
-    renderTree(collectUnits(currentMission));
+    renderTree(unitsOf(currentMission));
 }
 
 // Falls back to the raw key if the catalogue has not loaded yet, or if this is a
@@ -891,13 +894,19 @@ function unitName(type) {
 
 function draw(mission) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(basemap,
-        view.panX, view.panY,
-        canvas.width * view.scale, canvas.height * view.scale);
+    // The basemap goes through the same fit-then-view transform as every unit,
+    // so it can never drift out of register with the markers on top of it.
+    const mw = currentMap.maxX - currentMap.minX;
+    const mh = currentMap.maxZ - currentMap.minZ;
+    ctx.drawImage(basemap,
+        fit.offsetX * view.scale + view.panX,
+        fit.offsetY * view.scale + view.panY,
+        mw * fit.scale * view.scale,
+        mh * fit.scale * view.scale);
     ctx.strokeStyle = '#101418';
     ctx.lineWidth   = 1.5;
 
-    const units = collectUnits(mission).filter(isVisible);
+    const units = unitsOf(mission).filter(isVisible);
 
     // Remember where each marker actually landed. Hover then tests against what
     // is genuinely on screen, so filtered-out units can never be picked, and
@@ -1002,7 +1011,10 @@ canvas.addEventListener('wheel', (e) => {
     const my = e.offsetY;
 
     const desired = view.scale * factor;
-    const clamped = Math.min(25, Math.max(1, desired));
+    // Floor is 0.5 rather than 1 so you can pull back past the initial fit and
+    // see context around the map's edges. A floor of exactly 1 made sense when
+    // the canvas was the map's own shape; now the map sits inside a larger one.
+    const clamped = Math.min(25, Math.max(0.5, desired));
     const actual  = clamped / view.scale;
 
     view.panX = mx - (mx - view.panX) * actual;
@@ -1055,7 +1067,7 @@ drop.addEventListener('drop', async (e) => {
   // and drill in only where you need to. Five levels open at once would be
   // hundreds of rows.
   collapsedKeys.clear();
-  for (const u of collectUnits(mission)) {
+  for (const u of unitsOf(mission)) {
       collapsedKeys.add(rolePath(u));
       collapsedKeys.add(typePath(u));
   }
@@ -1070,7 +1082,7 @@ vehicles:  ${mission.vehicles.length}
 ships:     ${mission.ships.length}
 buildings: ${mission.buildings.length}`;
 
-  renderTree(collectUnits(mission));
+  renderTree(unitsOf(mission));
   draw(mission);
 });
   </script>
