@@ -142,6 +142,40 @@
     }
     .sheetLink:hover { text-decoration: underline; }
 
+    /* Context menu. Fixed, like the tooltip, because it is placed from
+       clientX/clientY. Unlike the tooltip it DOES take pointer events - you
+       have to be able to click the items. */
+    #menu {
+      position: fixed;
+      display: none;
+      z-index: 20;
+      min-width: 190px;
+      padding: 4px;
+      background: #161f26;
+      border: 1px solid #3d4a55;
+      border-radius: 5px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.55);
+      font-size: 13px;
+    }
+    #menu .mHead {
+      padding: 6px 10px 7px;
+      margin-bottom: 3px;
+      border-bottom: 1px solid #2a353d;
+      color: #e6edf3;
+      font-weight: 600;
+      max-width: 240px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #menu .mHead span { display: block; font-weight: 400; font-size: 11px; color: #7d8b96; }
+    #menu .mItem {
+      padding: 6px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      color: #cdd9e3;
+    }
+    #menu .mItem:hover { background: #24313a; color: #fff; }
+    #menu .mSep { height: 1px; background: #2a353d; margin: 4px 2px; }
+
     /* Follows the cursor. position:fixed because it is placed from clientX/clientY,
        which are viewport coordinates. pointer-events:none so it can never sit
        under the cursor and steal the very mousemove that positions it. */
@@ -202,6 +236,7 @@
   </div>
 
   <div id="tip"></div>
+  <div id="menu"></div>
 
   <!-- milsymbol 2.2.0 - MIT, Mans Beckman / spatialillusions.com.
        Renders MIL-STD-2525 symbols from a SIDC string. Vendored rather than
@@ -1000,11 +1035,170 @@ canvas.addEventListener('mouseleave', () => {
     tip.style.display = 'none';
 });
 
+// ---------------------------------------------------------------------------
+// Right-click menu
+//
+// Deliberately generic: showMenu takes a title and a list of {label, run} items
+// and knows nothing about what they do. Every later feature - place a bullseye,
+// mark a target, start a route, measure from here - is one more entry rather
+// than another button competing for panel space.
+// ---------------------------------------------------------------------------
+const menu = document.getElementById('menu');
+
+function hideMenu() { menu.style.display = 'none'; }
+
+function showMenu(clientX, clientY, title, subtitle, items) {
+    menu.innerHTML = '';
+
+    if (title) {
+        const head = document.createElement('div');
+        head.className = 'mHead';
+        head.textContent = title;
+        if (subtitle) {
+            const sub = document.createElement('span');
+            sub.textContent = subtitle;
+            head.appendChild(sub);
+        }
+        menu.appendChild(head);
+    }
+
+    for (const item of items) {
+        if (item === '-') {
+            const sep = document.createElement('div');
+            sep.className = 'mSep';
+            menu.appendChild(sep);
+            continue;
+        }
+        const el = document.createElement('div');
+        el.className = 'mItem';
+        el.textContent = item.label;
+        el.addEventListener('click', () => { hideMenu(); item.run(); });
+        menu.appendChild(el);
+    }
+
+    // Show it before measuring, or offsetWidth is 0 and the flip never happens.
+    menu.style.display = 'block';
+    menu.style.left = '0px';
+    menu.style.top  = '0px';
+
+    // Flip rather than overflow when near the right or bottom edge.
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    const x = (clientX + w > window.innerWidth)  ? clientX - w : clientX;
+    const y = (clientY + h > window.innerHeight) ? clientY - h : clientY;
+    menu.style.left = Math.max(0, x) + 'px';
+    menu.style.top  = Math.max(0, y) + 'px';
+}
+
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();               // suppress the browser's own menu
+    tip.style.display = 'none';
+
+    const unit = unitAt(e.offsetX, e.offsetY);
+
+    if (unit) {
+        showMenu(e.clientX, e.clientY,
+            unitName(unit.type),
+            factionLabel(unit.faction) + ' · ' + unit.role,
+            [
+                { label: 'Hide this unit', run: () => {
+                    hiddenPaths.add(unitPath(unit));
+                    refreshTree();
+                }},
+                { label: 'Hide all ' + unitName(unit.type), run: () => {
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.type === unit.type) hiddenPaths.add(unitPath(u));
+                    }
+                    refreshTree();
+                }},
+                { label: 'Hide all ' + unit.role, run: () => {
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.role === unit.role && u.group === unit.group) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                '-',
+                // "Show only" is the inverse: clear everything, then hide what
+                // does NOT match. Isolating one threat type is the common case
+                // when you are working out whether a route is survivable.
+                { label: 'Show only ' + unitName(unit.type), run: () => {
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.type !== unit.type) hiddenPaths.add(unitPath(u));
+                    }
+                    refreshTree();
+                }},
+                { label: 'Show only ' + unit.role, run: () => {
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.role !== unit.role || u.group !== unit.group) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                { label: 'Show only ' + unit.group, run: () => {
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.group !== unit.group) hiddenPaths.add(unitPath(u));
+                    }
+                    refreshTree();
+                }},
+                '-',
+                // The same two, narrowed to one side. Affiliation is evaluated
+                // now rather than stored, so these follow the faction picker.
+                { label: 'Show only ' + AFF_LABEL[affiliationOf(unit)] + ' ' + unit.role, run: () => {
+                    const aff = affiliationOf(unit);
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.role !== unit.role || u.group !== unit.group ||
+                            affiliationOf(u) !== aff) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                { label: 'Show only ' + AFF_LABEL[affiliationOf(unit)] + ' ' + unit.group, run: () => {
+                    const aff = affiliationOf(unit);
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.group !== unit.group || affiliationOf(u) !== aff) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                '-',
+                { label: 'Show everything again', run: () => {
+                    hiddenPaths.clear();
+                    refreshTree();
+                }}
+            ]);
+    } else {
+        showMenu(e.clientX, e.clientY, null, null, [
+            { label: 'Show everything again', run: () => {
+                hiddenPaths.clear();
+                refreshTree();
+            }}
+        ]);
+    }
+});
+
+// Any click elsewhere, any scroll, or Escape dismisses it.
+window.addEventListener('mousedown', (e) => {
+    if (!menu.contains(e.target)) hideMenu();
+});
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideMenu();
+});
+
 let dragging = false;
 let lastX = 0, lastY = 0;
 
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
+    hideMenu();      // the menu is placed in screen pixels; zooming moves the map out from under it
 
     const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
     const mx = e.offsetX;
@@ -1026,6 +1220,7 @@ canvas.addEventListener('wheel', (e) => {
 
 
 canvas.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;      // left button only - right-click opens the menu
     dragging = true;
     lastX = e.clientX;
     lastY = e.clientY;
