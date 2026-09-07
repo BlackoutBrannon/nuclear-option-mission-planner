@@ -142,6 +142,31 @@
     }
     .sheetLink:hover { text-decoration: underline; }
 
+    /* Status bar, bottom right over the map. */
+    #status {
+      position: fixed;
+      right: 12px; bottom: 12px;
+      z-index: 15;
+      display: flex; align-items: center; gap: 14px;
+      padding: 6px 10px;
+      background: rgba(11, 16, 20, .88);
+      border: 1px solid #2a353d;
+      border-radius: 4px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px;
+      color: #b8c5d0;
+      font-variant-numeric: tabular-nums;   /* digits stop jittering as they change */
+    }
+    #stBull { color: #ffd166; }
+    #stMeas { color: #6ee7b7; }
+    #unitToggle {
+      background: #1c262d; color: #cdd9e3;
+      border: 1px solid #3d4a55; border-radius: 3px;
+      padding: 3px 8px; font-size: 11px; cursor: pointer;
+      font-family: inherit;
+    }
+    #unitToggle:hover { background: #24313a; }
+
     /* Context menu. Fixed, like the tooltip, because it is placed from
        clientX/clientY. Unlike the tooltip it DOES take pointer events - you
        have to be able to click the items. */
@@ -237,6 +262,13 @@
 
   <div id="tip"></div>
   <div id="menu"></div>
+
+  <div id="status">
+    <span id="stPos">—</span>
+    <span id="stBull"></span>
+    <span id="stMeas"></span>
+    <button id="unitToggle" title="Switch between nautical and metric">NM / ft</button>
+  </div>
 
   <!-- milsymbol 2.2.0 - MIT, Mans Beckman / spatialillusions.com.
        Renders MIL-STD-2525 symbols from a SIDC string. Vendored rather than
@@ -358,6 +390,62 @@ window.addEventListener('resize', () => {
     if (currentMission) draw(currentMission);
 });
 let view = { scale: 1, panX: 0, panY: 0 };
+
+// A single named reference point. Everything on the map can then be called as
+// a bearing and range from it, which is how you talk about position over the
+// radio - "bandits bullseye 270 for 45" - rather than reading out coordinates.
+let bullseye = null;         // { x, z } in world metres, or null
+
+// The exact inverse of toScreen: undo the view, then undo the fit. Every
+// interaction that starts with a click - placing a bullseye, dropping a target,
+// laying a waypoint, sampling terrain height - goes through this.
+function toWorld(sx, sy) {
+    const m = currentMap;
+
+    const cx = (sx - view.panX) / view.scale;      // screen -> canvas
+    const cy = (sy - view.panY) / view.scale;
+
+    return {                                       // canvas -> metres
+        x: (cx - fit.offsetX) / fit.scale + m.minX,
+        z: m.maxZ - (cy - fit.offsetY) / fit.scale
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Bearing and range on a flat plane. x is east, z is north, and the world has
+// no curvature - so this is plane trigonometry, not great-circle navigation.
+// ---------------------------------------------------------------------------
+function bearingRange(from, to) {
+    const dx = to.x - from.x;        // east
+    const dz = to.z - from.z;        // north
+
+    // atan2(east, north) gives degrees clockwise from north, which is what a
+    // bearing is. atan2(y, x) would give the mathematical convention instead -
+    // anticlockwise from east - and be wrong by 90 degrees and mirrored.
+    let bearing = Math.atan2(dx, dz) * 180 / Math.PI;
+    if (bearing < 0) bearing += 360;
+
+    return { bearing: bearing, range: Math.hypot(dx, dz) };
+}
+
+let unitSystem = 'aviation';         // or 'metric'
+
+function fmtRange(metres) {
+    return unitSystem === 'aviation'
+        ? (metres / 1852).toFixed(1) + ' NM'      // 1852 m is one nautical mile
+        : (metres / 1000).toFixed(1) + ' km';
+}
+
+function fmtBearing(deg) {
+    return String(Math.round(deg) % 360).padStart(3, '0') + '°';
+}
+
+// Standard bullseye call: bearing then range, e.g. 270/45.
+function fmtBullseye(point) {
+    if (!bullseye) return '';
+    const br = bearingRange(bullseye, point);
+    return fmtBearing(br.bearing) + ' / ' + fmtRange(br.range);
+}
 
 function toScreen(x, z) {
     const m = currentMap;
@@ -689,6 +777,395 @@ function drawSymbol(ctx, x, y, unit) {
     ctx.drawImage(entry.canvas, x - entry.anchor.x, y - entry.anchor.y);
 }
 
+const BULL = '255,209,102';                 // rose colour, as rgb components
+
+// Range rings and radials. Drawn in WORLD units, unlike the unit symbols - a
+// 5 NM ring has to stay 5 NM wide as you zoom, or it means nothing.
+//
+// Called before the units so a rose covering the whole map sits underneath them
+// rather than obscuring the thing you are measuring.
+function drawBullseyeRose(ctx) {
+    if (!bullseye) return;
+
+    const p        = toScreen(bullseye.x, bullseye.z);
+    const interval = unitSystem === 'aviation' ? 1852 * 5 : 5000;   // metres
+    const ringPx   = interval * fit.scale * view.scale;
+
+    if (ringPx < 6) return;                 // zoomed out so far the rings would merge
+
+    // Extend to whichever canvas corner is furthest away, so the rose always
+    // reaches the edge of what you can see rather than stopping arbitrarily.
+    const far = Math.max(
+        Math.hypot(p.x, p.y),
+        Math.hypot(canvas.width - p.x, p.y),
+        Math.hypot(p.x, canvas.height - p.y),
+        Math.hypot(canvas.width - p.x, canvas.height - p.y)
+    );
+    const rings = Math.min(60, Math.ceil(far / ringPx));
+    const outer = rings * ringPx;
+
+    ctx.save();
+
+    // Two passes over the whole rose: a dark halo, then the bright line on top.
+    // A one-pixel line alone vanishes over pale terrain - what makes it legible
+    // is the contrast step against its own backing, not the colour.
+    for (const pass of [{ c: '11,16,20', w: 3, a: 0.55 },
+                        { c: BULL,      w: 1, a: 1    }]) {
+
+        ctx.lineWidth = pass.w;
+
+        ctx.strokeStyle = 'rgba(' + pass.c + ',' + (0.45 * pass.a) + ')';
+        for (let i = 1; i <= rings; i++) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, i * ringPx, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Radials every 45 degrees. Screen north is -y and east is +x, so sin
+        // drives x and -cos drives y - bearingRange's convention, inverted.
+        for (let deg = 0; deg < 360; deg += 45) {
+            const rad = deg * Math.PI / 180;
+            // Cardinals heavier than the 45s, so the two ranks are told apart
+            // by weight rather than by hue.
+            const alpha = (deg % 90 === 0 ? 0.75 : 0.42) * pass.a;
+            ctx.strokeStyle = 'rgba(' + pass.c + ',' + alpha + ')';
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x + Math.sin(rad) * outer, p.y - Math.cos(rad) * outer);
+            ctx.stroke();
+        }
+    }
+
+    // Range labels up the 045 radial, so they never sit on a cardinal line.
+    // Every other ring unless the rings are far apart, to limit clutter.
+    const step = ringPx > 90 ? 1 : 2;
+    const unit = unitSystem === 'aviation' ? 'NM' : 'km';
+    const diag = Math.PI / 4;
+
+    ctx.font = '10px ui-monospace, Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let i = step; i <= rings; i += step) {
+        const r  = i * ringPx;
+        const lx = p.x + Math.sin(diag) * r;
+        const ly = p.y - Math.cos(diag) * r;
+        if (lx < 0 || ly < 0 || lx > canvas.width || ly > canvas.height) continue;
+
+        const text = (i * 5) + (i === step ? ' ' + unit : '');
+        ctx.lineWidth   = 3;
+        ctx.strokeStyle = 'rgba(11,16,20,0.85)';
+        ctx.strokeText(text, lx, ly);
+        ctx.fillStyle = 'rgba(' + BULL + ',1)';
+        ctx.fillText(text, lx, ly);
+    }
+
+    // Bearing labels just inside the outermost ring.
+    for (let deg = 0; deg < 360; deg += 45) {
+        const rad = deg * Math.PI / 180;
+        const r   = outer - ringPx * 0.35;
+        const lx  = p.x + Math.sin(rad) * r;
+        const ly  = p.y - Math.cos(rad) * r;
+        if (lx < 12 || ly < 12 || lx > canvas.width - 12 || ly > canvas.height - 12) continue;
+
+        const text = String(deg).padStart(3, '0');
+        ctx.lineWidth   = 3;
+        ctx.strokeStyle = 'rgba(11,16,20,0.85)';
+        ctx.strokeText(text, lx, ly);
+        ctx.fillStyle = 'rgba(' + BULL + ',0.9)';
+        ctx.fillText(text, lx, ly);
+    }
+
+    ctx.restore();
+}
+
+// The centre mark, drawn on top of the units so it is never buried. Constant
+// screen size, unlike the rose.
+function drawBullseyeCentre(ctx) {
+    if (!bullseye) return;
+
+    const p = toScreen(bullseye.x, bullseye.z);
+
+    ctx.save();
+    // Dark halo first, then the bright mark, so it reads on any terrain.
+    for (const pass of [{ c: '#0b1014', w: 4 }, { c: '#ffd166', w: 1.6 }]) {
+        ctx.strokeStyle = pass.c;
+        ctx.lineWidth   = pass.w;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(p.x - 13, p.y); ctx.lineTo(p.x + 13, p.y);
+        ctx.moveTo(p.x, p.y - 13); ctx.lineTo(p.x, p.y + 13);
+        ctx.stroke();
+    }
+
+    ctx.font = '600 11px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#0b1014';
+    ctx.strokeText('BULLSEYE', p.x + 17, p.y - 6);
+    ctx.fillStyle = '#ffd166';
+    ctx.fillText('BULLSEYE', p.x + 17, p.y - 6);
+
+    ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Measuring tool
+//
+// A MODE. While one is running, left-click drops a point instead of starting a
+// pan, so every handler that cares has to ask whether measuring is active. The
+// ways out - double-click to finish, Escape to clear - matter as much as the
+// way in; a mode you cannot leave is a bug, not a feature.
+//
+// Points are world metres, like the bullseye, so a measurement stays put on the
+// ground as you pan and zoom.
+// ---------------------------------------------------------------------------
+const MEAS = '110,231,183';                 // measurement colour, rgb components
+
+// kind 'path'   - a run of legs, each labelled with its own bearing and range
+// kind 'circle'  - a ring of a radius you drag out, for "how far does this
+//                  reach" questions before we have real weapon ranges
+//
+// One mode with a kind rather than two separate modes. Two flags could both be
+// true at once and there would be no sensible answer for what a click means.
+let measure = null;   // { kind, points: [{x,z}], cursor: {x,z}|null, done }
+
+function startMeasure(at, kind, label) {
+    measure = { kind: kind || 'path', points: [at], cursor: at,
+                done: false, label: label || null };
+    canvas.style.cursor = 'crosshair';
+    if (currentMission) draw(currentMission);
+}
+
+// Finished rings, kept until you clear them. Stacking is the whole point: one
+// ring answers "how far does this reach", several answer "where are the gaps",
+// which is the question you are actually asking. Stored in world metres, so a
+// ring stays on its site through any pan or zoom.
+const rings = [];    // [{ x, z, r, label }]
+
+// Index of the ring whose EDGE is under the cursor, or -1. The tolerance is
+// converted from metres to pixels, so it stays an easy 8 px target at any zoom
+// instead of being unclickable when zoomed out.
+function ringAt(sx, sy) {
+    const w = toWorld(sx, sy);
+    for (let i = rings.length - 1; i >= 0; i--) {
+        const d     = Math.hypot(w.x - rings[i].x, w.z - rings[i].z);
+        const errPx = Math.abs(d - rings[i].r) * fit.scale * view.scale;
+        if (errPx < 8) return i;
+    }
+    return -1;
+}
+
+// Drawn UNDER the units, like the bullseye rose - a kept ring is context, and
+// must not sit on top of the symbols you are reading it against.
+function drawRings(ctx) {
+    if (!rings.length) return;
+
+    ctx.save();
+    for (const ring of rings) {
+        const p   = toScreen(ring.x, ring.z);
+        const rpx = ring.r * fit.scale * view.scale;
+
+        for (const pass of [{ c: '11,16,20', w: 4, a: 0.7 },
+                            { c: MEAS,      w: 1.5, a: 0.8 }]) {
+            ctx.strokeStyle = 'rgba(' + pass.c + ',' + pass.a + ')';
+            ctx.lineWidth   = pass.w;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle   = 'rgba(' + MEAS + ',0.9)';
+        ctx.strokeStyle = '#0b1014';
+        ctx.lineWidth   = 1.5;
+        ctx.fill();
+        ctx.stroke();
+
+        // Labelled at twelve o'clock, so stacked rings stay tellable apart.
+        const ly = p.y - rpx;
+        if (ly > 10 && ly < canvas.height - 10 && p.x > 0 && p.x < canvas.width) {
+            plate(ctx, (ring.label ? ring.label + '  ' : '') + fmtRange(ring.r),
+                  p.x, ly);
+        }
+    }
+    ctx.restore();
+}
+
+// Radius of a circle measurement, in metres - from the centre to whichever
+// point is currently defining the edge.
+function measureRadius() {
+    if (!measure || measure.kind !== 'circle') return 0;
+    const edge = measure.done ? measure.points[1] : measure.cursor;
+    return edge ? bearingRange(measure.points[0], edge).range : 0;
+}
+
+// Finish but keep it on screen - you have measured something and want to read
+// it while you look at the map.
+function endMeasure() {
+    if (!measure) return;
+
+    // A finished circle becomes a kept ring and stops being the live
+    // measurement, which is what lets the next one stack rather than replace.
+    if (measure.kind === 'circle') {
+        const r = measureRadius();
+        if (r > 0) {
+            rings.push({ x: measure.points[0].x, z: measure.points[0].z,
+                         r: r, label: measure.label });
+        }
+        clearMeasure();
+        return;
+    }
+
+    measure.done   = true;
+    measure.cursor = null;
+    canvas.style.cursor = '';
+    if (currentMission) draw(currentMission);
+}
+
+function clearMeasure() {
+    measure = null;
+    canvas.style.cursor = '';
+    if (currentMission) draw(currentMission);
+}
+
+// Total ground distance along the path, in metres.
+function measureTotal() {
+    if (!measure) return 0;
+    let total = 0;
+    for (let i = 1; i < measure.points.length; i++) {
+        total += bearingRange(measure.points[i - 1], measure.points[i]).range;
+    }
+    return total;
+}
+
+// A label with a dark plate behind it. Text over terrain needs the same
+// treatment the rose needed - contrast of its own, not a colour we hope reads.
+function plate(ctx, text, x, y) {
+    ctx.font = '11px ui-monospace, Consolas, monospace';
+    const w = ctx.measureText(text).width;
+    ctx.fillStyle = 'rgba(11,16,20,0.85)';
+    ctx.fillRect(x - w / 2 - 4, y - 8, w + 8, 16);
+    ctx.strokeStyle = 'rgba(' + MEAS + ',0.5)';
+    ctx.lineWidth   = 1;
+    ctx.strokeRect(x - w / 2 - 4, y - 8, w + 8, 16);
+    ctx.fillStyle    = 'rgb(' + MEAS + ')';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+}
+
+function drawMeasureCircle(ctx) {
+    const c    = measure.points[0];
+    const edge = measure.done ? measure.points[1] : measure.cursor;
+    if (!edge) return;
+
+    const p   = toScreen(c.x, c.z);
+    const br  = bearingRange(c, edge);
+    // Metres to screen pixels, the same product the bullseye rose uses. The
+    // ring is a real distance on the ground, so it has to scale with the map.
+    const rpx = br.range * fit.scale * view.scale;
+
+    ctx.save();
+
+    for (const pass of [{ c: '11,16,20', w: 5 }, { c: MEAS, w: 2 }]) {
+        ctx.strokeStyle = 'rgba(' + pass.c + ',0.9)';
+        ctx.lineWidth   = pass.w;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // The radius, dashed - a different shape from the solid path tool, so the
+    // two read apart without depending on the colour difference.
+    const q = toScreen(edge.x, edge.z);
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = 'rgba(' + MEAS + ',0.85)';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(q.x, q.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle   = 'rgb(' + MEAS + ')';
+    ctx.strokeStyle = '#0b1014';
+    ctx.lineWidth   = 2;
+    ctx.fill();
+    ctx.stroke();
+
+    plate(ctx, 'R ' + fmtRange(br.range), (p.x + q.x) / 2, (p.y + q.y) / 2);
+
+    ctx.restore();
+}
+
+function drawMeasure(ctx) {
+    if (!measure) return;
+    if (measure.kind === 'circle') return drawMeasureCircle(ctx);
+
+    // The rubber band: the leg from the last placed point to wherever the
+    // cursor is, shown only while the measurement is still being built.
+    const pts = measure.points.slice();
+    if (!measure.done && measure.cursor) pts.push(measure.cursor);
+
+    const scr = pts.map(pt => toScreen(pt.x, pt.z));
+
+    ctx.save();
+
+    // Halo pass then bright pass, as with the rose.
+    for (const pass of [{ c: '11,16,20', w: 5 }, { c: MEAS, w: 2 }]) {
+        ctx.strokeStyle = 'rgba(' + pass.c + ',0.9)';
+        ctx.lineWidth   = pass.w;
+        ctx.beginPath();
+        ctx.moveTo(scr[0].x, scr[0].y);
+        for (let i = 1; i < scr.length; i++) ctx.lineTo(scr[i].x, scr[i].y);
+        ctx.stroke();
+    }
+
+    // A tick at every point you actually clicked - not at the cursor, which is
+    // not a point yet.
+    for (let i = 0; i < measure.points.length; i++) {
+        const q = scr[i];
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle   = 'rgb(' + MEAS + ')';
+        ctx.strokeStyle = '#0b1014';
+        ctx.lineWidth   = 2;
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    // Bearing and range per leg, at the midpoint of that leg. Skipped when the
+    // leg is too short to hold a label without covering its own endpoints.
+    for (let i = 1; i < pts.length; i++) {
+        const a = scr[i - 1], b = scr[i];
+        if (Math.hypot(b.x - a.x, b.y - a.y) < 46) continue;
+        const br = bearingRange(pts[i - 1], pts[i]);
+        plate(ctx, fmtBearing(br.bearing) + '  ' + fmtRange(br.range),
+              (a.x + b.x) / 2, (a.y + b.y) / 2);
+    }
+
+    // Running total at the far end, once there is more than one leg to add up.
+    if (pts.length > 2) {
+        const last = scr[scr.length - 1];
+        let total = 0;
+        for (let i = 1; i < pts.length; i++) {
+            total += bearingRange(pts[i - 1], pts[i]).range;
+        }
+        plate(ctx, 'TOTAL ' + fmtRange(total), last.x, last.y - 18);
+    }
+
+    ctx.restore();
+}
+
 function drawFrame(ctx, x, y, size, affiliation) {
     ctx.beginPath();
 
@@ -948,11 +1425,18 @@ function draw(mission) {
     // pan and zoom need no special handling.
     drawnUnits = [];
 
+    // Under the units: a rose spanning the map must not sit on top of them.
+    drawBullseyeRose(ctx);
+    drawRings(ctx);
+
     for (const unit of units) {
         const p = toScreen(unit.x, unit.z);
         drawSymbol(ctx, p.x, p.y, unit);
         drawnUnits.push({ unit: unit, sx: p.x, sy: p.y });
     }
+
+    drawBullseyeCentre(ctx);
+    drawMeasure(ctx);
 
     // Ring the hovered marker last, so it sits on top of its neighbours. Drawn
     // as a white ring rather than a colour change, so it reads by shape and
@@ -1007,6 +1491,8 @@ function showTip(unit, clientX, clientY) {
         '<div class="n">' + unitName(unit.type) + '</div>' +
         '<div class="r">' + unit.group + ' &middot; ' + unit.role + '</div>' +
         '<div>' + factionLabel(unit.faction) + ' &middot; ' + affil + '</div>' +
+        (bullseye ? '<div style="color:#ffd166;margin-top:4px;">BULLSEYE '
+                    + fmtBullseye(unit) + '</div>' : '') +
         (entry.description ? '<div style="margin-top:5px;color:#9fb0bd;">'
                              + entry.description + '</div>' : '') +
         '<div class="k" style="margin-top:5px;">' + unit.type + '</div>';
@@ -1016,7 +1502,58 @@ function showTip(unit, clientX, clientY) {
     tip.style.top  = (clientY + 14) + 'px';
 }
 
+// ---- status bar ----
+const stPos  = document.getElementById('stPos');
+const stBull = document.getElementById('stBull');
+const stMeas = document.getElementById('stMeas');
+
+function updateStatus(sx, sy) {
+    if (!currentMap) return;
+    const w = toWorld(sx, sy);
+
+    stPos.textContent  = Math.round(w.x) + ', ' + Math.round(w.z);
+    stBull.textContent = bullseye ? 'BE ' + fmtBullseye(w) : '';
+
+    // While a measurement is open the total includes the leg to the cursor, so
+    // the number moves with the mouse and you can stop at a distance.
+    if (!measure) {
+        stMeas.textContent = rings.length
+            ? rings.length + (rings.length === 1 ? ' ring' : ' rings') : '';
+    } else if (measure.kind === 'circle') {
+        stMeas.textContent = 'RING R ' + fmtRange(measureRadius()) +
+                             (measure.done ? '' : '  (click to set)');
+    } else {
+        let total = measureTotal();
+        if (!measure.done && measure.cursor) {
+            total += bearingRange(measure.points[measure.points.length - 1],
+                                  measure.cursor).range;
+        }
+        stMeas.textContent = 'MEAS ' + fmtRange(total) +
+                             (measure.done ? '' : '  (dbl-click to finish)');
+    }
+}
+
+document.getElementById('unitToggle').addEventListener('click', (e) => {
+    unitSystem = (unitSystem === 'aviation') ? 'metric' : 'aviation';
+    e.target.textContent = (unitSystem === 'aviation') ? 'NM / ft' : 'km / m';
+    if (currentMission) draw(currentMission);
+});
+
 canvas.addEventListener('mousemove', (e) => {
+    // Cursor first, then the readout: updateStatus adds the open leg into the
+    // running total, so it has to see where the mouse is NOW, not last frame.
+    if (measure && !measure.done) measure.cursor = toWorld(e.offsetX, e.offsetY);
+
+    updateStatus(e.offsetX, e.offsetY);
+
+    // While measuring, every move redraws so the open leg tracks the cursor.
+    // Hover identification is suppressed - one thing at a time under the mouse.
+    if (measure && !measure.done) {
+        tip.style.display = 'none';
+        if (currentMission) draw(currentMission);
+        return;
+    }
+
     if (dragging) { tip.style.display = 'none'; return; }
 
     const found = unitAt(e.offsetX, e.offsetY);
@@ -1033,6 +1570,19 @@ canvas.addEventListener('mousemove', (e) => {
 
 canvas.addEventListener('mouseleave', () => {
     tip.style.display = 'none';
+});
+
+canvas.addEventListener('dblclick', () => {
+    if (!measure || measure.done || measure.kind !== 'path') return;
+
+    // A double-click is two clicks, and both already dropped a point. Throw the
+    // second away if it landed on top of the first.
+    const pts = measure.points;
+    if (pts.length > 1) {
+        const a = pts[pts.length - 1], b = pts[pts.length - 2];
+        if (Math.hypot(a.x - b.x, a.z - b.z) < 1) pts.pop();
+    }
+    endMeasure();
 });
 
 // ---------------------------------------------------------------------------
@@ -1170,13 +1720,50 @@ canvas.addEventListener('contextmenu', (e) => {
                     refreshTree();
                 }},
                 '-',
+                '-',
+                { label: 'Measure from here', run: () => {
+                    startMeasure({ x: unit.x, z: unit.z });
+                }},
+                { label: 'Range ring from here', run: () => {
+                    startMeasure({ x: unit.x, z: unit.z }, 'circle',
+                                 unitName(unit.type));
+                }},
+                ...(rings.length ? [{ label: 'Clear all rings', run: () => {
+                    rings.length = 0;
+                    if (currentMission) draw(currentMission);
+                }}] : []),
+                '-',
                 { label: 'Show everything again', run: () => {
                     hiddenPaths.clear();
                     refreshTree();
                 }}
             ]);
     } else {
+        const at      = toWorld(e.offsetX, e.offsetY);
+        const hitRing = ringAt(e.offsetX, e.offsetY);
+
         showMenu(e.clientX, e.clientY, null, null, [
+            { label: bullseye ? 'Move bullseye here' : 'Place bullseye here', run: () => {
+                bullseye = at;
+                if (currentMission) draw(currentMission);
+            }},
+            ...(bullseye ? [{ label: 'Clear bullseye', run: () => {
+                bullseye = null;
+                if (currentMission) draw(currentMission);
+            }}] : []),
+            '-',
+            { label: 'Measure from here', run: () => startMeasure(at) },
+            { label: 'Range ring from here', run: () => startMeasure(at, 'circle') },
+            ...(hitRing >= 0 ? [{ label: 'Remove this ring', run: () => {
+                rings.splice(hitRing, 1);
+                if (currentMission) draw(currentMission);
+            }}] : []),
+            ...(rings.length ? [{ label: 'Clear all rings', run: () => {
+                rings.length = 0;
+                if (currentMission) draw(currentMission);
+            }}] : []),
+            ...(measure ? [{ label: 'Clear measurement', run: clearMeasure }] : []),
+            '-',
             { label: 'Show everything again', run: () => {
                 hiddenPaths.clear();
                 refreshTree();
@@ -1190,7 +1777,17 @@ window.addEventListener('mousedown', (e) => {
     if (!menu.contains(e.target)) hideMenu();
 });
 window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') hideMenu();
+    if (e.key !== 'Escape') return;
+
+    // Escape unwinds one layer at a time: menu, then the measurement in
+    // progress, then the finished measurement still on screen.
+    if (menu.style.display === 'block')   { hideMenu(); }
+    // A half-dragged ring is abandoned, not committed - Escape means "forget
+    // this", and endMeasure would keep it.
+    else if (measure && !measure.done)    {
+        if (measure.kind === 'circle') clearMeasure(); else endMeasure();
+    }
+    else if (measure)                     { clearMeasure(); }
 });
 
 let dragging = false;
@@ -1221,6 +1818,19 @@ canvas.addEventListener('wheel', (e) => {
 
 canvas.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;      // left button only - right-click opens the menu
+
+    // The mode check. While a measurement is being built the left button means
+    // "drop a point", so panning must not also start - otherwise the map slides
+    // under you every time you place one.
+    if (measure && !measure.done) {
+        measure.points.push(toWorld(e.offsetX, e.offsetY));
+        // A circle is finished by the one click that sets its radius - there is
+        // no second leg to add, so there is nothing to double-click to end.
+        if (measure.kind === 'circle') endMeasure();
+        else if (currentMission) draw(currentMission);
+        return;
+    }
+
     dragging = true;
     lastX = e.clientX;
     lastY = e.clientY;
