@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SIDC preview</title>
+<style>
+  body {
+    margin: 0; padding: 20px 24px;
+    background: #12181d; color: #e6edf3;
+    font-family: system-ui, sans-serif;
+  }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  p.note { color: #8b98a5; font-size: 13px; margin: 0 0 22px; max-width: 70ch; }
+  h2 {
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: #7d8b96; margin: 26px 0 10px;
+    border-bottom: 1px solid #2a353d; padding-bottom: 5px;
+  }
+  .grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cell {
+    width: 150px; padding: 10px 8px;
+    background: #1a232a; border: 1px solid #2a353d; border-radius: 5px;
+    text-align: center;
+  }
+  .cell svg { height: 48px; }
+  .code {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 11px; color: #8ecbff; margin-top: 6px;
+  }
+  .desc { font-size: 11px; color: #8b98a5; margin-top: 3px; line-height: 1.35; }
+  .bad { color: #ff9a9a; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>MIL-STD-2525 candidate symbols</h1>
+<p class="note">
+  Rendered hostile, since that is what you plan against. The point is to pick by
+  eye rather than by guessing at what a code means. Anything that renders as a
+  bare frame with no icon is a code milsymbol does not recognise.
+</p>
+
+<div id="out"></div>
+
+<script src="../vendor/milsymbol.js"></script>
+<script>
+const SECTIONS = [
+  ['Armour and mobility — for IFV and APC', [
+    ['UCA---', 'armour (base)'],
+    ['UCAA--', 'UCAA branch'],
+    ['UCAAL-', 'UCAA + L'],
+    ['UCAAM-', 'UCAA + M'],
+    ['UCAAS-', 'UCAA + S'],
+    ['UCAW--', 'armour wheeled'],
+    ['UCAWL-', 'wheeled light'],
+    ['UCAWM-', 'wheeled medium'],
+    ['UCAWH-', 'wheeled heavy'],
+    ['UCAWW-', 'wheeled amphibious'],
+  ]],
+  ['Infantry — for comparison', [
+    ['UCI---', 'infantry'],
+    ['UCIM--', 'mechanized'],
+    ['UCIZ--', 'motorized'],
+    ['UCIL--', 'light'],
+  ]],
+  ['Installations — for vehicle depots, factories, bunkers', [
+    ['I-----', 'installation'],
+    ['IB----', 'IB (currently used)'],
+    ['IBA---', 'IBA'],
+    ['IBN---', 'IBN'],
+    ['IE----', 'IE'],
+    ['IG----', 'IG'],
+    ['IM----', 'IM'],
+    ['IMG---', 'IMG'],
+    ['IMV----', 'IMV'],
+    ['IMF---', 'IMF'],
+    ['IMN---', 'IMN'],
+    ['IP----', 'IP'],
+  ]],
+  ['Installations with the installation modifier (position 11 = H)', [
+    ['I-----|H', 'installation + mod'],
+    ['IB----|H', 'IB + mod'],
+    ['IMG---|H', 'IMG + mod'],
+    ['IMV---|H', 'IMV + mod'],
+  ]],
+  ['Currently in use by the planner', [
+    ['UCDM--', 'SAM'],
+    ['UCDS--', 'SHORAD'],
+    ['UCDG--', 'AAA'],
+    ['UCD---', 'Laser'],
+    ['ESR---', 'Radar'],
+    ['UUS---', 'Fire control'],
+    ['UCAT--', 'Anti-tank'],
+    ['UCF---', 'Artillery'],
+    ['UCR---', 'Recon'],
+    ['USS---', 'Logistics'],
+  ]],
+];
+
+const out = document.getElementById('out');
+
+for (const [title, items] of SECTIONS) {
+  const h = document.createElement('h2');
+  h.textContent = title;
+  out.appendChild(h);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+
+  for (const [raw, desc] of items) {
+    // "CODE|H" means put H in the symbol-modifier field (position 11).
+    const [fn, mod] = raw.split('|');
+    const modifier  = mod ? mod + '-' : '--';
+    const sidc      = 'SHGP' + fn.padEnd(6, '-') + modifier + '---';
+
+    let svg = '<span class="bad">render failed</span>';
+    try { svg = new ms.Symbol(sidc, { size: 34, strokeWidth: 5 }).asSVG(); }
+    catch (e) { /* leave the failure message */ }
+
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML = svg +
+      '<div class="code">' + sidc + '</div>' +
+      '<div class="desc">' + desc + '</div>';
+    grid.appendChild(cell);
+  }
+  out.appendChild(grid);
+}
+</script>
+</body>
+</html>

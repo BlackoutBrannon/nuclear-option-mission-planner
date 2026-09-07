@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Symbology sheet</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 28px 60px;
+    font-family: system-ui, sans-serif;
+    background: #12181d; color: #e6edf3;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #7d8b96; font-size: 13px; margin-bottom: 22px; }
+  .sub b { color: #b8c5d0; font-weight: 600; }
+
+  h2 {
+    font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    color: #8ecbff; margin: 26px 0 8px;
+    border-bottom: 1px solid #2a353d; padding-bottom: 5px;
+  }
+  h3 { font-size: 13px; color: #b8c5d0; margin: 16px 0 6px; font-weight: 600; }
+
+  table { border-collapse: collapse; width: 100%; max-width: 1000px; }
+  td { padding: 5px 10px; border-bottom: 1px solid #1e272e; vertical-align: middle; }
+  td.sym { width: 54px; text-align: center; }
+  td.sym svg { width: 40px; height: 40px; vertical-align: middle; }
+  td.name { font-size: 13px; }
+  td.key, td.code {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 11px; color: #6f7d88; white-space: nowrap;
+  }
+  td.src { width: 60px; font-size: 10px; text-transform: uppercase;
+           letter-spacing: .06em; color: #6f7d88; }
+  .role  { color: #8a9aa6; }
+  .guess { color: #d69a3c; }
+  thead td { color: #6f7d88; font-size: 10px; text-transform: uppercase;
+             letter-spacing: .08em; border-bottom: 1px solid #2a353d; }
+</style>
+</head>
+<body>
+  <h1>Symbology sheet</h1>
+  <div class="sub">
+    Every unit type, drawn with the same SIDC the planner uses.
+    <b>Hostile</b> and <b>friendly</b> shown side by side so frame errors are visible.
+    <span class="role">ROLE</span> in the source column means it fell back to the
+    role symbol rather than having one of its own.
+    <span class="guess">Amber</span> names were never resolved from the game files.
+  </div>
+  <div id="out"></div>
+
+<script src="vendor/milsymbol.js"></script>
+<script>
+const ROWS = [
+{
+"key": "6x6_1_AA",
+"name": "AFV6 AA",
+"group": "Air Defence",
+"role": "SHORAD",
+"sidc": "SFGPUCDS-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "6x6_1_APC",
+"name": "6x6_1_APC",
+"group": "Ground",
+"role": "APC",
+"sidc": "SFGPEVAA-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "6x6_1_AT",
+"name": "AFV6 AT",
+"group": "Ground",
+"role": "Anti-tank",
+"sidc": "SFGPUCAT-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "6x6_1_IFV",
+"name": "AFV6 IFV",
+"group": "Ground",
+"role": "IFV",
+"sidc": "SFGPEVATM------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "AFV8_APC",
+"name": "AFV8 APC",
+"group": "Ground",
+"role": "APC",
+"sidc": "SFGPEVAA-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "AFV8_IFV",
+"name": "AFV8 IFV",
+"group": "Ground",
+"role": "IFV",
+"sidc": "SFGPEVATM------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "AFV8_SAM",
+"name": "AFV8 Mobile Air Defense",
+"group": "Air Defence",
+"role": "SHORAD",
+"sidc": "SFGPUCDS-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Aryx_SupplyShip1",
+"name": "Aryx Supply Ship",
+"group": "Naval",
+"role": "Support",
+"sidc": "SFSPCL---------",
+"source": "role",
+"unresolved": true
+},
+{
+"key": "AssaultCarrier1",
+"name": "Annex Class Carrier",
+"group": "Naval",
+"role": "Carrier",
+"sidc": "SFSPCLCV-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "AttackHelo1",
+"name": "SAH-46 Chicane",
+"group": "Air",
+"role": "Rotary",
+"sidc": "SFAPMHA--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "CAS1",
+"name": "A-19 Brawler",
+"group": "Air",
+"role": "Strike",
+"sidc": "SFAPMFA--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "COIN",
+"name": "CI-22 Cricket",
+"group": "Air",
+"role": "Strike",
+"sidc": "SFAPMFA--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "CRAMTrailer1",
+"name": "HLT-CRAM",
+"group": "Air Defence",
+"role": "AAA",
+"sidc": "SFGPUCDG-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Corvette1",
+"name": "Shard Class Corvette",
+"group": "Naval",
+"role": "Combatant",
+"sidc": "SFSPCLFF-------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "Darkreach",
+"name": "SFB-81 Darkreach",
+"group": "Air",
+"role": "Bomber",
+"sidc": "SFAPMFB--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "Destroyer1",
+"name": "Dynamo Class Destroyer",
+"group": "Naval",
+"role": "Combatant",
+"sidc": "SFSPCLDD-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "EW1",
+"name": "EW-25 Medusa",
+"group": "Air",
+"role": "Support",
+"sidc": "SFAPMFQRW------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "Emplacement1_23mm",
+"name": "23mm AAA Emplacement",
+"group": "Air Defence",
+"role": "AAA",
+"sidc": "SFGPUCDG-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Emplacement1_ATGM",
+"name": "AT-145 Emplacement",
+"group": "Ground",
+"role": "Anti-tank",
+"sidc": "SFGPUCAT-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Emplacement1_MANPADS",
+"name": "IRM-S1 Emplacement",
+"group": "Air Defence",
+"role": "SHORAD",
+"sidc": "SFGPUCDS-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "FastBomber1",
+"name": "Alkyon AB-4",
+"group": "Air",
+"role": "Bomber",
+"sidc": "SFAPMFB--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "Fighter1",
+"name": "FS-12 Revoker",
+"group": "Air",
+"role": "Fighter",
+"sidc": "SFAPMFF--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "FleetCarrier1",
+"name": "Hyperion Class Carrier",
+"group": "Naval",
+"role": "Carrier",
+"sidc": "SFSPCLCV-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Frigate1",
+"name": "Argus Class Frigate",
+"group": "Naval",
+"role": "Combatant",
+"sidc": "SFSPCLFF-------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "HLT-FC",
+"name": "HLT Fire Control",
+"group": "Air Defence",
+"role": "Fire control",
+"sidc": "SFGPUUS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "HLT-FT",
+"name": "HLT Fuel Tanker",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "HLT-L",
+"name": "HLT Flatbed",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "HLT-M",
+"name": "HLT Munitions Truck",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "HLT-MART",
+"name": "HLT Mobile Artillery",
+"group": "Ground",
+"role": "Artillery",
+"sidc": "SFGPUCF--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "HLT-R",
+"name": "HLT Radar Truck",
+"group": "Air Defence",
+"role": "Radar",
+"sidc": "SFGPESR--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "HLT-T",
+"name": "HLT Tractor",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Helipad",
+"name": "Takeoff point for VTOL aircraft",
+"group": "Structure",
+"role": "Airbase",
+"sidc": "EFFPLF----H----",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "LCV45",
+"name": "LCV45 Recon Truck",
+"group": "Ground",
+"role": "Recon",
+"sidc": "SFGPUCR--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "LandingCraft1",
+"name": "OTB-31 landing craft",
+"group": "Naval",
+"role": "Amphibious",
+"sidc": "SFSPCLLL-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "LaserTrailer1",
+"name": "HLT-HEL",
+"group": "Air Defence",
+"role": "Laser",
+"sidc": "SFGPUCD--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "LightTruck1_AA",
+"name": "LCV25 AA",
+"group": "Air Defence",
+"role": "SHORAD",
+"sidc": "SFGPUCDS-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "LightTruck1_AT",
+"name": "LCV25 AT",
+"group": "Ground",
+"role": "Anti-tank",
+"sidc": "SFGPUCAT-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Linebreaker_APC",
+"name": "Linebreaker APC",
+"group": "Ground",
+"role": "APC",
+"sidc": "SFGPEVAA-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Linebreaker_IFV",
+"name": "Linebreaker IFV",
+"group": "Ground",
+"role": "IFV",
+"sidc": "SFGPEVATM------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Linebreaker_SAM",
+"name": "Linebreaker SAM",
+"group": "Air Defence",
+"role": "SHORAD",
+"sidc": "SFGPUCDS-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "MBT",
+"name": "Type-12 MBT",
+"group": "Ground",
+"role": "Armour",
+"sidc": "SFGPEVAT-------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "MBT1",
+"name": "Spearhead MBT",
+"group": "Ground",
+"role": "Armour",
+"sidc": "SFGPEVAT-------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "MC260_RadarContainer",
+"name": "MC260 Radar Container",
+"group": "Air Defence",
+"role": "Radar",
+"sidc": "SFGPESR--------",
+"source": "role",
+"unresolved": true
+},
+{
+"key": "Multirole1",
+"name": "KR-67 Ifrit",
+"group": "Air",
+"role": "Multirole",
+"sidc": "SFAPMFA--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "PatrolBoat1",
+"name": "Surf Class Patrol Boat",
+"group": "Naval",
+"role": "Patrol",
+"sidc": "SFSPCP---------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "QuadVTOL1",
+"name": "VL-49 Tarantula",
+"group": "Air",
+"role": "Support",
+"sidc": "SFAPMHU--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "RadarSAM1",
+"name": "T9K41 Boltstrike",
+"group": "Air Defence",
+"role": "SAM",
+"sidc": "SFGPUCDM-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "SAMTrailer1",
+"name": "StratoLance R9 Launcher",
+"group": "Air Defence",
+"role": "SAM",
+"sidc": "SFGPUCDM-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "SPAAG1",
+"name": "AeroSentry SPAAG",
+"group": "Air Defence",
+"role": "AAA",
+"sidc": "SFGPUCDG-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "SPAAG2",
+"name": "FGA-57 Anvil",
+"group": "Air Defence",
+"role": "AAA",
+"sidc": "SFGPUCDG-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "SmallCarrier1",
+"name": "Cursor Class LFD",
+"group": "Naval",
+"role": "Carrier",
+"sidc": "SFSPCLCV-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "SmallFighter1",
+"name": "FS-20 Vortex",
+"group": "Air",
+"role": "Fighter",
+"sidc": "SFAPMFL--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "Truck2-CRAM",
+"name": "MSV CRAM",
+"group": "Air Defence",
+"role": "AAA",
+"sidc": "SFGPUCDG-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-FC",
+"name": "MSV Fire Control",
+"group": "Air Defence",
+"role": "Fire control",
+"sidc": "SFGPUUS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-FT",
+"name": "MSV Fuel Tanker",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-L",
+"name": "MSV Flatbed",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-LADS",
+"name": "MSV LADS",
+"group": "Air Defence",
+"role": "Laser",
+"sidc": "SFGPUCD--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-M",
+"name": "MSV Munitions",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-MLRS",
+"name": "MSV MLRS",
+"group": "Ground",
+"role": "Artillery",
+"sidc": "SFGPUCF--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-MRAP",
+"name": "MSV MRAP",
+"group": "Ground",
+"role": "APC",
+"sidc": "SFGPEVAA-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-R",
+"name": "MSV Radar",
+"group": "Air Defence",
+"role": "Radar",
+"sidc": "SFGPESR--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-RSAM",
+"name": "MSV R9 Stratolance Launcher",
+"group": "Air Defence",
+"role": "SAM",
+"sidc": "SFGPUCDM-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "Truck2-T",
+"name": "MSV Tractor",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "UGV1_SAM",
+"name": "Hexhound SAM",
+"group": "Air Defence",
+"role": "SHORAD",
+"sidc": "SFGPUCDS-------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "UGV1_grenade",
+"name": "Hexhound GMG",
+"group": "Ground",
+"role": "Other",
+"sidc": "SFGPUCVU-------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "UGVDozer1",
+"name": "M12 Jackknife",
+"group": "Ground",
+"role": "Logistics",
+"sidc": "SFGPUSS--------",
+"source": "role",
+"unresolved": false
+},
+{
+"key": "UtilityHelo1",
+"name": "UH-90 Ibis",
+"group": "Air",
+"role": "Rotary",
+"sidc": "SFAPMHU--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "VehicleDepot1",
+"name": "Vehicle Depot",
+"group": "Structure",
+"role": "Logistics",
+"sidc": "SFGPIMV---H----",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "ammoDump",
+"name": "Ammo Dump",
+"group": "Structure",
+"role": "Logistics",
+"sidc": "GFSPPAS--------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "ammunitionBunker",
+"name": "Munitions Bunker",
+"group": "Structure",
+"role": "Logistics",
+"sidc": "GFMPSU---------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "controlTower1",
+"name": "Control Tower",
+"group": "Structure",
+"role": "Airbase",
+"sidc": "GFMPOHTH-------",
+"source": "type",
+"unresolved": true
+},
+{
+"key": "enrichmentPlant1",
+"name": "Enrichment Plant",
+"group": "Structure",
+"role": "Industry",
+"sidc": "SFGPIRNN--H----",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "factory_large",
+"name": "Large Factory",
+"group": "Structure",
+"role": "Industry",
+"sidc": "SFGPIE----H----",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "factory_tall",
+"name": "Factory Tall",
+"group": "Structure",
+"role": "Industry",
+"sidc": "SFGPIE----H----",
+"source": "type",
+"unresolved": true
+},
+{
+"key": "fuelTank1",
+"name": "Fuel Depot",
+"group": "Structure",
+"role": "Airbase",
+"sidc": "GFSPPR---------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "gabionBunker1",
+"name": "Infantry Bunker",
+"group": "Structure",
+"role": "Defensive",
+"sidc": "GFMPSE---------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "guardTower1",
+"name": "Guard Tower",
+"group": "Structure",
+"role": "Defensive",
+"sidc": "GFMPOHTL-------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "hangar_med",
+"name": "Medium Aircraft Hangar",
+"group": "Structure",
+"role": "Airbase",
+"sidc": "GFMPSS---------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "pillbox",
+"name": "Pillbox",
+"group": "Structure",
+"role": "Defensive",
+"sidc": "GFMPSE---------",
+"source": "type",
+"unresolved": true
+},
+{
+"key": "radarStation1",
+"name": "Radar Station",
+"group": "Air Defence",
+"role": "Radar",
+"sidc": "SFGPESR--------",
+"source": "role",
+"unresolved": true
+},
+{
+"key": "refinery_main",
+"name": "Refinery Structure",
+"group": "Structure",
+"role": "Industry",
+"sidc": "SFGPIP----H----",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "revetment1",
+"name": "Aircraft Revetment",
+"group": "Structure",
+"role": "Airbase",
+"sidc": "EFFPLF----H----",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "shelter1",
+"name": "Hardened Aircraft Shelter",
+"group": "Structure",
+"role": "Airbase",
+"sidc": "GFMPSS---------",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "storageTank",
+"name": "Storage Tank",
+"group": "Structure",
+"role": "Industry",
+"sidc": "SFGPIR----H----",
+"source": "type",
+"unresolved": false
+},
+{
+"key": "trainer",
+"name": "T/A-30 Compass",
+"group": "Air",
+"role": "Multirole",
+"sidc": "SFAPMFA--------",
+"source": "type",
+"unresolved": false
+}
+];
+
+function sym(template, aff) {
+  const sidc = template[0] + aff + template.slice(2);
+  try { return new ms.Symbol(sidc, { size: 28, strokeWidth: 5 }).asSVG(); }
+  catch (e) { return '<span style="color:#e2796f">bad</span>'; }
+}
+
+const groups = {};
+for (const r of ROWS) {
+  groups[r.group] = groups[r.group] || {};
+  (groups[r.group][r.role] = groups[r.group][r.role] || []).push(r);
+}
+
+let html = '';
+for (const g of Object.keys(groups).sort()) {
+  html += '<h2>' + g + '</h2>';
+  for (const role of Object.keys(groups[g]).sort()) {
+    html += '<h3>' + role + '</h3><table><thead><tr>' +
+            '<td>Hostile</td><td>Friend</td><td>Name</td>' +
+            '<td>Type key</td><td>SIDC</td><td>Source</td></tr></thead><tbody>';
+    for (const r of groups[g][role]) {
+      html += '<tr>' +
+        '<td class="sym">' + sym(r.sidc, 'H') + '</td>' +
+        '<td class="sym">' + sym(r.sidc, 'F') + '</td>' +
+        '<td class="name' + (r.unresolved ? ' guess' : '') + '">' + r.name + '</td>' +
+        '<td class="key">' + r.key + '</td>' +
+        '<td class="code">' + r.sidc + '</td>' +
+        '<td class="src' + (r.source === 'role' ? ' role' : '') + '">' + r.source + '</td>' +
+        '</tr>';
+    }
+    html += '</tbody></table>';
+  }
+}
+document.getElementById('out').innerHTML = html;
+</script>
+</body>
+</html>

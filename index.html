@@ -131,6 +131,21 @@
       font-family: ui-monospace, Consolas, monospace;
     }
 
+    .lgRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 1px 0;
+    }
+    .lgSym { width: 30px; flex: none; display: flex; justify-content: center; }
+    .lgSym svg { width: 26px; height: 26px; }
+    .lgName { flex: 1; font-size: 12px; }
+    .lgCode {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 10px;
+      color: #6f7d88;
+    }
+
     /* Follows the cursor. position:fixed because it is placed from clientX/clientY,
        which are viewport coordinates. pointer-events:none so it can never sit
        under the cursor and steal the very mousemove that positions it. */
@@ -174,6 +189,11 @@
         </div>
 
         <div class="group">
+          <div class="title">Symbology <span style="text-transform:none;letter-spacing:0">(hostile shown)</span></div>
+          <div id="legend"></div>
+        </div>
+
+        <div class="group">
           <div class="title">Mission</div>
           <pre id="out"></pre>
         </div>
@@ -187,6 +207,12 @@
   </div>
 
   <div id="tip"></div>
+
+  <!-- milsymbol 2.2.0 - MIT, Mans Beckman / spatialillusions.com.
+       Renders MIL-STD-2525 symbols from a SIDC string. Vendored rather than
+       loaded from a CDN so the planner works offline and cannot break when
+       someone else's server changes. Exposes the global `ms`. -->
+  <script src="vendor/milsymbol.js"></script>
 
   <script>
   const drop = document.getElementById('drop');
@@ -220,6 +246,9 @@ async function loadCatalogue() {
 }
 
 loadCatalogue();
+
+// Drawn once at startup - the legend depends on nothing but the SIDC mapping.
+window.addEventListener('DOMContentLoaded', renderLegend);
 
 function mapName(path) {
     if (path ==='Terrain_naval') return 'Ignus Archipelago';
@@ -419,6 +448,208 @@ const AFFIL_FILL = {
     hostile: '#ff9a9a',
     unknown: '#ffe08a'
 };
+
+// ---------------------------------------------------------------------------
+// MIL-STD-2525 symbology
+//
+// A SIDC is a 15-character code describing a symbol:
+//   1      scheme        S = warfighting
+//   2      affiliation   F friend, H hostile, N neutral, U unknown
+//   3      dimension     G ground, A air, S sea surface
+//   4      status        P = present (as opposed to anticipated)
+//   5-10   function      what the thing actually is
+//   11-15  modifiers, country, order of battle - unused here
+//
+// So affiliation and dimension come from data we already have, and only the
+// six-character function ID has to be chosen per role.
+// ---------------------------------------------------------------------------
+
+const AFF_LETTER = { friend: 'F', hostile: 'H', neutral: 'N', unknown: 'U' };
+
+// Full 15-character SIDC templates, written with F (friend) in position 2.
+// sidcFor swaps that one character for the unit's actual affiliation, leaving
+// scheme, dimension, function and modifiers alone.
+//
+// Templates rather than assembled parts because these span three coding
+// schemes - S warfighting, G tactical graphics, E emergency management - and
+// each has its own dimension letters. Assembling from a role plus a dimension
+// could not express GFMPOHTH or EFFPLF----H at all.
+//
+// Every code below was validated against milsymbol's own tables.
+
+// Per unit type. Beats the role fallback, because two units in one role can
+// need different symbols - an attack helicopter and a utility helicopter are
+// both Rotary but are not the same thing.
+const TYPE_SIDC = {
+    // --- Air ---
+    'FastBomber1':   'SFAPMFB--------',   // Alkyon AB-4
+    'Darkreach':     'SFAPMFB--------',   // SFB-81
+    'Fighter1':      'SFAPMFF--------',   // FS-12 Revoker
+    'SmallFighter1': 'SFAPMFL--------',   // FS-20 Vortex
+    'Multirole1':    'SFAPMFA--------',   // KR-67 Ifrit
+    'trainer':       'SFAPMFA--------',   // T/A-30 Compass, flown multirole
+    'CAS1':          'SFAPMFA--------',   // A-19 Brawler
+    'COIN':          'SFAPMFA--------',   // CI-22 Cricket
+    'AttackHelo1':   'SFAPMHA--------',   // SAH-46 Chicane
+    'UtilityHelo1':  'SFAPMHU--------',   // UH-90 Ibis
+    'QuadVTOL1':     'SFAPMHU--------',   // VL-49 Tarantula
+    'EW1':           'SFAPMFQRW------',   // EW-25 Medusa
+
+    // --- Armour. Function beats mobility where both will not fit, so the
+    // Linebreaker SAM stays an air defence symbol rather than a tank one.
+    // Linebreaker IFV and APC have no entries here on purpose: every IFV is
+    // EVATM and every APC is EVAA whatever the chassis, so the role covers them.
+    'MBT':  'SFGPEVAT-------',
+    'MBT1': 'SFGPEVAT-------',
+
+    // Hexhounds are unmanned ground vehicles with their own code. The Hexhound
+    // SAM is deliberately absent - air defence beats platform, so it falls
+    // through to SHORAD.
+    'UGV1_grenade': 'SFGPUCVU-------',
+
+    // --- Naval. Corvette and frigate share the frigate code; the destroyer
+    // keeps the role default. ---
+    'Corvette1': 'SFSPCLFF-------',
+    'Frigate1':  'SFSPCLFF-------',
+
+    // --- Structures ---
+    'revetment1':       'EFFPLF----H----',
+    'Helipad':          'EFFPLF----H----',
+    'controlTower1':    'GFMPOHTH-------',   // OHT--- is not a valid code; H = high
+    'guardTower1':      'GFMPOHTL-------',
+    'fuelTank1':        'GFSPPR---------',
+    'shelter1':         'GFMPSS---------',
+    'hangar_med':       'GFMPSS---------',
+    'gabionBunker1':    'GFMPSE---------',
+    'pillbox':          'GFMPSE---------',
+    'ammoDump':         'GFSPPAS--------',
+    'ammunitionBunker': 'GFMPSU---------',
+    'enrichmentPlant1': 'SFGPIRNN--H----',
+    'factory_large':    'SFGPIE----H----',
+    'factory_tall':     'SFGPIE----H----',
+    'refinery_main':    'SFGPIP----H----',
+    'storageTank':      'SFGPIR----H----',
+    'VehicleDepot1':    'SFGPIMV---H----'
+};
+
+// Fallback by "Group/Role". Keyed on both because role names repeat across
+// groups - Support exists under Air and Naval, Logistics under Ground and
+// Structure - and keying on the role alone put an air cargo symbol on a ship.
+const ROLE_SIDC = {
+    'Air Defence/SAM':          'SFGPUCDM-------',
+    'Air Defence/SHORAD':       'SFGPUCDS-------',
+    'Air Defence/AAA':          'SFGPUCDG-------',
+    'Air Defence/Laser':        'SFGPUCD--------',
+    'Air Defence/Radar':        'SFGPESR--------',
+    'Air Defence/Fire control': 'SFGPUUS--------',
+
+    'Ground/Armour':    'SFGPEVAT-------',
+    'Ground/IFV':       'SFGPEVATM------',   // tank, medium - all IFVs
+    'Ground/APC':       'SFGPEVAA-------',   // all APCs
+    'Ground/Anti-tank': 'SFGPUCAT-------',
+    'Ground/Artillery': 'SFGPUCF--------',
+    'Ground/Recon':     'SFGPUCR--------',
+    'Ground/Logistics': 'SFGPUSS--------',
+    'Ground/Other':     'SFGPUCI--------',
+
+    'Air/Fighter':   'SFAPMFF--------',
+    'Air/Multirole': 'SFAPMFA--------',
+    'Air/Strike':    'SFAPMFA--------',
+    'Air/Bomber':    'SFAPMFB--------',
+    'Air/Rotary':    'SFAPMHU--------',
+    'Air/Support':   'SFAPMFC--------',
+
+    'Naval/Carrier':    'SFSPCLCV-------',
+    'Naval/Combatant':  'SFSPCLDD-------',
+    'Naval/Patrol':     'SFSPCP---------',
+    'Naval/Amphibious': 'SFSPCLLL-------',
+    'Naval/Support':    'SFSPCL---------',   // no auxiliary code found; generic
+
+    'Structure/Airbase':   'SFGPIBA---H----',
+    'Structure/Defensive': 'GFMPSE---------',
+    'Structure/Industry':  'SFGPIE----H----',
+    'Structure/Logistics': 'SFGPIMV---H----'
+};
+
+const DEFAULT_SIDC = 'SFGPU----------';
+
+
+function sidcFor(unit) {
+    const template = TYPE_SIDC[unit.type]
+                  || ROLE_SIDC[unit.group + '/' + unit.role]
+                  || DEFAULT_SIDC;
+
+    // Position 2 is standard identity in every coding scheme, so swapping just
+    // that character works whether the template is S, G or E.
+    const aff = AFF_LETTER[affiliationOf(unit)] || 'U';
+    return template[0] + aff + template.slice(2);
+}
+
+// Rendering a symbol is expensive and there are hundreds of units, most of them
+// sharing a handful of symbols. Cache by SIDC so each distinct one is built
+// once and then just blitted.
+const symbolCache = new Map();
+
+function symbolFor(sidc) {
+    if (symbolCache.has(sidc)) return symbolCache.get(sidc);
+
+    let entry = null;
+    try {
+        // Installations render black rather than in affiliation colour. That is
+        // standard-correct, and an attempt to override it with fillColor and
+        // frameColor had no effect, so it is left alone. Shape still carries
+        // the affiliation.
+        const sym = new ms.Symbol(sidc, { size: 18, strokeWidth: 4 });
+        // getAnchor gives where the symbol's centre sits within its canvas -
+        // symbols are not centred in their own bitmap, so drawing at the raw
+        // position would offset every marker.
+        entry = { canvas: sym.asCanvas(), anchor: sym.getAnchor() };
+    } catch (err) {
+        console.warn('bad SIDC', sidc, err);
+    }
+
+    symbolCache.set(sidc, entry);
+    return entry;
+}
+
+function drawSymbol(ctx, x, y, unit) {
+    const entry = typeof ms === 'undefined' ? null : symbolFor(sidcFor(unit));
+
+    // Fall back to the plain frames if milsymbol did not load or rejected the
+    // code, so the map still works rather than going blank.
+    if (!entry) {
+        drawFrame(ctx, x, y, 5, affiliationOf(unit));
+        return;
+    }
+
+    ctx.drawImage(entry.canvas, x - entry.anchor.x, y - entry.anchor.y);
+}
+
+// A legend of the role-level fallbacks, shown hostile.
+function renderLegend() {
+    const el = document.getElementById('legend');
+    if (typeof ms === 'undefined') {
+        el.textContent = 'milsymbol did not load - falling back to plain frames.';
+        return;
+    }
+
+    const rows = Object.keys(ROLE_SIDC).map(key => {
+        const template = ROLE_SIDC[key];
+        const sidc = template[0] + 'H' + template.slice(2);   // shown hostile
+
+        let svg = '';
+        try { svg = new ms.Symbol(sidc, { size: 20, strokeWidth: 4 }).asSVG(); }
+        catch (e) { svg = ''; }
+
+        return '<div class="lgRow">' +
+               '<span class="lgSym">' + svg + '</span>' +
+               '<span class="lgName">' + key.split('/')[1] + '</span>' +
+               '<span class="lgCode">' + key.split('/')[0].slice(0, 4) + '</span>' +
+               '</div>';
+    });
+
+    el.innerHTML = rows.join('');
+}
 
 function drawFrame(ctx, x, y, size, affiliation) {
     ctx.beginPath();
@@ -675,7 +906,7 @@ function draw(mission) {
 
     for (const unit of units) {
         const p = toScreen(unit.x, unit.z);
-        drawFrame(ctx, p.x, p.y, 5, affiliationOf(unit));
+        drawSymbol(ctx, p.x, p.y, unit);
         drawnUnits.push({ unit: unit, sx: p.x, sy: p.y });
     }
 
