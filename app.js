@@ -1,0 +1,1626 @@
+/* ---------------------------------------------------------------------------
+   Nuclear Option Mission Planner
+
+   Loaded at the end of <body>, so every element it looks up already exists and
+   no DOMContentLoaded wrapper is needed. milsymbol loads before this file and
+   provides the global `ms`.
+
+   Note for tools/make_symbol_sheet.py: it parses TYPE_SIDC, ROLE_SIDC,
+   ROLE_OVERRIDES and ROLE_RULES out of THIS file, so the contact sheet can
+   never disagree with what the map draws. Keep those as plain top-level
+   `const NAME = {` ... `};` declarations.
+   --------------------------------------------------------------------------- */
+
+  const drop = document.getElementById('drop');
+const out  = document.getElementById('out');
+
+const factionSelect = document.getElementById('faction');
+
+// Display names and descriptions for every unit type, extracted from the game's
+// own files by tools/extract_units.py. Starts empty and fills in once the file
+// arrives, so anything reading it has to cope with it being empty for a moment.
+let unitCatalogue = {};
+
+async function loadCatalogue() {
+    try {
+        // fetch does NOT throw on 404 or 500 - it resolves with a response whose
+        // ok is false. Without this check a missing file sails on to .json(),
+        // which then fails on the error page's HTML with a confusing message.
+        const response = await fetch('units.json?v=' + Date.now());
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' ' + response.statusText);
+
+        unitCatalogue = await response.json();
+        console.log('catalogue loaded:', Object.keys(unitCatalogue).length, 'unit types');
+    } catch (err) {
+        // Loud, and visible without opening the console. Until this is fixed,
+        // every unit shows its raw key instead of a name.
+        console.error('units.json failed to load:', err);
+        out.textContent =
+            'units.json did not load\n\n' + err.message +
+            '\n\nUnit names will fall back to raw keys.';
+    }
+}
+
+loadCatalogue();
+
+
+function mapName(path) {
+    if (path ==='Terrain_naval') return 'Ignus Archipelago';
+    return 'Heartland';
+}
+
+const canvas = document.getElementById('map');
+const ctx = canvas.getContext('2d')
+
+const MAPS = {
+    'Heartland': {
+        image: 'Heartland_overview.png',
+        minX: -40960,   maxX: 40960,
+        minZ: -40960,   maxZ: 40960
+    },
+    'Ignus Archipelago': {
+        image: 'Ignus_overview.png',
+        minX: -78072.9, maxX: 79573.5,
+        minZ: -39419.9, maxZ: 37316.3
+    }
+};
+
+let currentMap = null;
+const basemap  = new Image();
+let currentMission = null;
+
+basemap.onload = () => {
+  if (currentMission) draw(currentMission);
+};
+
+const mapArea = document.getElementById('mapArea');
+
+const PANEL_W = 300;   // must match #panel width in the CSS
+
+// The canvas is now the whole window, which is not the map's shape - so the map
+// has to be fitted into it rather than filling it. Two transforms stack:
+//
+//   fit    map metres  ->  canvas pixels   (scale to fit, centre, fixed)
+//   view   canvas      ->  screen          (pan and zoom, changes constantly)
+//
+// Keeping them separate means panning and zooming never has to know the map's
+// dimensions, and re-fitting on a window resize never disturbs where you had
+// scrolled to.
+let fit = { scale: 1, offsetX: 0, offsetY: 0 };
+
+function computeFit() {
+    if (!currentMap) return;
+
+    const mw = currentMap.maxX - currentMap.minX;
+    const mh = currentMap.maxZ - currentMap.minZ;
+
+    // Fit into the part of the window the panel does not cover, so a freshly
+    // loaded mission is not half hidden behind it.
+    const usableW = Math.max(50, canvas.width - PANEL_W);
+    const scale   = Math.min(usableW / mw, canvas.height / mh) * 0.96;   // margin
+
+    fit.scale   = scale;
+    fit.offsetX = PANEL_W + (usableW - mw * scale) / 2;
+    fit.offsetY = (canvas.height - mh * scale) / 2;
+}
+
+function sizeCanvas() {
+    canvas.width  = mapArea.clientWidth;
+    canvas.height = mapArea.clientHeight;
+    computeFit();
+}
+
+function setMap(name) {
+    currentMap  = MAPS[name];
+    basemap.src = currentMap.image;
+
+    sizeCanvas();
+    view = { scale: 1, panX: 0, panY: 0 };
+}
+
+// Setting canvas.width wipes the canvas, so a resize always needs a redraw.
+window.addEventListener('resize', () => {
+    sizeCanvas();
+    if (currentMission) draw(currentMission);
+});
+let view = { scale: 1, panX: 0, panY: 0 };
+
+// A single named reference point. Everything on the map can then be called as
+// a bearing and range from it, which is how you talk about position over the
+// radio - "bandits bullseye 270 for 45" - rather than reading out coordinates.
+let bullseye = null;         // { x, z } in world metres, or null
+
+// The exact inverse of toScreen: undo the view, then undo the fit. Every
+// interaction that starts with a click - placing a bullseye, dropping a target,
+// laying a waypoint, sampling terrain height - goes through this.
+function toWorld(sx, sy) {
+    const m = currentMap;
+
+    const cx = (sx - view.panX) / view.scale;      // screen -> canvas
+    const cy = (sy - view.panY) / view.scale;
+
+    return {                                       // canvas -> metres
+        x: (cx - fit.offsetX) / fit.scale + m.minX,
+        z: m.maxZ - (cy - fit.offsetY) / fit.scale
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Bearing and range on a flat plane. x is east, z is north, and the world has
+// no curvature - so this is plane trigonometry, not great-circle navigation.
+// ---------------------------------------------------------------------------
+function bearingRange(from, to) {
+    const dx = to.x - from.x;        // east
+    const dz = to.z - from.z;        // north
+
+    // atan2(east, north) gives degrees clockwise from north, which is what a
+    // bearing is. atan2(y, x) would give the mathematical convention instead -
+    // anticlockwise from east - and be wrong by 90 degrees and mirrored.
+    let bearing = Math.atan2(dx, dz) * 180 / Math.PI;
+    if (bearing < 0) bearing += 360;
+
+    return { bearing: bearing, range: Math.hypot(dx, dz) };
+}
+
+let unitSystem = 'aviation';         // or 'metric'
+
+function fmtRange(metres) {
+    return unitSystem === 'aviation'
+        ? (metres / 1852).toFixed(1) + ' NM'      // 1852 m is one nautical mile
+        : (metres / 1000).toFixed(1) + ' km';
+}
+
+function fmtBearing(deg) {
+    return String(Math.round(deg) % 360).padStart(3, '0') + '°';
+}
+
+// Standard bullseye call: bearing then range, e.g. 270/45.
+function fmtBullseye(point) {
+    if (!bullseye) return '';
+    const br = bearingRange(bullseye, point);
+    return fmtBearing(br.bearing) + ' / ' + fmtRange(br.range);
+}
+
+function toScreen(x, z) {
+    const m = currentMap;
+
+    // metres -> canvas pixels. The vertical flip is here: screen y grows down,
+    // world z grows north.
+    const cx = (x - m.minX) * fit.scale + fit.offsetX;
+    const cy = (m.maxZ - z) * fit.scale + fit.offsetY;
+
+    // canvas pixels -> screen, applying pan and zoom.
+    return {
+        x: cx * view.scale + view.panX,
+        y: cy * view.scale + view.panY
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Role classification.
+//
+// APP-6 draws an icon by FUNCTION, not by vehicle model, and you brief off
+// function too - a Spearhead and a Linebreaker are both armour. So every type
+// is binned into a group and a role.
+//
+// Air defence splits three ways, and the distinction matters:
+//   SAM     radar-guided, medium to long range
+//   SHORAD  short range, IR-guided or mixed gun/missile mounts
+//   AAA     guns only
+// Radar and fire control live under Air Defence rather than beside it, because
+// this game can network almost any sensor to almost any shooter - killing the
+// sensor degrades the battery.
+// ---------------------------------------------------------------------------
+
+// Used where the key carries no hint of the role - aircraft, ships, buildings.
+const ROLE_OVERRIDES = {
+    Fighter1: 'Air/Fighter',        SmallFighter1: 'Air/Fighter',
+    // Trainers are flown in the multirole role rather than as support.
+    Multirole1:'Air/Multirole',     trainer:       'Air/Multirole',
+    CAS1:     'Air/Strike',         COIN:          'Air/Strike',
+    Darkreach:'Air/Bomber',         FastBomber1:   'Air/Bomber',
+    AttackHelo1:'Air/Rotary',       UtilityHelo1:  'Air/Rotary',
+    EW1:      'Air/Support',        QuadVTOL1:     'Air/Support',
+
+    FleetCarrier1:'Naval/Carrier',  AssaultCarrier1:'Naval/Carrier', SmallCarrier1:'Naval/Carrier',
+    Destroyer1:'Naval/Combatant',   Frigate1:'Naval/Combatant',      Corvette1:'Naval/Combatant',
+    PatrolBoat1:'Naval/Patrol',     LandingCraft1:'Naval/Amphibious',
+    Aryx_SupplyShip1:'Naval/Support',
+
+    Helipad:'Structure/Airbase',    hangar_med:'Structure/Airbase',  revetment1:'Structure/Airbase',
+    shelter1:'Structure/Airbase',   controlTower1:'Structure/Airbase', fuelTank1:'Structure/Airbase',
+    pillbox:'Structure/Defensive',  gabionBunker1:'Structure/Defensive', guardTower1:'Structure/Defensive',
+    factory_large:'Structure/Industry', factory_tall:'Structure/Industry',
+    refinery_main:'Structure/Industry', enrichmentPlant1:'Structure/Industry',
+    storageTank:'Structure/Industry',
+    ammoDump:'Structure/Logistics', ammunitionBunker:'Structure/Logistics',
+    VehicleDepot1:'Structure/Logistics',
+
+    radarStation1:'Air Defence/Radar',
+    Emplacement1_23mm:'Air Defence/AAA',
+    Emplacement1_MANPADS:'Air Defence/SHORAD',
+    Emplacement1_ATGM:'Ground/Anti-tank'
+};
+
+// Order matters: the first rule that matches wins, so specific before general.
+// RSAM must be tested before _SAM, or every launcher would read as SHORAD.
+const ROLE_RULES = [
+    [/RSAM|SAMTrailer|RadarSAM/i, 'Air Defence/SAM'],
+    [/_SAM$|MANPADS|_AA$/i,       'Air Defence/SHORAD'],
+    [/SPAAG|CRAM|23mm/i,          'Air Defence/AAA'],
+    [/LADS|Laser|HEL$/i,          'Air Defence/Laser'],
+    [/-R$|RadarContainer/i,       'Air Defence/Radar'],
+    [/-FC$/i,                     'Air Defence/Fire control'],
+    [/MART|MLRS/i,                'Ground/Artillery'],
+    [/_AT$|ATGM/i,                'Ground/Anti-tank'],
+    [/MBT/i,                      'Ground/Armour'],
+    [/_IFV$/i,                    'Ground/IFV'],
+    [/_APC$|MRAP/i,               'Ground/APC'],
+    [/LCV45|Recon/i,              'Ground/Recon'],
+    [/-FT$|-L$|-M$|-T$|Dozer|Supply/i, 'Ground/Logistics']
+];
+
+const FALLBACK_GROUP = {
+    aircraft: 'Air', ships: 'Naval', buildings: 'Structure', vehicles: 'Ground'
+};
+
+function roleOf(type, category) {
+    let path = ROLE_OVERRIDES[type];
+
+    if (!path) {
+        for (const [pattern, result] of ROLE_RULES) {
+            if (pattern.test(type)) { path = result; break; }
+        }
+    }
+    if (!path) path = (FALLBACK_GROUP[category] || 'Ground') + '/Other';
+
+    const [group, role] = path.split('/');
+    return { group, role };
+}
+
+// collectUnits is not cheap - 300+ objects, each running roleOf's pattern list -
+// and draw() runs on every mousemove while panning. Cache the result per
+// mission and rebuild only when the mission itself changes.
+//
+// This is only safe because collectUnits depends on nothing that changes at
+// runtime: affiliation is derived at draw time rather than stored, so switching
+// sides cannot invalidate it. Store what is fixed, derive what moves.
+let unitsCache = { mission: null, units: [] };
+
+function unitsOf(mission) {
+    if (unitsCache.mission !== mission) {
+        unitsCache = { mission: mission, units: collectUnits(mission) };
+    }
+    return unitsCache.units;
+}
+
+function collectUnits(mission) {
+    const units = [];
+    let uid = 0;
+
+    for (const category of ['aircraft', 'vehicles', 'ships', 'buildings']) {
+        for (const u of mission[category] || []) {
+            const { group, role } = roleOf(u.type, category);
+
+            units.push({
+                // A stable per-unit id. collectUnits always walks the mission in
+                // the same order, so a given unit keeps the same uid across
+                // calls - which is what lets the tree hide one instance.
+                uid:        uid++,
+                unitName:   u.UniqueName || u.type,
+                category:   category,
+                type:       u.type,
+                faction:    u.faction,
+                group:      group,
+                role:       role,
+                x:          u.globalPosition.x,
+                z:          u.globalPosition.z
+            });
+        }
+    }
+
+    return units;
+}
+
+let myFaction = null;
+
+function affiliationOf(unit) {
+    if (!myFaction) return 'unknown';
+    return unit.faction === myFaction ? 'friend' : 'hostile';
+}
+
+const AFFIL_FILL = {
+    friend:  '#8ecbff',
+    hostile: '#ff9a9a',
+    unknown: '#ffe08a'
+};
+
+// ---------------------------------------------------------------------------
+// MIL-STD-2525 symbology
+//
+// A SIDC is a 15-character code describing a symbol:
+//   1      scheme        S = warfighting
+//   2      affiliation   F friend, H hostile, N neutral, U unknown
+//   3      dimension     G ground, A air, S sea surface
+//   4      status        P = present (as opposed to anticipated)
+//   5-10   function      what the thing actually is
+//   11-15  modifiers, country, order of battle - unused here
+//
+// So affiliation and dimension come from data we already have, and only the
+// six-character function ID has to be chosen per role.
+// ---------------------------------------------------------------------------
+
+const AFF_LETTER = { friend: 'F', hostile: 'H', neutral: 'N', unknown: 'U' };
+
+// Full 15-character SIDC templates, written with F (friend) in position 2.
+// sidcFor swaps that one character for the unit's actual affiliation, leaving
+// scheme, dimension, function and modifiers alone.
+//
+// Templates rather than assembled parts because these span three coding
+// schemes - S warfighting, G tactical graphics, E emergency management - and
+// each has its own dimension letters. Assembling from a role plus a dimension
+// could not express GFMPOHTH or EFFPLF----H at all.
+//
+// Every code below was validated against milsymbol's own tables.
+
+// Per unit type. Beats the role fallback, because two units in one role can
+// need different symbols - an attack helicopter and a utility helicopter are
+// both Rotary but are not the same thing.
+const TYPE_SIDC = {
+    // --- Air ---
+    'FastBomber1':   'SFAPMFB--------',   // Alkyon AB-4
+    'Darkreach':     'SFAPMFB--------',   // SFB-81
+    'Fighter1':      'SFAPMFF--------',   // FS-12 Revoker
+    'SmallFighter1': 'SFAPMFL--------',   // FS-20 Vortex
+    'Multirole1':    'SFAPMFA--------',   // KR-67 Ifrit
+    'trainer':       'SFAPMFA--------',   // T/A-30 Compass, flown multirole
+    'CAS1':          'SFAPMFA--------',   // A-19 Brawler
+    'COIN':          'SFAPMFA--------',   // CI-22 Cricket
+    'AttackHelo1':   'SFAPMHA--------',   // SAH-46 Chicane
+    'UtilityHelo1':  'SFAPMHU--------',   // UH-90 Ibis
+    'QuadVTOL1':     'SFAPMHU--------',   // VL-49 Tarantula
+    'EW1':           'SFAPMFQRW------',   // EW-25 Medusa
+
+    // --- Armour. Function beats mobility where both will not fit, so the
+    // Linebreaker SAM stays an air defence symbol rather than a tank one.
+    // Linebreaker IFV and APC have no entries here on purpose: every IFV is
+    // EVATM and every APC is EVAA whatever the chassis, so the role covers them.
+    'MBT':  'SFGPEVAT-------',
+    'MBT1': 'SFGPEVAT-------',
+
+    // Hexhounds are unmanned ground vehicles with their own code. The Hexhound
+    // SAM is deliberately absent - air defence beats platform, so it falls
+    // through to SHORAD.
+    'UGV1_grenade': 'SFGPUCVU-------',
+
+    // --- Naval. Corvette and frigate share the frigate code; the destroyer
+    // keeps the role default. ---
+    'Corvette1': 'SFSPCLFF-------',
+    'Frigate1':  'SFSPCLFF-------',
+
+    // --- Structures ---
+    'revetment1':       'EFFPLF----H----',
+    'Helipad':          'EFFPLF----H----',
+    'controlTower1':    'GFMPOHTH-------',   // OHT--- is not a valid code; H = high
+    'guardTower1':      'GFMPOHTL-------',
+    'fuelTank1':        'GFSPPR---------',
+    'shelter1':         'GFMPSS---------',
+    'hangar_med':       'GFMPSS---------',
+    'gabionBunker1':    'GFMPSE---------',
+    'pillbox':          'GFMPSE---------',
+    'ammoDump':         'GFSPPAS--------',
+    'ammunitionBunker': 'GFMPSU---------',
+    'enrichmentPlant1': 'SFGPIRNN--H----',
+    'factory_large':    'SFGPIE----H----',
+    'factory_tall':     'SFGPIE----H----',
+    'refinery_main':    'SFGPIP----H----',
+    'storageTank':      'SFGPIR----H----',
+    'VehicleDepot1':    'SFGPIMV---H----'
+};
+
+// Fallback by "Group/Role". Keyed on both because role names repeat across
+// groups - Support exists under Air and Naval, Logistics under Ground and
+// Structure - and keying on the role alone put an air cargo symbol on a ship.
+const ROLE_SIDC = {
+    'Air Defence/SAM':          'SFGPUCDM-------',
+    'Air Defence/SHORAD':       'SFGPUCDS-------',
+    'Air Defence/AAA':          'SFGPUCDG-------',
+    'Air Defence/Laser':        'SFGPUCD--------',
+    'Air Defence/Radar':        'SFGPESR--------',
+    'Air Defence/Fire control': 'SFGPUUS--------',
+
+    'Ground/Armour':    'SFGPEVAT-------',
+    'Ground/IFV':       'SFGPEVATM------',   // tank, medium - all IFVs
+    'Ground/APC':       'SFGPEVAA-------',   // all APCs
+    'Ground/Anti-tank': 'SFGPUCAT-------',
+    'Ground/Artillery': 'SFGPUCF--------',
+    'Ground/Recon':     'SFGPUCR--------',
+    'Ground/Logistics': 'SFGPUSS--------',
+    'Ground/Other':     'SFGPUCI--------',
+
+    'Air/Fighter':   'SFAPMFF--------',
+    'Air/Multirole': 'SFAPMFA--------',
+    'Air/Strike':    'SFAPMFA--------',
+    'Air/Bomber':    'SFAPMFB--------',
+    'Air/Rotary':    'SFAPMHU--------',
+    'Air/Support':   'SFAPMFC--------',
+
+    'Naval/Carrier':    'SFSPCLCV-------',
+    'Naval/Combatant':  'SFSPCLDD-------',
+    'Naval/Patrol':     'SFSPCP---------',
+    'Naval/Amphibious': 'SFSPCLLL-------',
+    'Naval/Support':    'SFSPCL---------',   // no auxiliary code found; generic
+
+    'Structure/Airbase':   'SFGPIBA---H----',
+    'Structure/Defensive': 'GFMPSE---------',
+    'Structure/Industry':  'SFGPIE----H----',
+    'Structure/Logistics': 'SFGPIMV---H----'
+};
+
+const DEFAULT_SIDC = 'SFGPU----------';
+
+
+function sidcFor(unit) {
+    const template = TYPE_SIDC[unit.type]
+                  || ROLE_SIDC[unit.group + '/' + unit.role]
+                  || DEFAULT_SIDC;
+
+    // Position 2 is standard identity in every coding scheme, so swapping just
+    // that character works whether the template is S, G or E.
+    const aff = AFF_LETTER[affiliationOf(unit)] || 'U';
+    return template[0] + aff + template.slice(2);
+}
+
+// Rendering a symbol is expensive and there are hundreds of units, most of them
+// sharing a handful of symbols. Cache by SIDC so each distinct one is built
+// once and then just blitted.
+const symbolCache = new Map();
+
+function symbolFor(sidc) {
+    if (symbolCache.has(sidc)) return symbolCache.get(sidc);
+
+    let entry = null;
+    try {
+        // Installations render black rather than in affiliation colour. That is
+        // standard-correct, and an attempt to override it with fillColor and
+        // frameColor had no effect, so it is left alone. Shape still carries
+        // the affiliation.
+        const sym = new ms.Symbol(sidc, { size: 18, strokeWidth: 4 });
+        // getAnchor gives where the symbol's centre sits within its canvas -
+        // symbols are not centred in their own bitmap, so drawing at the raw
+        // position would offset every marker.
+        entry = { canvas: sym.asCanvas(), anchor: sym.getAnchor() };
+    } catch (err) {
+        console.warn('bad SIDC', sidc, err);
+    }
+
+    symbolCache.set(sidc, entry);
+    return entry;
+}
+
+function drawSymbol(ctx, x, y, unit) {
+    const entry = typeof ms === 'undefined' ? null : symbolFor(sidcFor(unit));
+
+    // Fall back to the plain frames if milsymbol did not load or rejected the
+    // code, so the map still works rather than going blank.
+    if (!entry) {
+        drawFrame(ctx, x, y, 5, affiliationOf(unit));
+        return;
+    }
+
+    ctx.drawImage(entry.canvas, x - entry.anchor.x, y - entry.anchor.y);
+}
+
+const BULL = '255,209,102';                 // rose colour, as rgb components
+
+// Range rings and radials. Drawn in WORLD units, unlike the unit symbols - a
+// 5 NM ring has to stay 5 NM wide as you zoom, or it means nothing.
+//
+// Called before the units so a rose covering the whole map sits underneath them
+// rather than obscuring the thing you are measuring.
+function drawBullseyeRose(ctx) {
+    if (!bullseye) return;
+
+    const p        = toScreen(bullseye.x, bullseye.z);
+    const interval = unitSystem === 'aviation' ? 1852 * 5 : 5000;   // metres
+    const ringPx   = interval * fit.scale * view.scale;
+
+    if (ringPx < 6) return;                 // zoomed out so far the rings would merge
+
+    // Extend to whichever canvas corner is furthest away, so the rose always
+    // reaches the edge of what you can see rather than stopping arbitrarily.
+    const far = Math.max(
+        Math.hypot(p.x, p.y),
+        Math.hypot(canvas.width - p.x, p.y),
+        Math.hypot(p.x, canvas.height - p.y),
+        Math.hypot(canvas.width - p.x, canvas.height - p.y)
+    );
+    const rings = Math.min(60, Math.ceil(far / ringPx));
+    const outer = rings * ringPx;
+
+    ctx.save();
+
+    // Two passes over the whole rose: a dark halo, then the bright line on top.
+    // A one-pixel line alone vanishes over pale terrain - what makes it legible
+    // is the contrast step against its own backing, not the colour.
+    for (const pass of [{ c: '11,16,20', w: 3, a: 0.55 },
+                        { c: BULL,      w: 1, a: 1    }]) {
+
+        ctx.lineWidth = pass.w;
+
+        ctx.strokeStyle = 'rgba(' + pass.c + ',' + (0.45 * pass.a) + ')';
+        for (let i = 1; i <= rings; i++) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, i * ringPx, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Radials every 45 degrees. Screen north is -y and east is +x, so sin
+        // drives x and -cos drives y - bearingRange's convention, inverted.
+        for (let deg = 0; deg < 360; deg += 45) {
+            const rad = deg * Math.PI / 180;
+            // Cardinals heavier than the 45s, so the two ranks are told apart
+            // by weight rather than by hue.
+            const alpha = (deg % 90 === 0 ? 0.75 : 0.42) * pass.a;
+            ctx.strokeStyle = 'rgba(' + pass.c + ',' + alpha + ')';
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x + Math.sin(rad) * outer, p.y - Math.cos(rad) * outer);
+            ctx.stroke();
+        }
+    }
+
+    // Range labels up the 045 radial, so they never sit on a cardinal line.
+    // Every other ring unless the rings are far apart, to limit clutter.
+    const step = ringPx > 90 ? 1 : 2;
+    const unit = unitSystem === 'aviation' ? 'NM' : 'km';
+    const diag = Math.PI / 4;
+
+    ctx.font = '10px ui-monospace, Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let i = step; i <= rings; i += step) {
+        const r  = i * ringPx;
+        const lx = p.x + Math.sin(diag) * r;
+        const ly = p.y - Math.cos(diag) * r;
+        if (lx < 0 || ly < 0 || lx > canvas.width || ly > canvas.height) continue;
+
+        const text = (i * 5) + (i === step ? ' ' + unit : '');
+        ctx.lineWidth   = 3;
+        ctx.strokeStyle = 'rgba(11,16,20,0.85)';
+        ctx.strokeText(text, lx, ly);
+        ctx.fillStyle = 'rgba(' + BULL + ',1)';
+        ctx.fillText(text, lx, ly);
+    }
+
+    // Bearing labels just inside the outermost ring.
+    for (let deg = 0; deg < 360; deg += 45) {
+        const rad = deg * Math.PI / 180;
+        const r   = outer - ringPx * 0.35;
+        const lx  = p.x + Math.sin(rad) * r;
+        const ly  = p.y - Math.cos(rad) * r;
+        if (lx < 12 || ly < 12 || lx > canvas.width - 12 || ly > canvas.height - 12) continue;
+
+        const text = String(deg).padStart(3, '0');
+        ctx.lineWidth   = 3;
+        ctx.strokeStyle = 'rgba(11,16,20,0.85)';
+        ctx.strokeText(text, lx, ly);
+        ctx.fillStyle = 'rgba(' + BULL + ',0.9)';
+        ctx.fillText(text, lx, ly);
+    }
+
+    ctx.restore();
+}
+
+// The centre mark, drawn on top of the units so it is never buried. Constant
+// screen size, unlike the rose.
+function drawBullseyeCentre(ctx) {
+    if (!bullseye) return;
+
+    const p = toScreen(bullseye.x, bullseye.z);
+
+    ctx.save();
+    // Dark halo first, then the bright mark, so it reads on any terrain.
+    for (const pass of [{ c: '#0b1014', w: 4 }, { c: '#ffd166', w: 1.6 }]) {
+        ctx.strokeStyle = pass.c;
+        ctx.lineWidth   = pass.w;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(p.x - 13, p.y); ctx.lineTo(p.x + 13, p.y);
+        ctx.moveTo(p.x, p.y - 13); ctx.lineTo(p.x, p.y + 13);
+        ctx.stroke();
+    }
+
+    ctx.font = '600 11px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#0b1014';
+    ctx.strokeText('BULLSEYE', p.x + 17, p.y - 6);
+    ctx.fillStyle = '#ffd166';
+    ctx.fillText('BULLSEYE', p.x + 17, p.y - 6);
+
+    ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Measuring tool
+//
+// A MODE. While one is running, left-click drops a point instead of starting a
+// pan, so every handler that cares has to ask whether measuring is active. The
+// ways out - double-click to finish, Escape to clear - matter as much as the
+// way in; a mode you cannot leave is a bug, not a feature.
+//
+// Points are world metres, like the bullseye, so a measurement stays put on the
+// ground as you pan and zoom.
+// ---------------------------------------------------------------------------
+const MEAS = '110,231,183';                 // measurement colour, rgb components
+
+// kind 'path'   - a run of legs, each labelled with its own bearing and range
+// kind 'circle'  - a ring of a radius you drag out, for "how far does this
+//                  reach" questions before we have real weapon ranges
+//
+// One mode with a kind rather than two separate modes. Two flags could both be
+// true at once and there would be no sensible answer for what a click means.
+let measure = null;   // { kind, points: [{x,z}], cursor: {x,z}|null, done }
+
+function startMeasure(at, kind, label) {
+    measure = { kind: kind || 'path', points: [at], cursor: at,
+                done: false, label: label || null };
+    canvas.style.cursor = 'crosshair';
+    if (currentMission) draw(currentMission);
+}
+
+// Finished rings, kept until you clear them. Stacking is the whole point: one
+// ring answers "how far does this reach", several answer "where are the gaps",
+// which is the question you are actually asking. Stored in world metres, so a
+// ring stays on its site through any pan or zoom.
+const rings = [];    // [{ x, z, r, label }]
+
+// Index of the ring whose EDGE is under the cursor, or -1. The tolerance is
+// converted from metres to pixels, so it stays an easy 8 px target at any zoom
+// instead of being unclickable when zoomed out.
+function ringAt(sx, sy) {
+    const w = toWorld(sx, sy);
+    for (let i = rings.length - 1; i >= 0; i--) {
+        const d     = Math.hypot(w.x - rings[i].x, w.z - rings[i].z);
+        const errPx = Math.abs(d - rings[i].r) * fit.scale * view.scale;
+        if (errPx < 8) return i;
+    }
+    return -1;
+}
+
+// Drawn UNDER the units, like the bullseye rose - a kept ring is context, and
+// must not sit on top of the symbols you are reading it against.
+function drawRings(ctx) {
+    if (!rings.length) return;
+
+    ctx.save();
+    for (const ring of rings) {
+        const p   = toScreen(ring.x, ring.z);
+        const rpx = ring.r * fit.scale * view.scale;
+
+        for (const pass of [{ c: '11,16,20', w: 4, a: 0.7 },
+                            { c: MEAS,      w: 1.5, a: 0.8 }]) {
+            ctx.strokeStyle = 'rgba(' + pass.c + ',' + pass.a + ')';
+            ctx.lineWidth   = pass.w;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle   = 'rgba(' + MEAS + ',0.9)';
+        ctx.strokeStyle = '#0b1014';
+        ctx.lineWidth   = 1.5;
+        ctx.fill();
+        ctx.stroke();
+
+        // Labelled at twelve o'clock, so stacked rings stay tellable apart.
+        const ly = p.y - rpx;
+        if (ly > 10 && ly < canvas.height - 10 && p.x > 0 && p.x < canvas.width) {
+            plate(ctx, (ring.label ? ring.label + '  ' : '') + fmtRange(ring.r),
+                  p.x, ly);
+        }
+    }
+    ctx.restore();
+}
+
+// Radius of a circle measurement, in metres - from the centre to whichever
+// point is currently defining the edge.
+function measureRadius() {
+    if (!measure || measure.kind !== 'circle') return 0;
+    const edge = measure.done ? measure.points[1] : measure.cursor;
+    return edge ? bearingRange(measure.points[0], edge).range : 0;
+}
+
+// Finish but keep it on screen - you have measured something and want to read
+// it while you look at the map.
+function endMeasure() {
+    if (!measure) return;
+
+    // A finished circle becomes a kept ring and stops being the live
+    // measurement, which is what lets the next one stack rather than replace.
+    if (measure.kind === 'circle') {
+        const r = measureRadius();
+        if (r > 0) {
+            rings.push({ x: measure.points[0].x, z: measure.points[0].z,
+                         r: r, label: measure.label });
+        }
+        clearMeasure();
+        return;
+    }
+
+    measure.done   = true;
+    measure.cursor = null;
+    canvas.style.cursor = '';
+    if (currentMission) draw(currentMission);
+}
+
+function clearMeasure() {
+    measure = null;
+    canvas.style.cursor = '';
+    if (currentMission) draw(currentMission);
+}
+
+// Total ground distance along the path, in metres.
+function measureTotal() {
+    if (!measure) return 0;
+    let total = 0;
+    for (let i = 1; i < measure.points.length; i++) {
+        total += bearingRange(measure.points[i - 1], measure.points[i]).range;
+    }
+    return total;
+}
+
+// A label with a dark plate behind it. Text over terrain needs the same
+// treatment the rose needed - contrast of its own, not a colour we hope reads.
+function plate(ctx, text, x, y) {
+    ctx.font = '11px ui-monospace, Consolas, monospace';
+    const w = ctx.measureText(text).width;
+    ctx.fillStyle = 'rgba(11,16,20,0.85)';
+    ctx.fillRect(x - w / 2 - 4, y - 8, w + 8, 16);
+    ctx.strokeStyle = 'rgba(' + MEAS + ',0.5)';
+    ctx.lineWidth   = 1;
+    ctx.strokeRect(x - w / 2 - 4, y - 8, w + 8, 16);
+    ctx.fillStyle    = 'rgb(' + MEAS + ')';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+}
+
+function drawMeasureCircle(ctx) {
+    const c    = measure.points[0];
+    const edge = measure.done ? measure.points[1] : measure.cursor;
+    if (!edge) return;
+
+    const p   = toScreen(c.x, c.z);
+    const br  = bearingRange(c, edge);
+    // Metres to screen pixels, the same product the bullseye rose uses. The
+    // ring is a real distance on the ground, so it has to scale with the map.
+    const rpx = br.range * fit.scale * view.scale;
+
+    ctx.save();
+
+    for (const pass of [{ c: '11,16,20', w: 5 }, { c: MEAS, w: 2 }]) {
+        ctx.strokeStyle = 'rgba(' + pass.c + ',0.9)';
+        ctx.lineWidth   = pass.w;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    // The radius, dashed - a different shape from the solid path tool, so the
+    // two read apart without depending on the colour difference.
+    const q = toScreen(edge.x, edge.z);
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = 'rgba(' + MEAS + ',0.85)';
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(q.x, q.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle   = 'rgb(' + MEAS + ')';
+    ctx.strokeStyle = '#0b1014';
+    ctx.lineWidth   = 2;
+    ctx.fill();
+    ctx.stroke();
+
+    plate(ctx, 'R ' + fmtRange(br.range), (p.x + q.x) / 2, (p.y + q.y) / 2);
+
+    ctx.restore();
+}
+
+function drawMeasure(ctx) {
+    if (!measure) return;
+    if (measure.kind === 'circle') return drawMeasureCircle(ctx);
+
+    // The rubber band: the leg from the last placed point to wherever the
+    // cursor is, shown only while the measurement is still being built.
+    const pts = measure.points.slice();
+    if (!measure.done && measure.cursor) pts.push(measure.cursor);
+
+    const scr = pts.map(pt => toScreen(pt.x, pt.z));
+
+    ctx.save();
+
+    // Halo pass then bright pass, as with the rose.
+    for (const pass of [{ c: '11,16,20', w: 5 }, { c: MEAS, w: 2 }]) {
+        ctx.strokeStyle = 'rgba(' + pass.c + ',0.9)';
+        ctx.lineWidth   = pass.w;
+        ctx.beginPath();
+        ctx.moveTo(scr[0].x, scr[0].y);
+        for (let i = 1; i < scr.length; i++) ctx.lineTo(scr[i].x, scr[i].y);
+        ctx.stroke();
+    }
+
+    // A tick at every point you actually clicked - not at the cursor, which is
+    // not a point yet.
+    for (let i = 0; i < measure.points.length; i++) {
+        const q = scr[i];
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle   = 'rgb(' + MEAS + ')';
+        ctx.strokeStyle = '#0b1014';
+        ctx.lineWidth   = 2;
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    // Bearing and range per leg, at the midpoint of that leg. Skipped when the
+    // leg is too short to hold a label without covering its own endpoints.
+    for (let i = 1; i < pts.length; i++) {
+        const a = scr[i - 1], b = scr[i];
+        if (Math.hypot(b.x - a.x, b.y - a.y) < 46) continue;
+        const br = bearingRange(pts[i - 1], pts[i]);
+        plate(ctx, fmtBearing(br.bearing) + '  ' + fmtRange(br.range),
+              (a.x + b.x) / 2, (a.y + b.y) / 2);
+    }
+
+    // Running total at the far end, once there is more than one leg to add up.
+    if (pts.length > 2) {
+        const last = scr[scr.length - 1];
+        let total = 0;
+        for (let i = 1; i < pts.length; i++) {
+            total += bearingRange(pts[i - 1], pts[i]).range;
+        }
+        plate(ctx, 'TOTAL ' + fmtRange(total), last.x, last.y - 18);
+    }
+
+    ctx.restore();
+}
+
+function drawFrame(ctx, x, y, size, affiliation) {
+    ctx.beginPath();
+
+    if (affiliation === 'hostile') {
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x + size, y);
+        ctx.lineTo(x, y + size);
+        ctx.lineTo(x - size, y);
+        ctx.closePath();
+    } else if (affiliation === 'friend') {
+        ctx.rect(x - size, y - size * 0.7, size * 2, size * 1.4);
+    } else {
+        ctx.rect(x - size, y - size, size * 2, size * 2);
+    }
+
+    ctx.fillStyle = AFFIL_FILL[affiliation];
+    ctx.fill();
+    ctx.stroke();
+}
+const FACTION_LABELS = {
+    'Boscali': 'BDF',
+    'Primeva': 'PALA'
+};
+
+function factionLabel(name) {
+    return FACTION_LABELS[name] || name;
+}
+function populateFactions(mission) {
+    factionSelect.innerHTML = '';
+
+    for (const f of mission.factions) {
+        const option = document.createElement('option');
+        option.value       = f.factionName;
+        option.textContent = factionLabel(f.factionName);
+        factionSelect.appendChild(option);
+    }
+
+    factionSelect.value = myFaction;
+}
+
+factionSelect.addEventListener('change', () => {
+    myFaction = factionSelect.value;
+
+    // Swapping sides moves every unit between the Hostile and Friendly branches,
+    // so the tree has to be rebuilt, not just the map redrawn. Hidden paths are
+    // cleared because "hostile/Air Defence/SAM" now means the opposite side.
+    hiddenPaths.clear();
+    refreshTree();
+});
+
+// ---------------------------------------------------------------------------
+// Layer tree:  affiliation -> group -> role
+//
+// Visibility is stored as a set of HIDDEN leaf paths ("hostile/Air Defence/SAM")
+// rather than as checkbox states. Two reasons: the checkboxes are rebuilt from
+// scratch on every render, so state kept on them would be lost; and a parent's
+// state is then always derivable from its leaves rather than being a third
+// thing that can disagree with them.
+// ---------------------------------------------------------------------------
+const layerTree    = document.getElementById('layerTree');
+const hiddenPaths  = new Set();
+const collapsedKeys = new Set();
+
+const AFF_ORDER = ['hostile', 'friend', 'unknown'];
+const AFF_LABEL = { hostile: 'Hostile', friend: 'Friendly', unknown: 'Unknown' };
+
+// The leaf is an individual unit, not a type - so a single emplacement can be
+// switched off when another flight is tasked to clear it.
+function unitPath(u) {
+    return typePath(u) + '/' + u.uid;
+}
+
+function rolePath(u) {
+    return affiliationOf(u) + '/' + u.group + '/' + u.role;
+}
+
+function typePath(u) {
+    return rolePath(u) + '/' + u.type;
+}
+
+function isVisible(u) {
+    return !hiddenPaths.has(unitPath(u));
+}
+
+// One row plus an empty container for its children, which is returned so the
+// caller can add them.
+function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit) {
+    const row = document.createElement('div');
+    row.className = 'ltRow';
+    row.style.paddingLeft = (depth * 11 + 4) + 'px';   // five levels in 300px
+
+    const twisty = document.createElement('span');
+    twisty.className = 'ltTwisty';
+    twisty.textContent = collapseKey
+        ? (collapsedKeys.has(collapseKey) ? '▶' : '▼')
+        : '';
+    row.appendChild(twisty);
+
+    // A parent is checked if ANY leaf under it is shown, and indeterminate if
+    // only some are - the standard tri-state you get in a file browser.
+    const shown = paths.filter(p => !hiddenPaths.has(p)).length;
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = shown > 0;
+    box.indeterminate = shown > 0 && shown < paths.length;
+    row.appendChild(box);
+
+    const lab = document.createElement('span');
+    lab.className = 'ltLabel' + (cssClass ? ' ' + cssClass : '');
+    lab.textContent = label;
+    row.appendChild(lab);
+
+    const cnt = document.createElement('span');
+    cnt.className = 'ltCount';
+    cnt.textContent = count;
+    row.appendChild(cnt);
+
+    // Hovering an individual unit's row rings it on the map, so you can tell
+    // which of five identical emplacements this row refers to.
+    if (unit) {
+        row.addEventListener('mouseenter', () => {
+            hoveredUnit = unit;
+            if (currentMission) draw(currentMission);
+        });
+        row.addEventListener('mouseleave', () => {
+            hoveredUnit = null;
+            if (currentMission) draw(currentMission);
+        });
+    }
+
+    const kids = document.createElement('div');
+    if (collapseKey && collapsedKeys.has(collapseKey)) kids.style.display = 'none';
+
+    box.addEventListener('change', () => {
+        if (box.checked) paths.forEach(p => hiddenPaths.delete(p));
+        else             paths.forEach(p => hiddenPaths.add(p));
+        refreshTree();
+    });
+
+    if (collapseKey) {
+        row.addEventListener('click', (e) => {
+            if (e.target === box) return;      // the checkbox handles its own clicks
+            if (collapsedKeys.has(collapseKey)) collapsedKeys.delete(collapseKey);
+            else collapsedKeys.add(collapseKey);
+            renderTree(unitsOf(currentMission));
+        });
+    }
+
+    parent.appendChild(row);
+    parent.appendChild(kids);
+    return kids;
+}
+
+function renderTree(units) {
+    // Count into affiliation -> group -> role. Only what the mission actually
+    // contains gets a branch, so there are never empty rows to wade through.
+    // affiliation -> group -> role -> type -> [units]
+    // Storing the units themselves rather than counts, because the deepest
+    // level needs each individual unit to hover and toggle.
+    const tree = {};
+    for (const u of units) {
+        const a = affiliationOf(u);
+        tree[a] = tree[a] || {};
+        tree[a][u.group] = tree[a][u.group] || {};
+        tree[a][u.group][u.role] = tree[a][u.group][u.role] || {};
+        const types = tree[a][u.group][u.role];
+        types[u.type] = types[u.type] || [];
+        types[u.type].push(u);
+    }
+
+    layerTree.innerHTML = '';
+
+    // Collect every unit sitting under part of the tree, at any depth.
+    function under(node) {
+        if (Array.isArray(node)) return node;
+        let out = [];
+        for (const key of Object.keys(node)) out = out.concat(under(node[key]));
+        return out;
+    }
+    const pathsOf = list => list.map(unitPath);
+
+    for (const aff of AFF_ORDER) {
+        if (!tree[aff]) continue;
+        const groups   = tree[aff];
+        const affUnits = under(groups);
+
+        const affKids = addNode(layerTree, 0, AFF_LABEL[aff], affUnits.length,
+                                pathsOf(affUnits), aff, 'ltAff');
+
+        for (const g of Object.keys(groups).sort()) {
+            const roles   = groups[g];
+            const gKey    = aff + '/' + g;
+            const gUnits  = under(roles);
+            const gKids   = addNode(affKids, 1, g, gUnits.length,
+                                    pathsOf(gUnits), gKey, null);
+
+            for (const r of Object.keys(roles).sort()) {
+                const types  = roles[r];
+                const rKey   = gKey + '/' + r;
+                const rUnits = under(types);
+                const rKids  = addNode(gKids, 2, r, rUnits.length,
+                                       pathsOf(rUnits), rKey, 'ltRole');
+
+                // Sorted by display name, not by key - the key is an internal
+                // identifier and sorting by it would look arbitrary.
+                const sortedTypes = Object.keys(types)
+                    .sort((a, b) => unitName(a).localeCompare(unitName(b)));
+
+                for (const t of sortedTypes) {
+                    const list  = types[t];
+                    const tKey  = rKey + '/' + t;
+                    const tKids = addNode(rKids, 3, unitName(t), list.length,
+                                          pathsOf(list), tKey, 'ltType');
+
+                    for (const u of list) {
+                        addNode(tKids, 4, u.unitName, '',
+                                [unitPath(u)], null, 'ltUnit', u);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Redraw the map and rebuild the tree, so counts and tri-states stay honest.
+function refreshTree() {
+    if (!currentMission) return;
+    draw(currentMission);
+    renderTree(unitsOf(currentMission));
+}
+
+// Falls back to the raw key if the catalogue has not loaded yet, or if this is a
+// modded unit the extractor never saw. Never blank, never crashes.
+function unitName(type) {
+    const entry = unitCatalogue[type];
+    return entry ? entry.name : type;
+}
+
+function draw(mission) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // The basemap goes through the same fit-then-view transform as every unit,
+    // so it can never drift out of register with the markers on top of it.
+    const mw = currentMap.maxX - currentMap.minX;
+    const mh = currentMap.maxZ - currentMap.minZ;
+    ctx.drawImage(basemap,
+        fit.offsetX * view.scale + view.panX,
+        fit.offsetY * view.scale + view.panY,
+        mw * fit.scale * view.scale,
+        mh * fit.scale * view.scale);
+    ctx.strokeStyle = '#101418';
+    ctx.lineWidth   = 1.5;
+
+    const units = unitsOf(mission).filter(isVisible);
+
+    // Remember where each marker actually landed. Hover then tests against what
+    // is genuinely on screen, so filtered-out units can never be picked, and
+    // pan and zoom need no special handling.
+    drawnUnits = [];
+
+    // Under the units: a rose spanning the map must not sit on top of them.
+    drawBullseyeRose(ctx);
+    drawRings(ctx);
+
+    for (const unit of units) {
+        const p = toScreen(unit.x, unit.z);
+        drawSymbol(ctx, p.x, p.y, unit);
+        drawnUnits.push({ unit: unit, sx: p.x, sy: p.y });
+    }
+
+    drawBullseyeCentre(ctx);
+    drawMeasure(ctx);
+
+    // Ring the hovered marker last, so it sits on top of its neighbours. Drawn
+    // as a white ring rather than a colour change, so it reads by shape and
+    // brightness rather than hue.
+    if (hoveredUnit) {
+        const p = toScreen(hoveredUnit.x, hoveredUnit.z);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth   = 2;
+        ctx.stroke();
+    }
+}
+
+drop.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  drop.style.borderColor = '#5aa9d6';
+});
+    drop.addEventListener('dragleave', () => {
+  drop.style.borderColor = '#3d4a55';
+});
+// ---------------------------------------------------------------------------
+// Hover to identify
+// ---------------------------------------------------------------------------
+const tip = document.getElementById('tip');
+
+// Filled by draw(): every marker currently on screen and where it landed.
+let drawnUnits = [];
+
+// The unit under the cursor, or null. draw() rings it.
+let hoveredUnit = null;
+
+function unitAt(mx, my) {
+    let best = null;
+    let bestDist = 12;               // pixels - generous, markers are ~10 across
+
+    for (const d of drawnUnits) {
+        // Math.hypot is the distance between two points: sqrt(dx*dx + dy*dy)
+        const dist = Math.hypot(d.sx - mx, d.sy - my);
+        if (dist < bestDist) { bestDist = dist; best = d.unit; }
+    }
+    return best;
+}
+
+function showTip(unit, clientX, clientY) {
+    if (!unit) { tip.style.display = 'none'; return; }
+
+    const entry = unitCatalogue[unit.type] || {};
+    const affil = affiliationOf(unit);
+
+    tip.innerHTML =
+        '<div class="n">' + unitName(unit.type) + '</div>' +
+        '<div class="r">' + unit.group + ' &middot; ' + unit.role + '</div>' +
+        '<div>' + factionLabel(unit.faction) + ' &middot; ' + affil + '</div>' +
+        (bullseye ? '<div style="color:#ffd166;margin-top:4px;">BULLSEYE '
+                    + fmtBullseye(unit) + '</div>' : '') +
+        (entry.description ? '<div style="margin-top:5px;color:#9fb0bd;">'
+                             + entry.description + '</div>' : '') +
+        '<div class="k" style="margin-top:5px;">' + unit.type + '</div>';
+
+    tip.style.display = 'block';
+    tip.style.left = (clientX + 14) + 'px';
+    tip.style.top  = (clientY + 14) + 'px';
+}
+
+// ---- status bar ----
+const stPos  = document.getElementById('stPos');
+const stBull = document.getElementById('stBull');
+const stMeas = document.getElementById('stMeas');
+
+function updateStatus(sx, sy) {
+    if (!currentMap) return;
+    const w = toWorld(sx, sy);
+
+    stPos.textContent  = Math.round(w.x) + ', ' + Math.round(w.z);
+    stBull.textContent = bullseye ? 'BE ' + fmtBullseye(w) : '';
+
+    // While a measurement is open the total includes the leg to the cursor, so
+    // the number moves with the mouse and you can stop at a distance.
+    if (!measure) {
+        stMeas.textContent = rings.length
+            ? rings.length + (rings.length === 1 ? ' ring' : ' rings') : '';
+    } else if (measure.kind === 'circle') {
+        stMeas.textContent = 'RING R ' + fmtRange(measureRadius()) +
+                             (measure.done ? '' : '  (click to set)');
+    } else {
+        let total = measureTotal();
+        if (!measure.done && measure.cursor) {
+            total += bearingRange(measure.points[measure.points.length - 1],
+                                  measure.cursor).range;
+        }
+        stMeas.textContent = 'MEAS ' + fmtRange(total) +
+                             (measure.done ? '' : '  (dbl-click to finish)');
+    }
+}
+
+document.getElementById('unitToggle').addEventListener('click', (e) => {
+    unitSystem = (unitSystem === 'aviation') ? 'metric' : 'aviation';
+    e.target.textContent = (unitSystem === 'aviation') ? 'NM / ft' : 'km / m';
+    if (currentMission) draw(currentMission);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    // Cursor first, then the readout: updateStatus adds the open leg into the
+    // running total, so it has to see where the mouse is NOW, not last frame.
+    if (measure && !measure.done) measure.cursor = toWorld(e.offsetX, e.offsetY);
+
+    updateStatus(e.offsetX, e.offsetY);
+
+    // While measuring, every move redraws so the open leg tracks the cursor.
+    // Hover identification is suppressed - one thing at a time under the mouse.
+    if (measure && !measure.done) {
+        tip.style.display = 'none';
+        if (currentMission) draw(currentMission);
+        return;
+    }
+
+    if (dragging) { tip.style.display = 'none'; return; }
+
+    const found = unitAt(e.offsetX, e.offsetY);
+
+    // Only repaint when the hovered unit actually CHANGES. Redrawing on every
+    // mousemove would mean ~60 full redraws a second for no visible difference.
+    if (found !== hoveredUnit) {
+        hoveredUnit = found;
+        if (currentMission) draw(currentMission);
+    }
+
+    showTip(found, e.clientX, e.clientY);
+});
+
+canvas.addEventListener('mouseleave', () => {
+    tip.style.display = 'none';
+});
+
+canvas.addEventListener('dblclick', () => {
+    if (!measure || measure.done || measure.kind !== 'path') return;
+
+    // A double-click is two clicks, and both already dropped a point. Throw the
+    // second away if it landed on top of the first.
+    const pts = measure.points;
+    if (pts.length > 1) {
+        const a = pts[pts.length - 1], b = pts[pts.length - 2];
+        if (Math.hypot(a.x - b.x, a.z - b.z) < 1) pts.pop();
+    }
+    endMeasure();
+});
+
+// ---------------------------------------------------------------------------
+// Right-click menu
+//
+// Deliberately generic: showMenu takes a title and a list of {label, run} items
+// and knows nothing about what they do. Every later feature - place a bullseye,
+// mark a target, start a route, measure from here - is one more entry rather
+// than another button competing for panel space.
+// ---------------------------------------------------------------------------
+const menu = document.getElementById('menu');
+
+function hideMenu() { menu.style.display = 'none'; }
+
+function showMenu(clientX, clientY, title, subtitle, items) {
+    menu.innerHTML = '';
+
+    if (title) {
+        const head = document.createElement('div');
+        head.className = 'mHead';
+        head.textContent = title;
+        if (subtitle) {
+            const sub = document.createElement('span');
+            sub.textContent = subtitle;
+            head.appendChild(sub);
+        }
+        menu.appendChild(head);
+    }
+
+    for (const item of items) {
+        if (item === '-') {
+            const sep = document.createElement('div');
+            sep.className = 'mSep';
+            menu.appendChild(sep);
+            continue;
+        }
+        const el = document.createElement('div');
+        el.className = 'mItem';
+        el.textContent = item.label;
+        el.addEventListener('click', () => { hideMenu(); item.run(); });
+        menu.appendChild(el);
+    }
+
+    // Show it before measuring, or offsetWidth is 0 and the flip never happens.
+    menu.style.display = 'block';
+    menu.style.left = '0px';
+    menu.style.top  = '0px';
+
+    // Flip rather than overflow when near the right or bottom edge.
+    const w = menu.offsetWidth, h = menu.offsetHeight;
+    const x = (clientX + w > window.innerWidth)  ? clientX - w : clientX;
+    const y = (clientY + h > window.innerHeight) ? clientY - h : clientY;
+    menu.style.left = Math.max(0, x) + 'px';
+    menu.style.top  = Math.max(0, y) + 'px';
+}
+
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();               // suppress the browser's own menu
+    tip.style.display = 'none';
+
+    const unit = unitAt(e.offsetX, e.offsetY);
+
+    if (unit) {
+        showMenu(e.clientX, e.clientY,
+            unitName(unit.type),
+            factionLabel(unit.faction) + ' · ' + unit.role,
+            [
+                { label: 'Hide this unit', run: () => {
+                    hiddenPaths.add(unitPath(unit));
+                    refreshTree();
+                }},
+                { label: 'Hide all ' + unitName(unit.type), run: () => {
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.type === unit.type) hiddenPaths.add(unitPath(u));
+                    }
+                    refreshTree();
+                }},
+                { label: 'Hide all ' + unit.role, run: () => {
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.role === unit.role && u.group === unit.group) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                '-',
+                // "Show only" is the inverse: clear everything, then hide what
+                // does NOT match. Isolating one threat type is the common case
+                // when you are working out whether a route is survivable.
+                { label: 'Show only ' + unitName(unit.type), run: () => {
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.type !== unit.type) hiddenPaths.add(unitPath(u));
+                    }
+                    refreshTree();
+                }},
+                { label: 'Show only ' + unit.role, run: () => {
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.role !== unit.role || u.group !== unit.group) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                { label: 'Show only ' + unit.group, run: () => {
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.group !== unit.group) hiddenPaths.add(unitPath(u));
+                    }
+                    refreshTree();
+                }},
+                '-',
+                // The same two, narrowed to one side. Affiliation is evaluated
+                // now rather than stored, so these follow the faction picker.
+                { label: 'Show only ' + AFF_LABEL[affiliationOf(unit)] + ' ' + unit.role, run: () => {
+                    const aff = affiliationOf(unit);
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.role !== unit.role || u.group !== unit.group ||
+                            affiliationOf(u) !== aff) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                { label: 'Show only ' + AFF_LABEL[affiliationOf(unit)] + ' ' + unit.group, run: () => {
+                    const aff = affiliationOf(unit);
+                    hiddenPaths.clear();
+                    for (const u of unitsOf(currentMission)) {
+                        if (u.group !== unit.group || affiliationOf(u) !== aff) {
+                            hiddenPaths.add(unitPath(u));
+                        }
+                    }
+                    refreshTree();
+                }},
+                '-',
+                '-',
+                { label: 'Measure from here', run: () => {
+                    startMeasure({ x: unit.x, z: unit.z });
+                }},
+                { label: 'Range ring from here', run: () => {
+                    startMeasure({ x: unit.x, z: unit.z }, 'circle',
+                                 unitName(unit.type));
+                }},
+                ...(rings.length ? [{ label: 'Clear all rings', run: () => {
+                    rings.length = 0;
+                    if (currentMission) draw(currentMission);
+                }}] : []),
+                '-',
+                { label: 'Show everything again', run: () => {
+                    hiddenPaths.clear();
+                    refreshTree();
+                }}
+            ]);
+    } else {
+        const at      = toWorld(e.offsetX, e.offsetY);
+        const hitRing = ringAt(e.offsetX, e.offsetY);
+
+        showMenu(e.clientX, e.clientY, null, null, [
+            { label: bullseye ? 'Move bullseye here' : 'Place bullseye here', run: () => {
+                bullseye = at;
+                if (currentMission) draw(currentMission);
+            }},
+            ...(bullseye ? [{ label: 'Clear bullseye', run: () => {
+                bullseye = null;
+                if (currentMission) draw(currentMission);
+            }}] : []),
+            '-',
+            { label: 'Measure from here', run: () => startMeasure(at) },
+            { label: 'Range ring from here', run: () => startMeasure(at, 'circle') },
+            ...(hitRing >= 0 ? [{ label: 'Remove this ring', run: () => {
+                rings.splice(hitRing, 1);
+                if (currentMission) draw(currentMission);
+            }}] : []),
+            ...(rings.length ? [{ label: 'Clear all rings', run: () => {
+                rings.length = 0;
+                if (currentMission) draw(currentMission);
+            }}] : []),
+            ...(measure ? [{ label: 'Clear measurement', run: clearMeasure }] : []),
+            '-',
+            { label: 'Show everything again', run: () => {
+                hiddenPaths.clear();
+                refreshTree();
+            }}
+        ]);
+    }
+});
+
+// Any click elsewhere, any scroll, or Escape dismisses it.
+window.addEventListener('mousedown', (e) => {
+    if (!menu.contains(e.target)) hideMenu();
+});
+window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+
+    // Escape unwinds one layer at a time: menu, then the measurement in
+    // progress, then the finished measurement still on screen.
+    if (menu.style.display === 'block')   { hideMenu(); }
+    // A half-dragged ring is abandoned, not committed - Escape means "forget
+    // this", and endMeasure would keep it.
+    else if (measure && !measure.done)    {
+        if (measure.kind === 'circle') clearMeasure(); else endMeasure();
+    }
+    else if (measure)                     { clearMeasure(); }
+});
+
+let dragging = false;
+let lastX = 0, lastY = 0;
+
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    hideMenu();      // the menu is placed in screen pixels; zooming moves the map out from under it
+
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    const mx = e.offsetX;
+    const my = e.offsetY;
+
+    const desired = view.scale * factor;
+    // Floor is 0.5 rather than 1 so you can pull back past the initial fit and
+    // see context around the map's edges. A floor of exactly 1 made sense when
+    // the canvas was the map's own shape; now the map sits inside a larger one.
+    const clamped = Math.min(25, Math.max(0.5, desired));
+    const actual  = clamped / view.scale;
+
+    view.panX = mx - (mx - view.panX) * actual;
+    view.panY = my - (my - view.panY) * actual;
+    view.scale = clamped;
+
+    if (currentMission) draw(currentMission);
+});
+
+
+canvas.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;      // left button only - right-click opens the menu
+
+    // The mode check. While a measurement is being built the left button means
+    // "drop a point", so panning must not also start - otherwise the map slides
+    // under you every time you place one.
+    if (measure && !measure.done) {
+        measure.points.push(toWorld(e.offsetX, e.offsetY));
+        // A circle is finished by the one click that sets its radius - there is
+        // no second leg to add, so there is nothing to double-click to end.
+        if (measure.kind === 'circle') endMeasure();
+        else if (currentMission) draw(currentMission);
+        return;
+    }
+
+    dragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    view.panX += e.clientX - lastX;
+    view.panY += e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    if (currentMission) draw(currentMission);
+});
+
+window.addEventListener('mouseup', () => {
+    dragging = false;
+});
+drop.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  drop.style.borderColor = '#3d4a55';
+
+  const file = e.dataTransfer.files[0];
+  const text = await file.text();
+
+  const mission = JSON.parse(text);
+
+  // Order matters here. Affiliation depends on myFaction, and the tree is built
+  // from affiliations - so the faction has to be settled before anything is
+  // counted or drawn.
+  myFaction      = mission.factions[0].factionName;
+  currentMission = mission;
+  populateFactions(mission);
+
+  // A new mission starts with everything visible. Without this, layers hidden
+  // in the previous mission would stay hidden in this one.
+  hiddenPaths.clear();
+
+  // Roles and types start collapsed, so you see affiliation -> group -> role
+  // and drill in only where you need to. Five levels open at once would be
+  // hundreds of rows.
+  collapsedKeys.clear();
+  for (const u of unitsOf(mission)) {
+      collapsedKeys.add(rolePath(u));
+      collapsedKeys.add(typePath(u));
+  }
+
+  setMap(mapName(mission.MapKey.Path));
+
+  out.textContent = `${file.name}
+
+map:       ${mapName(mission.MapKey.Path)}
+aircraft:  ${mission.aircraft.length}
+vehicles:  ${mission.vehicles.length}
+ships:     ${mission.ships.length}
+buildings: ${mission.buildings.length}`;
+
+  renderTree(unitsOf(mission));
+  draw(mission);
+});

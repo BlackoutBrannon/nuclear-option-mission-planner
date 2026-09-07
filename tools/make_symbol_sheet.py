@@ -2,7 +2,7 @@
 Generate symbols.html - a contact sheet of every unit type and the symbol it
 draws, for reviewing the symbology away from a cluttered map.
 
-Reads the tables out of index.html rather than restating them, so the sheet can
+Reads the tables out of app.js rather than restating them, so the sheet can
 never disagree with what the planner actually renders. Re-run after changing
 TYPE_SIDC, ROLE_SIDC, ROLE_OVERRIDES or ROLE_RULES.
 
@@ -16,7 +16,7 @@ import json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
-INDEX = os.path.join(ROOT, "index.html")
+APP   = os.path.join(ROOT, "app.js")
 UNITS = os.path.join(ROOT, "units.json")
 OUT   = os.path.join(ROOT, "symbols.html")
 
@@ -27,7 +27,7 @@ def block(src, name, opener="{", closer="};"):
                r"(.*?)\n" + re.escape(closer))
     m = re.search(pattern, src, re.S)
     if not m:
-        sys.exit(f"could not find {name} in index.html")
+        sys.exit(f"could not find {name} in app.js")
     return m.group(1)
 
 
@@ -49,7 +49,7 @@ FALLBACK_GROUP = {"aircraft": "Air", "ships": "Naval",
 
 
 def main():
-    src = open(INDEX, encoding="utf-8").read()
+    src = open(APP, encoding="utf-8").read()
     cat = json.load(open(UNITS, encoding="utf-8"))
 
     type_sidc = parse_sidc_table(src, "TYPE_SIDC")

@@ -31,10 +31,17 @@ symptom is every unit showing its raw key — `SPAAG1` rather than
 
 | | |
 |---|---|
-| `index.html` | The whole application. No framework, no build step. |
+| `index.html` | Page structure only — the elements the app looks up by id. |
+| `style.css` | All layout and appearance. |
+| `app.js` | The application. No framework, no build step. |
 | `units.json` | Display names and descriptions per unit type. Generated. |
 | `*_overview.png` | Basemaps, produced by the terrain capture tool. |
 | `tools/extract_units.py` | Regenerates `units.json` from the game's own files. |
+| `tools/make_symbol_sheet.py` | Builds `symbols.html` by parsing the tables out of `app.js`. |
+
+`app.js` is loaded at the end of `<body>`, so every element it looks up already
+exists and it needs no `DOMContentLoaded` wrapper. `vendor/milsymbol.js` loads
+before it and provides the global `ms`.
 
 ## Regenerating the unit catalogue
 

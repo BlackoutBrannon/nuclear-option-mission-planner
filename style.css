@@ -1,0 +1,224 @@
+/* ---------------------------------------------------------------------------
+   Nuclear Option Mission Planner - styles
+
+   Split out of index.html so layout work happens in one small file instead of
+   being hunted for inside the application. Nothing here is generated; edit it
+   directly.
+   --------------------------------------------------------------------------- */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;                 /* the page never scrolls; panels scroll */
+  font-family: system-ui, sans-serif;
+  background: #12181d;
+  color: #e6edf3;
+}
+
+/* The map is the page. Everything else floats on top of it, the way a GIS
+   client works - rather than the map living in a box beside a sidebar. */
+#app {
+  position: relative;
+  height: 100%;
+}
+
+#panel {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 300px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #2a353d;
+  background: rgba(19, 26, 32, 0.94);
+  backdrop-filter: blur(3px);       /* map faintly visible behind the panel */
+  box-shadow: 2px 0 12px rgba(0,0,0,.45);
+}
+
+#panelHead {
+  padding: 10px 14px;
+  border-bottom: 1px solid #2a353d;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+#panelBody {
+  flex: 1;                          /* soak up remaining height */
+  overflow-y: auto;                 /* scroll here, not the page */
+  padding: 12px 14px;
+}
+
+#mapArea {
+  position: absolute;
+  inset: 0;                         /* fills the whole window, under the panel */
+  overflow: hidden;
+  background: #0d1216;
+}
+
+#map { display: block; }
+
+#drop {
+  border: 2px dashed #3d4a55;
+  border-radius: 6px;
+  padding: 14px 10px;
+  text-align: center;
+  color: #8b98a5;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.group { margin-top: 16px; }
+.group > .title {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #7d8b96;
+  margin-bottom: 6px;
+}
+
+label { display: block; font-size: 13px; padding: 2px 0; cursor: pointer; }
+
+select {
+  width: 100%;
+  background: #1c262d;
+  color: #e6edf3;
+  border: 1px solid #3d4a55;
+  padding: 5px;
+  border-radius: 3px;
+}
+
+#out {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: #9fb0bd;
+  margin: 0;
+}
+
+/* --- layer tree --- */
+.ltRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;              /* clicking to collapse shouldn't select text */
+  border-radius: 3px;
+}
+.ltRow:hover { background: #1d272e; }
+
+.ltTwisty {
+  width: 10px;
+  flex: none;
+  color: #7d8b96;
+  font-size: 9px;
+  text-align: center;
+}
+.ltRow input { margin: 0; flex: none; }
+.ltLabel { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ltCount {
+  color: #6f7d88;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ltAff  { font-weight: 600; letter-spacing: .02em; }
+.ltRole { color: #b8c5d0; }
+.ltType { color: #93a3b0; font-size: 12px; }
+.ltUnit {
+  color: #7d8b96;
+  font-size: 11.5px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.sheetLink {
+  display: inline-block;
+  font-size: 12px;
+  color: #8ecbff;
+  text-decoration: none;
+}
+.sheetLink:hover { text-decoration: underline; }
+
+/* Status bar, bottom right over the map. */
+#status {
+  position: fixed;
+  right: 12px; bottom: 12px;
+  z-index: 15;
+  display: flex; align-items: center; gap: 14px;
+  padding: 6px 10px;
+  background: rgba(11, 16, 20, .88);
+  border: 1px solid #2a353d;
+  border-radius: 4px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  color: #b8c5d0;
+  font-variant-numeric: tabular-nums;   /* digits stop jittering as they change */
+}
+#stBull { color: #ffd166; }
+#stMeas { color: #6ee7b7; }
+#unitToggle {
+  background: #1c262d; color: #cdd9e3;
+  border: 1px solid #3d4a55; border-radius: 3px;
+  padding: 3px 8px; font-size: 11px; cursor: pointer;
+  font-family: inherit;
+}
+#unitToggle:hover { background: #24313a; }
+
+/* Context menu. Fixed, like the tooltip, because it is placed from
+   clientX/clientY. Unlike the tooltip it DOES take pointer events - you
+   have to be able to click the items. */
+#menu {
+  position: fixed;
+  display: none;
+  z-index: 20;
+  min-width: 190px;
+  padding: 4px;
+  background: #161f26;
+  border: 1px solid #3d4a55;
+  border-radius: 5px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.55);
+  font-size: 13px;
+}
+#menu .mHead {
+  padding: 6px 10px 7px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid #2a353d;
+  color: #e6edf3;
+  font-weight: 600;
+  max-width: 240px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#menu .mHead span { display: block; font-weight: 400; font-size: 11px; color: #7d8b96; }
+#menu .mItem {
+  padding: 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #cdd9e3;
+}
+#menu .mItem:hover { background: #24313a; color: #fff; }
+#menu .mSep { height: 1px; background: #2a353d; margin: 4px 2px; }
+
+/* Follows the cursor. position:fixed because it is placed from clientX/clientY,
+   which are viewport coordinates. pointer-events:none so it can never sit
+   under the cursor and steal the very mousemove that positions it. */
+#tip {
+  position: fixed;
+  display: none;
+  pointer-events: none;
+  z-index: 10;
+  background: #0b1014;
+  border: 1px solid #3d4a55;
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 260px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.5);
+}
+#tip .n { font-weight: 600; }
+#tip .r { color: #8ecbff; }
+#tip .k { color: #6f7d88; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
