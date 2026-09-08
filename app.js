@@ -84,11 +84,13 @@ const ctx = canvas.getContext('2d')
 const MAPS = {
     'Heartland': {
         image: 'Heartland_overview.png',
+        terrain: 'Heartland',
         minX: -40960,   maxX: 40960,
         minZ: -40960,   maxZ: 40960
     },
     'Ignus Archipelago': {
         image: 'Ignus_overview.png',
+        terrain: 'Ignus',
         minX: -78072.9, maxX: 79573.5,
         minZ: -39419.9, maxZ: 37316.3
     }
@@ -270,6 +272,7 @@ function sizeCanvas() {
 function setMap(name) {
     currentMap  = MAPS[name];
     basemap.src = currentMap.image;
+    loadTerrain(currentMap.terrain);
 
     sizeCanvas();
     view = { scale: 1, panX: 0, panY: 0 };
@@ -431,6 +434,7 @@ function snapAlt(displayValue) {
 }
 
 altSlider.addEventListener('input', () => {
+    suspendMask();
     const raw = sliderToAlt(parseInt(altSlider.value, 10));
     const inDisplay = (unitSystem === 'aviation') ? raw * FT_PER_M : raw;
     const snapped = snapAlt(inDisplay);
@@ -443,6 +447,7 @@ altSlider.addEventListener('input', () => {
 });
 
 altInput.addEventListener('input', () => {
+    suspendMask();
     const n = parseFloat(altInput.value);
     if (!isFinite(n) || n < 0) return;          // mid-typing "-" or "" - ignore
     ownAltM = (unitSystem === 'aviation') ? n / FT_PER_M : n;
@@ -936,7 +941,12 @@ function drawBullseyeRose(ctx) {
 // A weapon whose altitude band excludes you is drawn faint and sparse: it is
 // still there, it just cannot reach you where you are.
 // ---------------------------------------------------------------------------
-const showRings = { radar: true, optical: false, weapon: true };
+const showRings = { radar: true, optical: false, weapon: true, mask: true };
+
+// 'auto'  place what fits, thinning overlaps and repeats
+// 'hover' label only the unit under the cursor
+// 'off'   shapes only
+let labelMode = 'auto';
 
 // Which individual UNITS draw rings, held as unitPath strings - the same keys
 // the layer tree uses. Empty means none: rings stay off until you ask for them,
@@ -953,8 +963,15 @@ const RING_STYLE = {
 // Ring toggles. These must be wired AFTER `showRings` exists: a top-level
 // `const` is in the temporal dead zone until its own line runs, so reading it
 // higher up throws before the page ever paints.
+const labelSelect = document.getElementById('ringLabels');
+labelSelect.value = labelMode;
+labelSelect.addEventListener('change', () => {
+    labelMode = labelSelect.value;
+    if (currentMission) draw(currentMission);
+});
+
 for (const [id, key] of [['ringWeapon', 'weapon'], ['ringRadar', 'radar'],
-                         ['ringOptical', 'optical']]) {
+                         ['ringOptical', 'optical'], ['ringMask', 'mask']]) {
     const box = document.getElementById(id);
     box.checked = showRings[key];
     box.addEventListener('change', () => {
@@ -1087,6 +1104,7 @@ function threatRingsFor(unit) {
             if (ground <= 0) continue;
             rings.push({
                 kind:  'radar',
+                los:   true,          // detection raycasts against terrain
                 r:     Math.min(ground, horizon),
                 // Set when the horizon, not the radar, is the binding limit.
                 // Such a ring expands again with altitude.
@@ -1101,7 +1119,8 @@ function threatRingsFor(unit) {
             const ground = groundFrom(
                 Math.min(o.visualRange, ownVisibleRange() * o.magnification));
             if (ground <= 0) continue;
-            rings.push({ kind: 'optical', r: ground, label: 'VIS' });
+            rings.push({ kind: 'optical', los: true, r: ground,
+                         label: 'VIS ' + fmtRange(ground) });
         }
     }
 
@@ -1111,6 +1130,10 @@ function threatRingsFor(unit) {
             if (ground <= 0) continue;          // you are above its reach entirely
             rings.push({
                 kind:   'weapon',
+                // Only weapons whose targetRequirements demand line of sight
+                // are masked. Indirect fire - MLRS, ballistic missiles - has
+                // the flag clear and reaches over terrain.
+                los:    w.lineOfSight,
                 r:      ground,
                 // The altitude band is a separate hard gate in
                 // TargetRequirements - a weapon can be in range and still not
@@ -1130,6 +1153,11 @@ function drawThreatRings(ctx, units) {
     if (!showRings.radar && !showRings.optical && !showRings.weapon) return;
 
     const mPerPx = fit.scale * view.scale;
+    const masking = showRings.mask && terrain && !maskSuspended;
+
+    const labels = [];
+    drawnRings  = [];
+    drawnLabels = [];
 
     ctx.save();
     for (const unit of units) {
@@ -1138,6 +1166,15 @@ function drawThreatRings(ctx, units) {
 
         const p = toScreen(unit.x, unit.z);
 
+        // One profile per unit, walked to its widest ring. The cutoff along a
+        // radial does not depend on which ring is being drawn, so narrower
+        // rings clamp the same profile rather than recomputing it.
+        let profile = null;
+        if (masking) {
+            const widest = rings.reduce((m, r) => Math.max(m, r.r), 0);
+            profile = maskProfileFor(unit, widest);
+        }
+
         for (let i = 0; i < rings.length; i++) {
             const ring = rings[i];
             const rpx = ring.r * mPerPx;
@@ -1145,38 +1182,314 @@ function drawThreatRings(ctx, units) {
             const style = RING_STYLE[ring.kind];
             const inert = ring.inBand === false;
 
+            const prof = ring.los ? profile : null;
+            const key  = ringKey(unit, ring);
+            const hot  = hoveredRing && hoveredRing.key === key;
+
+            drawnRings.push({ x: p.x, y: p.y, mPerPx: mPerPx, profile: prof,
+                              ring: ring, unit: unit, key: key });
+
             // Halo first, as everywhere else, so a thin ring survives terrain.
             ctx.setLineDash(inert ? [3, 7] : style.dash);
             ctx.strokeStyle = 'rgba(11,16,20,0.55)';
             ctx.lineWidth   = style.width + 2;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+            ringPath(ctx, p, ring.r, mPerPx, prof);
             ctx.stroke();
 
-            ctx.globalAlpha = inert ? 0.3 : 0.85;
-            ctx.strokeStyle = style.colour;
-            ctx.lineWidth   = style.width;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+            // The hovered ring is drawn white and thicker. Brightness and
+            // weight rather than a colour change, so it separates from its
+            // neighbours without depending on hue.
+            ctx.globalAlpha = hot ? 1 : (inert ? 0.3 : 0.85);
+            ctx.strokeStyle = hot ? '#ffffff' : style.colour;
+            ctx.lineWidth   = hot ? style.width + 1.6 : style.width;
+            ringPath(ctx, p, ring.r, mPerPx, prof);
             ctx.stroke();
             ctx.globalAlpha = 1;
 
             // Labelled only above 70 px radius, to limit clutter on a dense
             // map. Labels are spaced 22 degrees apart around the upper arc so
             // that concentric rings on one unit do not overlap.
-            if (rpx > 70) {
-                const a  = (-90 + i * 22) * Math.PI / 180;
-                const lx = p.x + Math.cos(a) * rpx;
-                const ly = p.y + Math.sin(a) * rpx;
-                if (lx > 40 && lx < canvas.width - 40 && ly > 12 && ly < canvas.height - 12) {
-                    plate(ctx, ring.label + (ring.capped ? ' (horizon)' : ''),
-                          lx, ly, inert ? 'rgba(240,133,122,0.5)' : style.colour);
+            if (rpx > 70 && labelMode !== 'off' &&
+                (labelMode === 'auto' || unit === hoveredUnit)) {
+                // Anchored on the ring itself, offset per ring so several rings
+                // on one unit start apart before placement runs.
+                //
+                // A ring wider than the viewport has most of its circumference
+                // off-screen, so the preferred anchor is tried first and then
+                // rotated until a point lands in view. Without the rotation the
+                // largest rings - the ones that matter most - go unlabelled.
+                const base = -90 + i * 22;
+                let lx = 0, ly = 0, onScreen = false;
+                for (let k = 0; k < 12 && !onScreen; k++) {
+                    const a = (base + k * 30) * Math.PI / 180;
+                    lx = p.x + Math.cos(a) * rpx;
+                    ly = p.y + Math.sin(a) * rpx;
+                    onScreen = lx > 40 && lx < canvas.width - 40 &&
+                               ly > 12 && ly < canvas.height - 12;
+                }
+                if (onScreen) {
+                    labels.push({
+                        text: ring.label + (ring.capped ? ' (horizon)' : ''),
+                        x: lx, y: ly, kind: ring.kind, r: ring.r,
+                        colour: inert ? 'rgba(240,133,122,0.5)' : style.colour,
+                        key: ringKey(unit, ring), unit: unit, ring: ring,
+                    });
                 }
             }
         }
     }
     ctx.setLineDash([]);
+
+    // Placed after every ring is drawn, so a label is never buried by a ring
+    // rendered later.
+    placeLabels(ctx, labels);
     ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Terrain
+//
+// Elevation for the current map, produced by tools/make_terrain.py: int16
+// metres at 50 m post spacing, rows north to south, columns west to east.
+// Fetched as an ArrayBuffer and read directly as an Int16Array, so there is no
+// per-sample parsing cost.
+//
+// Absent terrain is not an error. Rings fall back to plain circles, which is
+// the geometry without masking rather than a wrong answer.
+// ---------------------------------------------------------------------------
+let terrain = null;   // { width, height, minX, maxX, minZ, maxZ, data }
+
+async function loadTerrain(key) {
+    terrain = null;
+    maskCache.clear();
+    if (!key) return;
+
+    try {
+        const index = await (await fetch('terrain/index.json?v=' + Date.now())).json();
+        const meta = index.maps[key];
+        if (!meta) throw new Error('no terrain for ' + key);
+
+        const buf = await (await fetch('terrain/' + meta.file)).arrayBuffer();
+        const data = new Int16Array(buf);
+        if (data.length !== meta.width * meta.height) {
+            throw new Error(`expected ${meta.width * meta.height} samples, got ${data.length}`);
+        }
+
+        terrain = Object.assign({}, meta, { data: data });
+        console.log('terrain loaded:', key, meta.width + 'x' + meta.height,
+                    '@', meta.spacing + ' m');
+    } catch (err) {
+        console.error('terrain failed to load:', err);
+    }
+    if (currentMission) draw(currentMission);
+}
+
+// Ground elevation in metres, bilinear between the four surrounding posts.
+// Interpolating within the captured surface keeps the profile smooth; it is
+// the only averaging in the masking path, and it spans one 50 m cell rather
+// than smoothing the surface itself.
+function terrainAt(x, z) {
+    const t = terrain;
+    if (!t) return 0;
+
+    const fx = (x - t.minX) / (t.maxX - t.minX) * (t.width  - 1);
+    const fz = (t.maxZ - z) / (t.maxZ - t.minZ) * (t.height - 1);
+    if (!(fx >= 0 && fx <= t.width - 1 && fz >= 0 && fz <= t.height - 1)) {
+        return t.seaLevel || 0;                  // off the map edge
+    }
+
+    const x0 = fx | 0, z0 = fz | 0;
+    const x1 = Math.min(x0 + 1, t.width  - 1);
+    const z1 = Math.min(z0 + 1, t.height - 1);
+    const tx = fx - x0, tz = fz - z0;
+
+    const d = t.data;
+    const a = d[z0 * t.width + x0], b = d[z0 * t.width + x1];
+    const c = d[z1 * t.width + x0], e = d[z1 * t.width + x1];
+
+    return (a + (b - a) * tx) * (1 - tz) + (c + (e - c) * tx) * tz;
+}
+
+const MASK_STEP    = 100;    // metres between profile samples
+const MASK_RADIALS = 180;    // one every two degrees
+const MAST_HEIGHT  = 10;     // antenna above local ground
+
+// Distance along one radial at which an aircraft at ownAltM passes behind
+// terrain, or maxR if it never does.
+//
+// Compares ANGLES, not heights: a low ridge close in blocks more sky than a
+// tall peak far out. The running maximum of terrain angle only rises with
+// distance while the aircraft's angle only falls, so the two cross exactly
+// once - one cutoff per radial, and the walk can stop there.
+function maskedDistance(ox, oz, obsH, bearing, maxR) {
+    const sin = Math.sin(bearing), cos = Math.cos(bearing);
+    let maxAngle = -Infinity;
+
+    for (let d = MASK_STEP; d <= maxR; d += MASK_STEP) {
+        // Tested against terrain strictly closer than d, so a sample does not
+        // block the aircraft sitting on top of it.
+        if ((ownAltM - obsH) / d < maxAngle) return d - MASK_STEP;
+
+        const h = terrainAt(ox + sin * d, oz + cos * d);
+        const angle = (h - obsH) / d;
+        if (angle > maxAngle) maxAngle = angle;
+    }
+    return maxR;
+}
+
+// Profiles are keyed by unit, altitude and radius. Panning and zooming reuse
+// them; changing altitude does not, since every angle depends on it.
+const maskCache = new Map();
+
+function maskProfileFor(unit, maxR) {
+    const key = unitPath(unit) + '|' + Math.round(ownAltM) + '|' + Math.round(maxR / 500);
+    let profile = maskCache.get(key);
+    if (profile) return profile;
+
+    const obsH = terrainAt(unit.x, unit.z) + MAST_HEIGHT;
+    profile = new Float32Array(MASK_RADIALS);
+    for (let i = 0; i < MASK_RADIALS; i++) {
+        profile[i] = maskedDistance(unit.x, unit.z, obsH,
+                                    i * 2 * Math.PI / MASK_RADIALS, maxR);
+    }
+
+    if (maskCache.size > 4000) maskCache.clear();
+    maskCache.set(key, profile);
+    return profile;
+}
+
+// Masking is skipped while the altitude is being dragged. A full pass is tens
+// of millions of samples, which would stall the drag; plain circles are drawn
+// until the control settles, then the masked shapes replace them.
+let maskSuspended = false;
+let maskTimer = null;
+
+function suspendMask() {
+    maskSuspended = true;
+    clearTimeout(maskTimer);
+    maskTimer = setTimeout(() => {
+        maskSuspended = false;
+        if (currentMission) draw(currentMission);
+    }, 180);
+}
+
+// ---------------------------------------------------------------------------
+// Ring labels
+//
+// A mission with dozens of ringed units produces hundreds of labels, most of
+// them repeats: twenty identical emplacements yield twenty identical plates.
+// Two separate problems, handled separately.
+//
+//   OVERLAP    labels landing on top of each other. Candidates are collected
+//              first, ranked, then placed only where they clear everything
+//              already placed - the standard cartographic approach, and the
+//              reason placement is a second pass rather than inline.
+//
+//   REPETITION labels that do not overlap but say the same thing. A repeat of
+//              text already on screen is placed only beyond LABEL_SPACING, so
+//              a cluster is labelled once rather than fifteen times.
+//
+// Ranking decides what survives a collision: weapon envelopes over sensors,
+// then larger rings over smaller.
+// ---------------------------------------------------------------------------
+// Rings and labels drawn this frame, in screen coordinates, so the cursor can
+// be tested against what is actually on screen - the same approach drawnUnits
+// uses for the symbols.
+let drawnRings  = [];
+let drawnLabels = [];
+
+// Identifies a ring across redraws. Ring objects are rebuilt every frame, so
+// object identity cannot carry a hover between them.
+function ringKey(unit, ring) {
+    return unitPath(unit) + '|' + ring.kind + '|' + ring.label;
+}
+
+let hoveredRing = null;   // { key, unit } or null
+
+// Radius of a ring along one bearing, following the masked outline where there
+// is one. Nearest radial rather than interpolated: the profile is sampled every
+// two degrees and the hit tolerance is wider than the difference.
+function ringRadiusAt(ring, profile, bearing) {
+    if (!profile) return ring.r;
+    const i = Math.round(bearing / (Math.PI * 2) * profile.length) % profile.length;
+    return Math.min(profile[i], ring.r);
+}
+
+// The ring outline under the cursor, or null. Tests the EDGE, not the interior,
+// so nested rings each stay selectable.
+function ringAtScreen(sx, sy) {
+    for (const d of drawnRings) {
+        const dx = sx - d.x, dy = sy - d.y;
+        let bearing = Math.atan2(dx, -dy);
+        if (bearing < 0) bearing += Math.PI * 2;
+
+        const r = ringRadiusAt(d.ring, d.profile, bearing) * d.mPerPx;
+        if (Math.abs(Math.hypot(dx, dy) - r) < 6) return d;
+    }
+    return null;
+}
+
+function labelAtScreen(sx, sy) {
+    for (const l of drawnLabels) {
+        if (sx >= l.x && sx <= l.x + l.w && sy >= l.y && sy <= l.y + l.h) return l;
+    }
+    return null;
+}
+
+const LABEL_SPACING = 240;      // px between repeats of the same text
+const LABEL_PAD     = 3;        // px of clearance required around each plate
+
+const KIND_RANK = { weapon: 0, radar: 1, optical: 2 };
+
+function placeLabels(ctx, candidates) {
+    candidates.sort((a, b) =>
+        (KIND_RANK[a.kind] - KIND_RANK[b.kind]) || (b.r - a.r));
+
+    const placed = [];
+
+    ctx.font = '11px ui-monospace, Consolas, monospace';
+    for (const c of candidates) {
+        const w = ctx.measureText(c.text).width + 8;
+        const h = 16;
+        const box = { x: c.x - w / 2, y: c.y - h / 2, w: w, h: h };
+
+        let blocked = false;
+        for (const q of placed) {
+            if (q.text === c.text &&
+                Math.hypot(q.cx - c.x, q.cy - c.y) < LABEL_SPACING) {
+                blocked = true; break;
+            }
+            if (box.x - LABEL_PAD < q.x + q.w && box.x + box.w + LABEL_PAD > q.x &&
+                box.y - LABEL_PAD < q.y + q.h && box.y + box.h + LABEL_PAD > q.y) {
+                blocked = true; break;
+            }
+        }
+        if (blocked) continue;
+
+        const emphasis = hoveredRing && hoveredRing.key === c.key;
+        plate(ctx, c.text, c.x, c.y, emphasis ? '#ffffff' : c.colour);
+        placed.push({ x: box.x, y: box.y, w: w, h: h,
+                      cx: c.x, cy: c.y, text: c.text });
+        drawnLabels.push({ x: box.x, y: box.y, w: w, h: h,
+                           key: c.key, unit: c.unit, ring: c.ring });
+    }
+}
+
+// A circle, or the masked outline when a profile is supplied.
+function ringPath(ctx, p, radiusM, mPerPx, profile) {
+    ctx.beginPath();
+    if (!profile) {
+        ctx.arc(p.x, p.y, radiusM * mPerPx, 0, Math.PI * 2);
+        return;
+    }
+    for (let i = 0; i < profile.length; i++) {
+        const bearing = i * 2 * Math.PI / profile.length;
+        const d = Math.min(profile[i], radiusM) * mPerPx;
+        const x = p.x + Math.sin(bearing) * d;
+        const y = p.y - Math.cos(bearing) * d;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
 }
 
 // The centre mark, drawn on top of the units so it is never buried. Constant
@@ -1986,20 +2299,38 @@ canvas.addEventListener('mousemove', (e) => {
 
     if (dragging) { tip.style.display = 'none'; return; }
 
+    // Symbols first, then labels, then ring outlines: the topmost thing under
+    // the cursor wins, and a label is an easier target than a one-pixel edge.
     const found = unitAt(e.offsetX, e.offsetY);
+    const hit = found ? null
+                      : (labelAtScreen(e.offsetX, e.offsetY) ||
+                         ringAtScreen(e.offsetX, e.offsetY));
 
-    // Only repaint when the hovered unit actually CHANGES. Redrawing on every
+    const unit = found || (hit && hit.unit) || null;
+    const key  = hit ? hit.key : null;
+
+    // Only repaint when the hovered thing actually CHANGES. Redrawing on every
     // mousemove would mean ~60 full redraws a second for no visible difference.
-    if (found !== hoveredUnit) {
-        hoveredUnit = found;
+    if (unit !== hoveredUnit || key !== (hoveredRing && hoveredRing.key)) {
+        hoveredUnit = unit;
+        hoveredRing = hit ? { key: hit.key, unit: hit.unit } : null;
         if (currentMission) draw(currentMission);
     }
 
-    showTip(found, e.clientX, e.clientY);
+    canvas.style.cursor = (measure && !measure.done) ? 'crosshair'
+                        : (found || hit) ? 'pointer' : '';
+
+    if (hit) showRingTip(hit, e.clientX, e.clientY);
+    else showTip(found, e.clientX, e.clientY);
 });
 
 canvas.addEventListener('mouseleave', () => {
     tip.style.display = 'none';
+    if (hoveredRing) {
+        hoveredRing = null;
+        hoveredUnit = null;
+        if (currentMission) draw(currentMission);
+    }
 });
 
 canvas.addEventListener('dblclick', () => {
@@ -2022,6 +2353,27 @@ canvas.addEventListener('dblclick', () => {
 // about what they do. Map features - place a bullseye, measure, draw a range
 // ring - are entries here rather than controls competing for panel space.
 // ---------------------------------------------------------------------------
+// Tooltip for a hovered ring: which unit it belongs to, and what the ring is.
+function showRingTip(hit, clientX, clientY) {
+    const ring = hit.ring, unit = hit.unit;
+    const kind = ring.kind === 'weapon' ? 'Weapon envelope'
+               : ring.kind === 'radar'  ? 'Radar detection'
+               : 'Optical / IR';
+
+    tip.innerHTML =
+        '<b>' + unitName(unit.type) + '</b>' +
+        '<div style="color:#8a9aa6;margin-top:2px;">' + unit.unitName + '</div>' +
+        '<div style="margin-top:4px;">' + kind + '</div>' +
+        '<div style="color:#9fb6c6;">' + ring.label +
+        (ring.capped ? '  (horizon limited)' : '') +
+        (ring.inBand === false ? '  (altitude out of band)' : '') + '</div>' +
+        (ring.los ? '' : '<div style="color:#8a9aa6;">not terrain limited</div>');
+
+    tip.style.display = 'block';
+    tip.style.left = (clientX + 14) + 'px';
+    tip.style.top  = (clientY + 14) + 'px';
+}
+
 const menu = document.getElementById('menu');
 
 function hideMenu() { menu.style.display = 'none'; }

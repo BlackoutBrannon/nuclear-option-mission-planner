@@ -1,0 +1,31 @@
+{
+ "_format": "int16 little-endian metres, row-major, north-to-south rows, west-to-east columns",
+ "maps": {
+  "Heartland": {
+   "file": "Heartland.bin",
+   "width": 1639,
+   "height": 1639,
+   "spacing": 50,
+   "minX": -40960.0,
+   "maxX": 40960.0,
+   "minZ": -40960.0,
+   "maxZ": 40960.0,
+   "seaLevel": 0,
+   "capturedUtc": "2026-09-02T10:22:42.7710950Z",
+   "gameVersion": "0.34.1_111fcd8b50e6"
+  },
+  "Ignus": {
+   "file": "Ignus.bin",
+   "width": 3154,
+   "height": 1535,
+   "spacing": 50,
+   "minX": -78072.9,
+   "maxX": 79573.5,
+   "minZ": -39419.9,
+   "maxZ": 37316.3,
+   "seaLevel": 0,
+   "capturedUtc": "2026-09-02T09:46:15.0851529Z",
+   "gameVersion": "0.34.1_111fcd8b50e6"
+  }
+ }
+}
