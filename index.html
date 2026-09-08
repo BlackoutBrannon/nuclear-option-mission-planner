@@ -104,6 +104,36 @@
       <div id="ringPanelCorner" title="Drag to resize"></div>
     </aside>
 
+    <!-- Flights and their routes. A third instance of the same window. -->
+    <aside id="flightPanel" hidden>
+      <div id="flightPanelHead">
+        <span>Flights</span>
+        <button id="flightPanelClose" title="Close (reopen from the bar below)">&times;</button>
+      </div>
+
+      <div id="flightPanelBody">
+        <div class="group">
+          <div class="ringActions">
+            <button id="flightNew" type="button">New flight</button>
+            <button id="flightAppend" type="button"
+                    title="Continue adding waypoints to the selected flight">Add legs</button>
+            <button id="flightDelete" type="button">Delete</button>
+          </div>
+          <div id="flightList"></div>
+        </div>
+
+        <div class="group">
+          <div class="title">Waypoints <span id="flightTotal"></span></div>
+          <div id="waypointList"></div>
+          <div class="hint">Click the map to place waypoints, double-click or
+            Escape to finish. Drag a waypoint to move it.</div>
+        </div>
+      </div>
+
+      <div id="flightPanelResize" title="Drag to resize"></div>
+      <div id="flightPanelCorner" title="Drag to resize"></div>
+    </aside>
+
     <main id="mapArea">
       <canvas id="map"></canvas>
     </main>
@@ -118,6 +148,7 @@
   <div id="status">
     <button id="panelToggle" title="Show or hide the mission panel">Panel</button>
     <button id="ringPanelToggle" title="Show or hide the threat ring controls">Rings</button>
+    <button id="flightPanelToggle" title="Show or hide flights and routes">Flights</button>
     <span class="vsep"></span>
     <span id="stPos">—</span>
     <span id="stBull"></span>

@@ -234,6 +234,8 @@ const mainWin = makeWindow('panel', 'panel',
                            { x: 12, y: 12, w: 300, h: 0, open: true });
 const ringWin = makeWindow('ringPanel', 'ringPanel',
                            { x: 326, y: 12, w: 330, h: 460, open: false });
+const flightWin = makeWindow('flightPanel', 'flightPanel',
+                             { x: 670, y: 12, w: 330, h: 430, open: false });
 
 function setPanelOpen(open) { mainWin.setOpen(open); }
 
@@ -1492,6 +1494,140 @@ function ringPath(ctx, p, radiusM, mPerPx, profile) {
     ctx.closePath();
 }
 
+// ---------------------------------------------------------------------------
+// Flights and routes
+//
+// A flight is an ordered list of waypoints, each carrying its own altitude, so
+// a route can descend into a valley and climb out again. Altitude is per
+// waypoint rather than per flight because it is what decides whether a leg sits
+// inside a threat envelope, and that changes along a route.
+//
+// Waypoints are world metres, like everything else on the map, so a route holds
+// its position through pan and zoom.
+// ---------------------------------------------------------------------------
+const FLIGHT_COLOURS = [
+    '#8ecbff', '#ffd166', '#6ee7b7', '#e58fd0', '#f0a37a', '#a5b4fc',
+];
+
+const flights = [];      // { name, colour, visible, waypoints: [{x,z,alt}] }
+let activeFlight = -1;   // index into flights, or -1
+
+// Appending waypoints to the active flight. A mode, like measuring, so the
+// left button drops a waypoint rather than starting a pan.
+let routeMode = false;
+let routeCursor = null;  // world position of the rubber band end
+let dragWaypoint = null; // { flight, index } while one is being moved
+
+function flightTotal(f) {
+    let total = 0;
+    for (let i = 1; i < f.waypoints.length; i++) {
+        total += bearingRange(f.waypoints[i - 1], f.waypoints[i]).range;
+    }
+    return total;
+}
+
+// Measuring and route editing both claim the left button, so starting either
+// one ends the other. Two live modes would leave a click ambiguous.
+function endRouteMode() {
+    routeMode = false;
+    routeCursor = null;
+    canvas.style.cursor = '';
+    renderFlights();
+    if (currentMission) draw(currentMission);
+}
+
+function startRouteMode() {
+    if (activeFlight < 0) return;
+    clearMeasure();
+    routeMode = true;
+    canvas.style.cursor = 'crosshair';
+    renderFlights();
+    if (currentMission) draw(currentMission);
+}
+
+function newFlight() {
+    flights.push({
+        name: 'Flight ' + (flights.length + 1),
+        colour: FLIGHT_COLOURS[flights.length % FLIGHT_COLOURS.length],
+        visible: true,
+        waypoints: [],
+    });
+    activeFlight = flights.length - 1;
+    startRouteMode();
+}
+
+// The waypoint under the cursor, searched newest first so an overlapping pair
+// resolves to the one drawn on top.
+function waypointAt(sx, sy) {
+    for (let fi = flights.length - 1; fi >= 0; fi--) {
+        const f = flights[fi];
+        if (!f.visible) continue;
+        for (let i = f.waypoints.length - 1; i >= 0; i--) {
+            const p = toScreen(f.waypoints[i].x, f.waypoints[i].z);
+            if (Math.hypot(sx - p.x, sy - p.y) < 9) return { flight: fi, index: i };
+        }
+    }
+    return null;
+}
+
+function drawFlights(ctx) {
+    for (let fi = 0; fi < flights.length; fi++) {
+        const f = flights[fi];
+        if (!f.visible || !f.waypoints.length) continue;
+
+        const pts = f.waypoints.slice();
+        if (routeMode && fi === activeFlight && routeCursor) pts.push(routeCursor);
+        const scr = pts.map(w => toScreen(w.x, w.z));
+
+        ctx.save();
+
+        // Halo then the line, as elsewhere, so a route stays legible over any
+        // terrain and over the threat rings beneath it.
+        for (const pass of [{ c: 'rgba(11,16,20,0.9)', w: 5 },
+                            { c: f.colour,             w: 2.2 }]) {
+            ctx.strokeStyle = pass.c;
+            ctx.lineWidth   = pass.w;
+            ctx.beginPath();
+            ctx.moveTo(scr[0].x, scr[0].y);
+            for (let i = 1; i < scr.length; i++) ctx.lineTo(scr[i].x, scr[i].y);
+            ctx.stroke();
+        }
+
+        // Numbered waypoints. The number is what identifies a waypoint in the
+        // panel, so it is on the map rather than a bare dot.
+        ctx.font = '600 10px ui-monospace, Consolas, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i < f.waypoints.length; i++) {
+            const q = scr[i];
+            const hot = dragWaypoint && dragWaypoint.flight === fi &&
+                        dragWaypoint.index === i;
+            ctx.beginPath();
+            ctx.arc(q.x, q.y, hot ? 9 : 7, 0, Math.PI * 2);
+            ctx.fillStyle   = hot ? '#ffffff' : f.colour;
+            ctx.strokeStyle = '#0b1014';
+            ctx.lineWidth   = 2;
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#0b1014';
+            ctx.fillText(String(i + 1), q.x, q.y + 0.5);
+        }
+
+        // Leg detail at the midpoint, skipped when the leg is too short to
+        // hold it without covering its own waypoints.
+        for (let i = 1; i < pts.length; i++) {
+            const a = scr[i - 1], b = scr[i];
+            if (Math.hypot(b.x - a.x, b.y - a.y) < 60) continue;
+            const br = bearingRange(pts[i - 1], pts[i]);
+            plate(ctx, fmtBearing(br.bearing) + '  ' + fmtRange(br.range),
+                  (a.x + b.x) / 2, (a.y + b.y) / 2, f.colour);
+        }
+
+        plate(ctx, f.name, scr[0].x, scr[0].y - 16, f.colour);
+        ctx.restore();
+    }
+}
+
 // The centre mark, drawn on top of the units so it is never buried. Constant
 // screen size, unlike the rose.
 function drawBullseyeCentre(ctx) {
@@ -1598,6 +1734,7 @@ setRingColour(ringColour);
 let measure = null;   // { kind, points: [{x,z}], cursor: {x,z}|null, done }
 
 function startMeasure(at, kind, label) {
+    if (routeMode) endRouteMode();
     measure = { kind: kind || 'path', points: [at], cursor: at,
                 done: false, label: label || null };
     canvas.style.cursor = 'crosshair';
@@ -2171,6 +2308,9 @@ function draw(mission) {
     drawRings(ctx);
     drawThreatRings(ctx, units);
 
+    // Above the rings the route is read against, below the symbols.
+    drawFlights(ctx);
+
     for (const unit of units) {
         const p = toScreen(unit.x, unit.z);
         drawSymbol(ctx, p.x, p.y, unit);
@@ -2279,13 +2419,37 @@ document.getElementById('unitToggle').addEventListener('click', (e) => {
     unitSystem = (unitSystem === 'aviation') ? 'metric' : 'aviation';
     e.target.textContent = (unitSystem === 'aviation') ? 'NM / ft' : 'km / m';
     refreshAltField();
+    renderWaypoints();      // waypoint altitudes are shown in the chosen unit
     updateOwnship();
 });
 
 canvas.addEventListener('mousemove', (e) => {
     // The cursor is stored before updateStatus runs, because updateStatus adds
     // the open leg into the running total and must read the current position.
-    if (measure && !measure.done) measure.cursor = toWorld(e.offsetX, e.offsetY);
+    if (measure && !measure.done && !dragging) {
+        measure.cursor = toWorld(e.offsetX, e.offsetY);
+    }
+
+    if (dragWaypoint) {
+        const at = toWorld(e.offsetX, e.offsetY);
+        const w = flights[dragWaypoint.flight].waypoints[dragWaypoint.index];
+        w.x = at.x; w.z = at.z;
+        updateStatus(e.offsetX, e.offsetY);
+        renderFlights();
+        if (currentMission) draw(currentMission);
+        return;
+    }
+
+    // While the map is being dragged the readout still follows the pointer,
+    // but the open leg does not: the world under the cursor is moving, and
+    // chasing it makes the rubber band swing about.
+    if (routeMode && activeFlight >= 0) {
+        if (!dragging) routeCursor = toWorld(e.offsetX, e.offsetY);
+        tip.style.display = 'none';
+        updateStatus(e.offsetX, e.offsetY);
+        if (currentMission) draw(currentMission);
+        return;
+    }
 
     updateStatus(e.offsetX, e.offsetY);
 
@@ -2334,6 +2498,7 @@ canvas.addEventListener('mouseleave', () => {
 });
 
 canvas.addEventListener('dblclick', () => {
+    if (routeMode) { endRouteMode(); return; }
     if (!measure || measure.done || measure.kind !== 'path') return;
 
     // A double-click is two clicks, and both already dropped a point. Throw the
@@ -2373,6 +2538,146 @@ function showRingTip(hit, clientX, clientY) {
     tip.style.left = (clientX + 14) + 'px';
     tip.style.top  = (clientY + 14) + 'px';
 }
+
+// ---------------------------------------------------------------------------
+// The flights panel
+// ---------------------------------------------------------------------------
+const flightListEl = document.getElementById('flightList');
+const waypointListEl = document.getElementById('waypointList');
+const flightTotalEl = document.getElementById('flightTotal');
+
+function renderFlights() {
+    flightListEl.innerHTML = '';
+
+    if (!flights.length) {
+        flightListEl.innerHTML =
+            '<div class="hint">No flights yet. New flight, then click the map.</div>';
+    }
+
+    flights.forEach((f, i) => {
+        const row = document.createElement('div');
+        row.className = 'flightRow' + (i === activeFlight ? ' active' : '');
+        row.addEventListener('click', () => {
+            activeFlight = i;
+            renderFlights();
+            if (currentMission) draw(currentMission);
+        });
+
+        const vis = document.createElement('input');
+        vis.type = 'checkbox';
+        vis.checked = f.visible;
+        vis.title = 'Show this route';
+        vis.addEventListener('click', e => e.stopPropagation());
+        vis.addEventListener('change', () => {
+            f.visible = vis.checked;
+            if (currentMission) draw(currentMission);
+        });
+
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.style.background = f.colour;
+
+        const name = document.createElement('input');
+        name.className = 'nm';
+        name.value = f.name;
+        name.addEventListener('click', e => e.stopPropagation());
+        name.addEventListener('input', () => {
+            f.name = name.value;
+            if (currentMission) draw(currentMission);
+        });
+
+        const ct = document.createElement('span');
+        ct.className = 'ct';
+        ct.textContent = f.waypoints.length + ' wp  ' + fmtRange(flightTotal(f));
+
+        row.append(vis, chip, name, ct);
+        flightListEl.appendChild(row);
+    });
+
+    renderWaypoints();
+}
+
+function renderWaypoints() {
+    waypointListEl.innerHTML = '';
+    const f = flights[activeFlight];
+
+    if (!f) {
+        flightTotalEl.textContent = '';
+        waypointListEl.innerHTML = '<div class="hint">Select a flight.</div>';
+        return;
+    }
+
+    flightTotalEl.textContent = f.waypoints.length
+        ? fmtRange(flightTotal(f)) + (routeMode ? '   adding\u2026' : '') : '';
+
+    f.waypoints.forEach((w, i) => {
+        const row = document.createElement('div');
+        row.className = 'wpRow';
+
+        const n = document.createElement('span');
+        n.className = 'n';
+        n.textContent = i + 1;
+
+        const leg = document.createElement('span');
+        leg.className = 'leg';
+        leg.textContent = i === 0 ? 'start'
+            : (br => fmtBearing(br.bearing) + '  ' + fmtRange(br.range))
+              (bearingRange(f.waypoints[i - 1], w));
+
+        // Altitude is shown in the unit currently selected in the bar, and
+        // stored in metres, so switching units never alters the route.
+        const alt = document.createElement('input');
+        alt.className = 'alt';
+        alt.type = 'number';
+        alt.step = unitSystem === 'aviation' ? 500 : 100;
+        alt.value = Math.round(unitSystem === 'aviation'
+                               ? w.alt * FT_PER_M : w.alt);
+        alt.title = 'Altitude at this waypoint';
+        alt.addEventListener('input', () => {
+            const v = parseFloat(alt.value);
+            if (!isFinite(v) || v < 0) return;
+            w.alt = unitSystem === 'aviation' ? v / FT_PER_M : v;
+            if (currentMission) draw(currentMission);
+        });
+
+        const del = document.createElement('button');
+        del.className = 'del';
+        del.type = 'button';
+        del.textContent = '\u00d7';
+        del.title = 'Remove this waypoint';
+        del.addEventListener('click', () => {
+            f.waypoints.splice(i, 1);
+            renderFlights();
+            if (currentMission) draw(currentMission);
+        });
+
+        row.append(n, leg, alt, del);
+        waypointListEl.appendChild(row);
+    });
+
+    if (!f.waypoints.length) {
+        waypointListEl.innerHTML =
+            '<div class="hint">Click the map to place the first waypoint.</div>';
+    }
+}
+
+document.getElementById('flightNew').addEventListener('click', () => {
+    flightWin.setOpen(true);
+    newFlight();
+});
+
+document.getElementById('flightAppend').addEventListener('click', () => {
+    if (routeMode) endRouteMode(); else startRouteMode();
+});
+
+document.getElementById('flightDelete').addEventListener('click', () => {
+    if (activeFlight < 0) return;
+    flights.splice(activeFlight, 1);
+    activeFlight = Math.min(activeFlight, flights.length - 1);
+    endRouteMode();
+});
+
+renderFlights();
 
 const menu = document.getElementById('menu');
 
@@ -2574,6 +2879,7 @@ window.addEventListener('keydown', (e) => {
     // Escape unwinds one layer at a time: menu, then the measurement in
     // progress, then the finished measurement still on screen.
     if (menu.style.display === 'block')   { hideMenu(); }
+    else if (routeMode)                   { endRouteMode(); }
     // A half-dragged ring is abandoned, not committed - Escape means "forget
     // this", and endMeasure would keep it.
     else if (measure && !measure.done)    {
@@ -2608,19 +2914,43 @@ canvas.addEventListener('wheel', (e) => {
 });
 
 
-canvas.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return;      // left button only - right-click opens the menu
+// A press that is waiting to become either a click or a drag.
+//
+// Placing tools and panning both want the left button, and taking it for
+// placement outright makes the map immovable while a route or measurement is
+// open. The press is therefore held until the button is released: moved more
+// than DRAG_SLOP, it was a pan; otherwise it places a point at where the press
+// began, not where the pointer ended up.
+const DRAG_SLOP = 4;             // px of travel before a press counts as a drag
+let press = null;                // { ox, oy, x, y, moved } while held
 
-    // The mode check. While a measurement is being built the left button means
-    // "drop a point", so panning must not also start - otherwise the map slides
-    // under you every time you place one.
-    if (measure && !measure.done) {
-        measure.points.push(toWorld(e.offsetX, e.offsetY));
-        // A circle is finished by the one click that sets its radius - there is
-        // no second leg to add, so there is nothing to double-click to end.
-        if (measure.kind === 'circle') endMeasure();
-        else if (currentMission) draw(currentMission);
+canvas.addEventListener('mousedown', (e) => {
+    // Middle button always pans, in every mode, so there is a way to move the
+    // map that never has to be disambiguated from anything else.
+    if (e.button === 1) {
+        e.preventDefault();      // suppress autoscroll
+        dragging = true;
+        lastX = e.clientX;
+        lastY = e.clientY;
         return;
+    }
+
+    if (e.button !== 0) return;  // right-click opens the menu
+
+    // Grabbing an existing waypoint is unambiguous and takes precedence.
+    const grab = waypointAt(e.offsetX, e.offsetY);
+    if (grab) {
+        dragWaypoint = grab;
+        activeFlight = grab.flight;
+        renderFlights();
+        if (currentMission) draw(currentMission);
+        return;
+    }
+
+    const placing = (routeMode && activeFlight >= 0) || (measure && !measure.done);
+    if (placing) {
+        press = { ox: e.offsetX, oy: e.offsetY,
+                  x: e.clientX, y: e.clientY, moved: false };
     }
 
     dragging = true;
@@ -2628,8 +2958,37 @@ canvas.addEventListener('mousedown', (e) => {
     lastY = e.clientY;
 });
 
+// Called from mouseup when a press never travelled far enough to be a drag.
+function placeAtPress(p) {
+    if (routeMode && activeFlight >= 0) {
+        const at = toWorld(p.ox, p.oy);
+        flights[activeFlight].waypoints.push({ x: at.x, z: at.z, alt: ownAltM });
+        renderFlights();
+        if (currentMission) draw(currentMission);
+        return;
+    }
+
+    if (measure && !measure.done) {
+        measure.points.push(toWorld(p.ox, p.oy));
+        // A circle is finished by the one click that sets its radius - there is
+        // no second leg to add, so there is nothing to double-click to end.
+        if (measure.kind === 'circle') endMeasure();
+        else if (currentMission) draw(currentMission);
+    }
+}
+
 window.addEventListener('mousemove', (e) => {
     if (!dragging) return;
+
+    // Below the slop threshold the map does not move at all, so a click that
+    // wobbles by a pixel still places a point exactly where it was pressed.
+    if (press && !press.moved) {
+        if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < DRAG_SLOP) return;
+        press.moved = true;
+        lastX = press.x;
+        lastY = press.y;
+    }
+
     view.panX += e.clientX - lastX;
     view.panY += e.clientY - lastY;
     lastX = e.clientX;
@@ -2639,6 +2998,17 @@ window.addEventListener('mousemove', (e) => {
 
 window.addEventListener('mouseup', () => {
     dragging = false;
+
+    if (press) {
+        const p = press;
+        press = null;
+        if (!p.moved) placeAtPress(p);
+    }
+
+    if (dragWaypoint) {
+        dragWaypoint = null;
+        if (currentMission) draw(currentMission);
+    }
 });
 drop.addEventListener('drop', async (e) => {
   e.preventDefault();

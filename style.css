@@ -42,11 +42,11 @@ html, body {
   box-shadow: 0 6px 22px rgba(0,0,0,.5);
 }
 
-#panel[hidden], #ringPanel[hidden] { display: none; }
+#panel[hidden], #ringPanel[hidden], #flightPanel[hidden] { display: none; }
 
 /* The second window shares the first one's look. Selector list rather than a
    shared class so the existing markup did not have to change. */
-#ringPanel {
+#ringPanel, #flightPanel {
   position: absolute;
   left: 326px; top: 12px;
   width: 330px; height: 460px;
@@ -59,12 +59,12 @@ html, body {
   backdrop-filter: blur(3px);
   box-shadow: 0 6px 22px rgba(0,0,0,.5);
 }
-#ringPanelBody {
+#ringPanelBody, #flightPanelBody {
   flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px 14px;
 }
 
-#ringPanelHead { /* shares the rules below */ }
-#panelHead, #ringPanelHead {
+#ringPanelHead, #flightPanelHead { /* share the rules below */ }
+#panelHead, #ringPanelHead, #flightPanelHead {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 8px 8px 14px;
   border-bottom: 1px solid #2a353d;
@@ -76,7 +76,7 @@ html, body {
 #panelHead:active { cursor: grabbing; }
 #panelTitle { flex: 1; }
 
-#panelClose, #ringPanelClose {
+#panelClose, #ringPanelClose, #flightPanelClose {
   width: 22px; height: 22px;
   display: grid; place-items: center;
   background: transparent; color: #8b98a5;
@@ -84,10 +84,10 @@ html, body {
   font-size: 17px; line-height: 1; cursor: pointer;
   font-family: inherit;
 }
-#panelClose:hover, #ringPanelClose:hover { background: #3a2226; border-color: #6d3b3f; color: #f3b3b3; }
+#panelClose:hover, #ringPanelClose:hover, #flightPanelClose:hover { background: #3a2226; border-color: #6d3b3f; color: #f3b3b3; }
 
 /* Bottom-right corner: width AND height together. */
-#panelCorner, #ringPanelCorner {
+#panelCorner, #ringPanelCorner, #flightPanelCorner {
   position: absolute;
   right: 0; bottom: 0;
   width: 16px; height: 16px;
@@ -99,7 +99,8 @@ html, body {
   opacity: .55;
 }
 #panelCorner:hover, #panelCorner.dragging,
-#ringPanelCorner:hover, #ringPanelCorner.dragging { opacity: 1; }
+#ringPanelCorner:hover, #ringPanelCorner.dragging,
+#flightPanelCorner:hover, #flightPanelCorner.dragging { opacity: 1; }
 
 #panelBody {
   flex: 1;                          /* soak up remaining height */
@@ -110,7 +111,7 @@ html, body {
 
 /* Visible grip, not just an invisible hot zone - you should be able to see that
    the edge is draggable without discovering it by accident. */
-#panelResize, #ringPanelResize {
+#panelResize, #ringPanelResize, #flightPanelResize {
   position: absolute;
   top: 0; bottom: 16px; right: 0;
   width: 7px;
@@ -122,8 +123,9 @@ html, body {
   transition: opacity .12s;
 }
 #panelResize:hover, #panelResize.dragging,
-#ringPanelResize:hover, #ringPanelResize.dragging { opacity: 1; }
-#panelResize.dragging, #ringPanelResize.dragging { background-color: rgba(142,203,255,.18); }
+#ringPanelResize:hover, #ringPanelResize.dragging,
+#flightPanelResize:hover, #flightPanelResize.dragging { opacity: 1; }
+#panelResize.dragging, #ringPanelResize.dragging, #flightPanelResize.dragging { background-color: rgba(142,203,255,.18); }
 
 /* While dragging, stop the pointer selecting text across the whole page. */
 body.resizing { user-select: none; cursor: col-resize; }
@@ -348,16 +350,17 @@ select {
   margin: 0 -4px;
 }
 
-#unitToggle, #panelToggle, #ringPanelToggle {
+#unitToggle, #panelToggle, #ringPanelToggle, #flightPanelToggle {
   background: #1c262d; color: #cdd9e3;
   border: 1px solid #3d4a55; border-radius: 3px;
   padding: 3px 8px; font-size: 11px; cursor: pointer;
   font-family: inherit;
 }
-#unitToggle:hover, #panelToggle:hover, #ringPanelToggle:hover { background: #24313a; }
+#unitToggle:hover, #panelToggle:hover, #ringPanelToggle:hover, #flightPanelToggle:hover { background: #24313a; }
 /* Pressed-in look while the panel is open, so the button's state is readable
    from its shape and not only from its colour. */
-#panelToggle[aria-pressed="true"], #ringPanelToggle[aria-pressed="true"] {
+#panelToggle[aria-pressed="true"], #ringPanelToggle[aria-pressed="true"],
+#flightPanelToggle[aria-pressed="true"] {
   background: #2c3d49; border-color: #5a6e7c; color: #eaf2f8;
   box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
 }
@@ -416,3 +419,61 @@ select {
 #tip .n { font-weight: 600; }
 #tip .r { color: #8ecbff; }
 #tip .k { color: #6f7d88; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+
+
+/* --- flights ------------------------------------------------------------ */
+
+.flightRow {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 5px; font-size: 12px;
+  border: 1px solid transparent; border-radius: 3px;
+  cursor: pointer;
+}
+.flightRow:hover { background: #1c262d; }
+/* The selected flight is marked by a left bar and a lighter ground, not by
+   colour alone - every row already carries a different colour chip. */
+.flightRow.active {
+  background: #22303a; border-color: #3d4a55;
+  box-shadow: inset 3px 0 0 #8ecbff;
+}
+.flightRow .chip {
+  width: 11px; height: 11px; border-radius: 2px;
+  border: 1px solid #0b1014; flex: none;
+}
+.flightRow .nm {
+  flex: 1; background: transparent; border: 0; color: #e6edf3;
+  font: inherit; padding: 1px 2px; min-width: 0;
+}
+.flightRow .nm:focus { outline: 1px solid #3da5ff; border-radius: 2px; }
+.flightRow .ct { color: #6f7d88; font-size: 10px; }
+
+#flightTotal { color: #9fb6c6; font-family: ui-monospace, Consolas, monospace;
+               text-transform: none; letter-spacing: 0; }
+
+.wpRow {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 0; font-size: 12px;
+  border-bottom: 1px solid #1a232a;
+}
+.wpRow .n {
+  width: 18px; height: 18px; flex: none;
+  display: grid; place-items: center;
+  background: #22303a; border: 1px solid #3d4a55; border-radius: 50%;
+  font-size: 10px; font-family: ui-monospace, Consolas, monospace;
+}
+.wpRow .leg {
+  flex: 1; color: #9fb6c6;
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+}
+.wpRow input.alt {
+  width: 62px; text-align: right;
+  background: #223039; color: #e2ecf4;
+  border: 1px solid #55707f; border-radius: 3px;
+  padding: 1px 4px; font: inherit; font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.wpRow .del {
+  background: transparent; border: 0; color: #6f7d88;
+  cursor: pointer; font-size: 14px; line-height: 1; padding: 0 3px;
+}
+.wpRow .del:hover { color: #f3b3b3; }
