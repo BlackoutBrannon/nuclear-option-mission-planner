@@ -149,6 +149,7 @@ body.resizing { user-select: none; cursor: col-resize; }
 .key-weapon  { border-top: 2px solid  #f0857a; }
 .key-radar   { border-top: 2px dashed #8ecbff; }
 .key-optical { border-top: 2px dotted #ffd166; }
+.key-engaged { border-top: 4px solid #f0857a; }
 /* Masking is not a ring type, so its key is a shape rather than a line. */
 .key-mask {
   height: 8px; border: 0;

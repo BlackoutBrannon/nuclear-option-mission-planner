@@ -308,9 +308,27 @@ function renderWaypoints() {
 
         const leg = document.createElement('span');
         leg.className = 'leg';
-        leg.textContent = i === 0 ? 'start'
-            : (br => fmtBearing(br.bearing) + '  ' + fmtRange(br.range))
-              (bearingRange(f.waypoints[i - 1], w));
+        if (i === 0) {
+            leg.textContent = 'start';
+        } else {
+            const br = bearingRange(f.waypoints[i - 1], w);
+            let text = fmtBearing(br.bearing) + '  ' + fmtRange(br.range);
+
+            // How much of this leg is threatened, in the same units as the leg
+            // itself, so the two numbers can be read against each other.
+            const legs = (showExposure && ringUnits.size) ? flightExposure(f) : null;
+            const t = legs && legs[i - 1] && legs[i - 1].tally;
+            if (t && (t.engaged > 1 || t.detected > 1 || t.terrain > 1)) {
+                const bits = [];
+                if (t.terrain  > 1) bits.push(fmtRange(t.terrain) + ' BELOW GROUND');
+                if (t.engaged  > 1) bits.push(fmtRange(t.engaged) + ' engaged');
+                if (t.detected > 1) bits.push(fmtRange(t.detected) + ' seen');
+                text += '   ' + bits.join(', ');
+                leg.style.color = t.terrain > 1 ? '#ffffff'
+                                : t.engaged > 1 ? '#f0857a' : '#ffd166';
+            }
+            leg.textContent = text;
+        }
 
         // Altitude is shown in the unit currently selected in the bar, and
         // stored in metres, so switching units never alters the route.
@@ -348,6 +366,12 @@ function renderWaypoints() {
             '<div class="hint">Click the map to place the first waypoint.</div>';
     }
 }
+
+document.getElementById('flightExposure').addEventListener('change', (e) => {
+    showExposure = e.target.checked;
+    renderFlights();
+    if (currentMission) draw(currentMission);
+});
 
 document.getElementById('flightNew').addEventListener('click', () => {
     flightWin.setOpen(true);

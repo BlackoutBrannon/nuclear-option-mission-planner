@@ -93,6 +93,8 @@ function drawFlights(ctx) {
         if (routeMode && fi === activeFlight && routeCursor) pts.push(routeCursor);
         const scr = pts.map(w => toScreen(w.x, w.z));
 
+        drawExposure(ctx, f);
+
         ctx.save();
 
         // Halo then the line, as elsewhere, so a route stays legible over any
@@ -174,5 +176,163 @@ function drawBullseyeCentre(ctx) {
     ctx.fillStyle = BULL_HEX;
     ctx.fillText('BULLSEYE', p.x + 17, p.y - 6);
 
+    ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Route exposure
+//
+// Walks each leg and asks, at every sample, whether that point is inside any
+// threat envelope AT THAT POINT'S ALTITUDE. This is the reason waypoints carry
+// their own altitude: a leg that descends into a valley leaves envelopes a
+// level leg would sit inside.
+//
+// Two states are distinguished, because they mean different things:
+//
+//   TERRAIN   below the ground: the altitude is not flyable here at all
+//   ENGAGED   inside a weapon envelope whose altitude band includes you
+//   DETECTED  inside a radar or optical envelope but nothing can shoot
+//
+// TERRAIN is checked first and reported separately because it would otherwise
+// come back CLEAR - nothing can see through a mountain - which is true and
+// useless. A route that reads clear because it is underground is a fatal route
+// described as a safe one.
+//
+// Scope is the units ticked in the ring panel. That panel already means "the
+// threats I am working against", and it keeps the cost bounded and predictable
+// rather than silently walking all 750 units with envelope data.
+// ---------------------------------------------------------------------------
+const EXPOSURE_STEP = 500;      // metres between samples along a leg
+
+let showExposure = true;
+
+// Threat state at one point in space, at one altitude.
+function exposureAt(x, z, alt) {
+    // Altitudes are MSL, so a low figure over high ground puts the aircraft
+    // inside the hill rather than over it.
+    if (terrain && alt < terrainAt(x, z)) return 'terrain';
+
+    let engaged = null, detected = null;
+
+    for (const u of unitsOf(currentMission)) {
+        if (!ringUnits.has(unitPath(u))) continue;
+
+        const rings = threatRingsFor(u, alt);
+        if (!rings.length) continue;
+
+        const br = bearingRange({ x: u.x, z: u.z }, { x: x, z: z });
+        const widest = rings.reduce((m, r) => Math.max(m, r.r), 0);
+        if (br.range > widest) continue;          // outside everything this unit has
+
+        let profile = null;
+        if (showRings.mask && terrain) profile = maskProfileFor(u, widest, alt);
+
+        for (const ring of rings) {
+            const reach = (ring.los && profile)
+                ? ringRadiusAt(ring, profile, br.bearing * Math.PI / 180)
+                : ring.r;
+            if (br.range > reach) continue;
+
+            if (ring.kind === 'weapon') {
+                if (ring.inBand !== false && !engaged) engaged = ring.label;
+            } else if (!detected) {
+                detected = unitName(u.type);
+            }
+        }
+        if (engaged) break;                       // engaged is the worst case
+    }
+    return engaged ? 'engaged' : (detected ? 'detected' : 'clear');
+}
+
+// Per-leg samples for one flight, cached against the threat picture and the
+// route itself so panning and zooming never trigger a recompute.
+function flightExposure(f) {
+    const sig = ringEpoch + '|' + ownRCS + '|' + (terrain ? 1 : 0) + '|' +
+                f.waypoints.map(w => Math.round(w.x) + ',' + Math.round(w.z) +
+                                     ',' + Math.round(w.alt)).join(';');
+    if (f._expSig === sig) return f._exposure;
+
+    const legs = [];
+    for (let i = 1; i < f.waypoints.length; i++) {
+        const a = f.waypoints[i - 1], b = f.waypoints[i];
+        const dist  = bearingRange(a, b).range;
+        const steps = Math.max(2, Math.ceil(dist / EXPOSURE_STEP));
+        const states = [];
+
+        for (let k = 0; k <= steps; k++) {
+            const t = k / steps;
+            states.push(exposureAt(a.x + (b.x - a.x) * t,
+                                   a.z + (b.z - a.z) * t,
+                                   a.alt + (b.alt - a.alt) * t));
+        }
+
+        // Distance in each state, for the panel. A sample stands for the span
+        // around it, so each interior sample counts a full step and the two
+        // ends count half.
+        const span = dist / steps;
+        const tally = { clear: 0, detected: 0, engaged: 0, terrain: 0 };
+        for (let k = 0; k <= steps; k++) {
+            tally[states[k]] += (k === 0 || k === steps) ? span / 2 : span;
+        }
+        legs.push({ states: states, dist: dist, tally: tally });
+    }
+
+    f._expSig = sig;
+    f._exposure = legs;
+    return legs;
+}
+
+// Overlaid on the route line: thick solid where a weapon reaches, medium dashed
+// where something sees you but cannot shoot. Weight and pattern carry the
+// distinction, not colour alone.
+const EXPOSURE_STYLE = {
+    // White on the dark halo the route already carries, in a tight dash no
+    // other overlay uses: unflyable has to be unmistakable rather than merely
+    // a different colour.
+    terrain:  { colour: '#ffffff', width: 7, dash: [3, 3] },
+    engaged:  { colour: '#f0857a', width: 6, dash: [] },
+    detected: { colour: '#ffd166', width: 4, dash: [7, 5] },
+};
+
+function drawExposure(ctx, f) {
+    if (!showExposure || f.waypoints.length < 2) return;
+    if (!ringUnits.size || maskSuspended) return;
+
+    const legs = flightExposure(f);
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let i = 0; i < legs.length; i++) {
+        const a = f.waypoints[i], b = f.waypoints[i + 1];
+        const states = legs[i].states, steps = states.length - 1;
+
+        for (let k = 0; k < steps; k++) {
+            // A span is drawn in the worse of the states at its two ends, so a
+            // threatened stretch is never understated by half a sample.
+            const s = (states[k] === 'terrain' || states[k + 1] === 'terrain')
+                    ? 'terrain'
+                    : (states[k] === 'engaged' || states[k + 1] === 'engaged')
+                    ? 'engaged'
+                    : (states[k] === 'detected' || states[k + 1] === 'detected')
+                    ? 'detected' : 'clear';
+            if (s === 'clear') continue;
+
+            const t0 = k / steps, t1 = (k + 1) / steps;
+            const p0 = toScreen(a.x + (b.x - a.x) * t0, a.z + (b.z - a.z) * t0);
+            const p1 = toScreen(a.x + (b.x - a.x) * t1, a.z + (b.z - a.z) * t1);
+
+            const st = EXPOSURE_STYLE[s];
+            ctx.setLineDash(st.dash);
+            ctx.globalAlpha = 0.75;
+            ctx.strokeStyle = st.colour;
+            ctx.lineWidth   = st.width;
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y);
+            ctx.lineTo(p1.x, p1.y);
+            ctx.stroke();
+        }
+    }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
     ctx.restore();
 }

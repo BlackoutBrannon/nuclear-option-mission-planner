@@ -76,21 +76,24 @@ const MASK_STEP    = 100;    // metres between profile samples
 const MASK_RADIALS = 180;    // one every two degrees
 const MAST_HEIGHT  = 10;     // antenna above local ground
 
-// Distance along one radial at which an aircraft at ownAltM passes behind
+// Distance along one radial at which an aircraft at `alt` passes behind
 // terrain, or maxR if it never does.
+//
+// The altitude is a parameter rather than read from the bar, because a route
+// leg is evaluated at its own altitude, which is not the one on screen.
 //
 // Compares ANGLES, not heights: a low ridge close in blocks more sky than a
 // tall peak far out. The running maximum of terrain angle only rises with
 // distance while the aircraft's angle only falls, so the two cross exactly
 // once - one cutoff per radial, and the walk can stop there.
-function maskedDistance(ox, oz, obsH, bearing, maxR) {
+function maskedDistance(ox, oz, obsH, bearing, maxR, alt) {
     const sin = Math.sin(bearing), cos = Math.cos(bearing);
     let maxAngle = -Infinity;
 
     for (let d = MASK_STEP; d <= maxR; d += MASK_STEP) {
         // Tested against terrain strictly closer than d, so a sample does not
         // block the aircraft sitting on top of it.
-        if ((ownAltM - obsH) / d < maxAngle) return d - MASK_STEP;
+        if ((alt - obsH) / d < maxAngle) return d - MASK_STEP;
 
         const h = terrainAt(ox + sin * d, oz + cos * d);
         const angle = (h - obsH) / d;
@@ -103,8 +106,15 @@ function maskedDistance(ox, oz, obsH, bearing, maxR) {
 // them; changing altitude does not, since every angle depends on it.
 const maskCache = new Map();
 
-function maskProfileFor(unit, maxR) {
-    const key = unitPath(unit) + '|' + Math.round(ownAltM) + '|' + Math.round(maxR / 500);
+// Altitudes are bucketed before they reach the cache. A climbing leg passes
+// through a continuum of altitudes, and keying on each one exactly would mean a
+// fresh profile - some milliseconds of ray walking - for every sample along it.
+const MASK_ALT_BUCKET = 250;   // metres
+
+function maskProfileFor(unit, maxR, alt) {
+    const a = Math.round((alt === undefined ? ownAltM : alt) / MASK_ALT_BUCKET)
+              * MASK_ALT_BUCKET;
+    const key = unitPath(unit) + '|' + a + '|' + Math.round(maxR / 500);
     let profile = maskCache.get(key);
     if (profile) return profile;
 
@@ -112,7 +122,7 @@ function maskProfileFor(unit, maxR) {
     profile = new Float32Array(MASK_RADIALS);
     for (let i = 0; i < MASK_RADIALS; i++) {
         profile[i] = maskedDistance(unit.x, unit.z, obsH,
-                                    i * 2 * Math.PI / MASK_RADIALS, maxR);
+                                    i * 2 * Math.PI / MASK_RADIALS, maxR, a);
     }
 
     if (maskCache.size > 4000) maskCache.clear();

@@ -36,6 +36,13 @@ let labelMode = 'auto';
 // is unreadable. The ring-type switches decide WHICH rings; this decides WHOSE.
 const ringUnits = new Set();
 
+// Bumped whenever anything that changes the threat picture changes: which units
+// are ringed, which ring types are shown, or the aircraft selected. Route
+// exposure is expensive to recompute, so it is cached against this number
+// rather than recomputed every frame.
+let ringEpoch = 0;
+function bumpRingEpoch() { ringEpoch++; }
+
 const RING_STYLE = {
     weapon:  { colour: '#f0857a', dash: [],      width: 1.8 },
     radar:   { colour: '#8ecbff', dash: [9, 6],  width: 1.5 },
@@ -58,6 +65,7 @@ for (const [id, key] of [['ringWeapon', 'weapon'], ['ringRadar', 'radar'],
     box.checked = showRings[key];
     box.addEventListener('change', () => {
         showRings[key] = box.checked;
+        bumpRingEpoch();
         if (currentMission) draw(currentMission);
     });
 }
@@ -104,8 +112,10 @@ const ringSpec = {
     // Only things that can draw a ring at all.
     filter: u => !!(ranges.units || {})[u.type],
     isOn:  p => ringUnits.has(p),
-    setOn: (paths, on) => paths.forEach(p => on ? ringUnits.add(p)
-                                                : ringUnits.delete(p)),
+    setOn: (paths, on) => {
+        paths.forEach(p => on ? ringUnits.add(p) : ringUnits.delete(p));
+        bumpRingEpoch();
+    },
     refresh: () => { renderRingTree(); if (currentMission) draw(currentMission); },
     render:  () => renderRingTree(),
     // An em dash rather than "0.0 NM": zero would look like missing data when
@@ -127,6 +137,7 @@ function renderRingTree() {
 // every individual emplacement of a type that reaches far enough.
 function setRingUnits(pick) {
     ringUnits.clear();
+    bumpRingEpoch();
     if (currentMission) {
         for (const u of unitsOf(currentMission)) {
             if (!(ranges.units || {})[u.type]) continue;
@@ -154,10 +165,15 @@ function ownVisibleRange() {
 
 // Rings a single unit produces at the current own-ship settings. Recomputed
 //per draw, since every radius depends on the RCS and altitude in the status bar.
-function threatRingsFor(unit) {
+// `alt` defaults to the altitude on the bar. Route legs pass their own, so the
+// same envelope maths answers both "what reaches me where I am" and "what
+// reached me at that point on the route".
+function threatRingsFor(unit, alt) {
     if (!ringUnits.has(unitPath(unit))) return [];
     const entry = (ranges.units || {})[unit.type];
     if (!entry) return [];
+
+    const ownAlt = (alt === undefined) ? ownAltM : alt;
 
     const rings = [];
 
@@ -166,7 +182,7 @@ function threatRingsFor(unit) {
     // up even when the vehicle is at sea level. This one IS a ground distance -
     // DetectorManager tests it against the flattened vector.
     const emitterAlt = Math.max(unit.y, 0) + 10;
-    const horizon = horizonM(ownAltM) + horizonM(emitterAlt);
+    const horizon = horizonM(ownAlt) + horizonM(emitterAlt);
 
     // Every range test in the game is SLANT range: Turret uses
     // aimVector.magnitude, the radar uses FastMath.Distance, and
@@ -174,7 +190,7 @@ function threatRingsFor(unit) {
     // is the ground projection of that sphere. An envelope therefore contracts
     // with increasing altitude difference and closes entirely once the
     // difference exceeds the slant range.
-    const dh = Math.abs(ownAltM - emitterAlt);
+    const dh = Math.abs(ownAlt - emitterAlt);
     const groundFrom = slant =>
         slant > dh ? Math.sqrt(slant * slant - dh * dh) : 0;
 
@@ -220,7 +236,7 @@ function threatRingsFor(unit) {
                 // The altitude band is a separate hard gate in
                 // TargetRequirements - a weapon can be in range and still not
                 // be cleared to engage at your height.
-                inBand: ownAltM >= w.minAltitude && ownAltM <= w.maxAltitude,
+                inBand: ownAlt >= w.minAltitude && ownAlt <= w.maxAltitude,
                 label:  w.name + '  ' + fmtRange(ground),
             });
         }
@@ -254,7 +270,7 @@ function drawThreatRings(ctx, units) {
         let profile = null;
         if (masking) {
             const widest = rings.reduce((m, r) => Math.max(m, r.r), 0);
-            profile = maskProfileFor(unit, widest);
+            profile = maskProfileFor(unit, widest, ownAltM);
         }
 
         for (let i = 0; i < rings.length; i++) {
