@@ -294,11 +294,11 @@ function flightExposure(f) {
 // Overlaid on the route line: thick solid where a weapon reaches, medium dashed
 // where something sees you but cannot shoot. Weight and pattern carry the
 // distinction, not colour alone.
+// Terrain and engaged are both red, and are told apart by weight and pattern:
+// terrain is a heavier, tightly dashed bar in a harder red, engaged is a
+// lighter solid line. Saturation alone is not relied on.
 const EXPOSURE_STYLE = {
-    // White on the dark halo the route already carries, in a tight dash no
-    // other overlay uses: unflyable has to be unmistakable rather than merely
-    // a different colour.
-    terrain:  { colour: '#ffffff', width: 7, dash: [3, 3] },
+    terrain:  { colour: '#ff3b30', width: 8, dash: [4, 3] },
     engaged:  { colour: '#f0857a', width: 6, dash: [] },
     detected: { colour: '#ffd166', width: 4, dash: [7, 5] },
 };
@@ -309,7 +309,7 @@ const EXPOSURE_STYLE = {
 // well as by hue.
 const PENDING_STYLE = {
     terrain:  { colour: '#ff3b30', width: 9, dash: [],
-                over: '#ffffff', overWidth: 9, overDash: [6, 6] },
+                over: '#ff9b96', overWidth: 9, overDash: [6, 6] },
     engaged:  { colour: '#ff6b5e', width: 7, dash: [] },
     detected: { colour: '#ffd166', width: 5, dash: [9, 6] },
 };
