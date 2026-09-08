@@ -442,8 +442,9 @@ select {
   border: 1px solid #0b1014; flex: none;
 }
 .flightRow .nm {
-  flex: 1; background: transparent; border: 0; color: #e6edf3;
-  font: inherit; padding: 1px 2px; min-width: 0;
+  flex: 1 1 0; width: 0; min-width: 0;
+  background: transparent; border: 0; color: #e6edf3;
+  font: inherit; padding: 1px 2px;
 }
 .flightRow .nm:focus { outline: 1px solid #3da5ff; border-radius: 2px; }
 .flightRow .ct { color: #6f7d88; font-size: 10px; }
@@ -473,7 +474,30 @@ select {
   padding: 1px 4px; font: inherit; font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
-.wpRow .del {
+.tgtRow {
+  display: flex; align-items: center; gap: 7px;
+  padding: 3px 0; font-size: 12px;
+  border-bottom: 1px solid #1a232a;
+}
+.tgtRow .n {
+  width: 18px; height: 18px; flex: none;
+  display: grid; place-items: center;
+  background: #ff5c52; color: #0b1014;
+  border-radius: 50%; font-size: 10px; font-weight: 600;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.tgtRow .nm {
+  flex: 1 1 0; width: 0; min-width: 0;
+  background: transparent; border: 0; color: #e6edf3;
+  font: inherit; font-size: 12px; padding: 1px 2px;
+}
+.tgtRow .nm:focus { outline: 1px solid #3da5ff; border-radius: 2px; }
+.tgtRow .be {
+  flex: none;
+  color: #9fb6c6; font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px; white-space: nowrap;
+}
+.tgtRow .del, .wpRow .del {
   background: transparent; border: 0; color: #6f7d88;
   cursor: pointer; font-size: 14px; line-height: 1; padding: 0 3px;
 }

@@ -235,6 +235,76 @@ function showRingTip(hit, clientX, clientY) {
 // ---------------------------------------------------------------------------
 // The flights panel
 // ---------------------------------------------------------------------------
+const targetListEl  = document.getElementById('targetList');
+const targetCountEl = document.getElementById('targetCount');
+
+function renderTargets() {
+    targetListEl.innerHTML = '';
+    targetCountEl.textContent = targets.length ? '(' + targets.length + ')' : '';
+
+    if (!targets.length) {
+        targetListEl.innerHTML = '<div class="hint">None designated.</div>';
+        return;
+    }
+
+    targets.forEach((t, i) => {
+        const row = document.createElement('div');
+        row.className = 'tgtRow';
+
+        const n = document.createElement('span');
+        n.className = 'n';
+        n.textContent = i + 1;
+
+        const nm = document.createElement('input');
+        nm.className = 'nm';
+        nm.value = t.name;
+        nm.title = t.kind === 'unit' ? 'Attached to a unit' : 'Point target';
+        nm.addEventListener('input', () => {
+            t.name = nm.value;
+            if (currentMission) draw(currentMission);
+        });
+
+        // The bullseye call is how a target gets passed over the radio, so it
+        // is the position worth showing rather than raw coordinates.
+        const be = document.createElement('span');
+        be.className = 'be';
+        const w = targetPos(t);
+        be.textContent = !w ? 'not in this mission'
+                       : bullseye ? fmtBullseye(w)
+                       : Math.round(w.x) + ', ' + Math.round(w.z);
+
+        const del = document.createElement('button');
+        del.className = 'del';
+        del.type = 'button';
+        del.textContent = '\u00d7';
+        del.title = 'Remove this target';
+        del.addEventListener('click', () => {
+            targets.splice(i, 1);
+            renderTargets();
+            if (currentMission) draw(currentMission);
+        });
+
+        // Hovering a row highlights the unit it designates, as the layer tree
+        // does, so a row can be tied to a symbol on a crowded map.
+        if (t.kind === 'unit' && currentMission) {
+            const u = unitsOf(currentMission).find(x => unitPath(x) === t.path);
+            if (u) {
+                row.addEventListener('mouseenter', () => {
+                    hoveredUnit = u; draw(currentMission);
+                });
+                row.addEventListener('mouseleave', () => {
+                    hoveredUnit = null; draw(currentMission);
+                });
+            }
+        }
+
+        row.append(n, nm, be, del);
+        targetListEl.appendChild(row);
+    });
+}
+
+renderTargets();
+
 const flightListEl = document.getElementById('flightList');
 const waypointListEl = document.getElementById('waypointList');
 const flightTotalEl = document.getElementById('flightTotal');
@@ -546,6 +616,7 @@ canvas.addEventListener('contextmenu', (e) => {
                 }},
                 '-',
                 '-',
+                { label: 'Designate as target', run: () => designateUnit(unit) },
                 { label: 'Measure from here', run: () => {
                     startMeasure({ x: unit.x, z: unit.z });
                 }},
@@ -577,6 +648,12 @@ canvas.addEventListener('contextmenu', (e) => {
                 if (currentMission) draw(currentMission);
             }}] : []),
             '-',
+            { label: 'Target point here', run: () => designatePoint(at) },
+            ...(targets.length ? [{ label: 'Clear all targets', run: () => {
+                targets.length = 0;
+                renderTargets();
+                if (currentMission) draw(currentMission);
+            }}] : []),
             { label: 'Measure from here', run: () => startMeasure(at) },
             { label: 'Range ring from here', run: () => startMeasure(at, 'circle') },
             ...(terrain ? [{ label: 'Coverage ring from here (terrain clipped)',
@@ -783,9 +860,11 @@ drop.addEventListener('drop', async (e) => {
   // A new mission means a new threat picture: forget which types were ringed,
   // and rebuild the list from what is actually out there.
   ringUnits.clear();
+  targets.length = 0;
 
   setMap(mapName(mission.MapKey.Path));
   renderRingTree();
+  renderTargets();
 
   out.textContent = `${file.name}
 

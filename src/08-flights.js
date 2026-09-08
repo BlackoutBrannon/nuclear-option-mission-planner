@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Flights, routes and waypoints.
+   Flights, routes, waypoints and designated targets.
 
    Part 8 of 11 of the planner. These files are plain scripts sharing one
    global scope, loaded in the order listed in index.html - not ES modules - so
@@ -456,4 +456,93 @@ function pendingLegText() {
     if (t.engaged  > 1) bits.push(fmtRange(t.engaged) + ' engaged');
     if (t.detected > 1) bits.push(fmtRange(t.detected) + ' seen');
     return bits.join('  ');
+}
+
+// ---------------------------------------------------------------------------
+// Designated targets
+//
+// Targets are what the PLANNER nominates, never what the mission file lists as
+// its own objectives. A mission's objectives belong to whoever wrote it; a
+// target is a decision made while planning against it.
+//
+// A target is either attached to a unit or a free point on the ground:
+//
+//   unit    stores the unit's path, and reads its position at draw time, so a
+//           target follows the thing it designates and survives the unit list
+//           being rebuilt
+//   point   stores its own coordinates, for a place rather than a thing - a
+//           bridge, a revetment, a mark on a road
+// ---------------------------------------------------------------------------
+const targets = [];       // { kind, path?, x?, z?, name }
+
+const TARGET_COLOUR = '#ff5c52';
+
+function targetPos(t) {
+    if (t.kind === 'point') return { x: t.x, z: t.z };
+    if (!currentMission) return null;
+    const u = unitsOf(currentMission).find(x => unitPath(x) === t.path);
+    return u ? { x: u.x, z: u.z } : null;   // the unit is gone from this mission
+}
+
+function designateUnit(unit) {
+    const path = unitPath(unit);
+    if (targets.some(t => t.path === path)) return;   // already designated
+    targets.push({ kind: 'unit', path: path, name: unitName(unit.type) });
+    renderTargets();
+    if (currentMission) draw(currentMission);
+}
+
+function designatePoint(at) {
+    targets.push({ kind: 'point', x: at.x, z: at.z, name: 'Point target' });
+    renderTargets();
+    if (currentMission) draw(currentMission);
+}
+
+// Drawn ON TOP of the unit symbols: a designation is an annotation about a
+// symbol, so it has to sit over the thing it refers to rather than under it.
+//
+// A corner reticle rather than another frame or ring - unit symbols are already
+// frames and the bullseye is already rings, so the shape has to be unlike both
+// at a glance.
+function drawTargets(ctx) {
+    if (!targets.length) return;
+
+    ctx.save();
+    ctx.font = '600 10px ui-monospace, Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    targets.forEach((t, i) => {
+        const w = targetPos(t);
+        if (!w) return;
+        const p = toScreen(w.x, w.z);
+
+        const R = 13, ARM = 6;
+        for (const pass of [{ c: '#0b1014', lw: 5 }, { c: TARGET_COLOUR, lw: 2.4 }]) {
+            ctx.strokeStyle = pass.c;
+            ctx.lineWidth   = pass.lw;
+            ctx.beginPath();
+            for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+                ctx.moveTo(p.x + sx * R, p.y + sy * R - sy * ARM);
+                ctx.lineTo(p.x + sx * R, p.y + sy * R);
+                ctx.lineTo(p.x + sx * R - sx * ARM, p.y + sy * R);
+            }
+            ctx.stroke();
+        }
+
+        // The number is how a target is referred to everywhere else, so it is
+        // on the map rather than only in the panel.
+        const bx = p.x + R + 7, by = p.y - R - 3;
+        ctx.beginPath();
+        ctx.arc(bx, by, 8, 0, Math.PI * 2);
+        ctx.fillStyle   = TARGET_COLOUR;
+        ctx.strokeStyle = '#0b1014';
+        ctx.lineWidth   = 2;
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#0b1014';
+        ctx.fillText(String(i + 1), bx, by + 0.5);
+    });
+
+    ctx.restore();
 }

@@ -320,6 +320,7 @@ function draw(mission) {
         drawnUnits.push({ unit: unit, sx: p.x, sy: p.y });
     }
 
+    drawTargets(ctx);
     drawBullseyeCentre(ctx);
     drawMeasure(ctx);
 
