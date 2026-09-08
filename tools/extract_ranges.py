@@ -420,6 +420,10 @@ def main():
             "maxAltitude": tr.get("maxAltitude", 0.0),
             "guided":      bool(info.get("missile") or info.get("laserGuided")
                                 or info.get("glideBomb")),
+            # RoleIdentity weights. antiSurface separates a strike weapon from
+            # an air-to-air one far more reliably than the name does.
+            "roles":       {k: round(v, 3) for k, v in
+                            (info.get("effectiveness") or {}).items()},
             "nuclear":     bool(info.get("nuclear")),
         }
 

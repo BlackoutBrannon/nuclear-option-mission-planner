@@ -421,13 +421,31 @@ function releaseBlock(f, i, w) {
     pick.appendChild(new Option('Select a munition\u2026', ''));
 
     const arsenal = ranges.arsenal || {};
+
+    // Only weapons a release point would actually be planned around. Guns are
+    // excluded because a gun pass is not planned as a time of flight, and
+    // air-to-air weapons because an intercept is too dynamic to plan from a
+    // fixed point on a map.
+    //
+    // Filtered on the RoleIdentity weights rather than the name: ARAD-116
+    // carries antiRadar 1.0 with antiSurface 0, so a plain "anti-surface only"
+    // test would drop the anti-radiation missiles - the weapons this whole
+    // tool exists to plan around.
+    const strike = name => {
+        const a = arsenal[name];
+        if (!a || a.flight.kind === 'gun') return false;
+        const r = a.roles || {};
+        return (r.antiSurface || 0) > 0 || (r.antiRadar || 0) > 0;
+    };
+
     // Ordered by reach, so what can be shot from furthest out comes first.
-    Object.keys(arsenal)
+    Object.keys(arsenal).filter(strike)
         .sort((a, b) => arsenal[b].maxRange - arsenal[a].maxRange)
         .forEach(name => {
             const a = arsenal[name];
+            const tag = (a.roles || {}).antiRadar > 0 ? 'anti-radar' : a.flight.kind;
             pick.appendChild(new Option(
-                name + '  (' + fmtRange(a.maxRange) + ', ' + a.flight.kind + ')', name));
+                name + '  (' + fmtRange(a.maxRange) + ', ' + tag + ')', name));
         });
     pick.value = w.munition || '';
     pick.addEventListener('change', () => {
