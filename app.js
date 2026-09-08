@@ -1211,21 +1211,43 @@ function drawThreatRings(ctx, units) {
             // Labelled only above 70 px radius, to limit clutter on a dense
             // map. Labels are spaced 22 degrees apart around the upper arc so
             // that concentric rings on one unit do not overlap.
-            if (rpx > 70 && labelMode !== 'off' &&
+            // Widest point the ring actually reaches. A masked ring can be a
+            // fraction of its nominal radius, and labelling it by the radius it
+            // would have had puts a number where there is no ring.
+            let visibleR = ring.r;
+            if (prof) {
+                visibleR = 0;
+                for (let k = 0; k < prof.length; k++) {
+                    visibleR = Math.max(visibleR, Math.min(prof[k], ring.r));
+                }
+            }
+
+            if (visibleR * mPerPx > 70 && labelMode !== 'off' &&
                 (labelMode === 'auto' || unit === hoveredUnit)) {
-                // Anchored on the ring itself, offset per ring so several rings
-                // on one unit start apart before placement runs.
+                // Anchored ON the outline, offset per ring so several rings on
+                // one unit start apart before placement runs.
                 //
                 // A ring wider than the viewport has most of its circumference
                 // off-screen, so the preferred anchor is tried first and then
                 // rotated until a point lands in view. Without the rotation the
                 // largest rings - the ones that matter most - go unlabelled.
+                //
+                // The radius is re-read for each angle tried, because a masked
+                // ring reaches a different distance along every bearing.
                 const base = -90 + i * 22;
                 let lx = 0, ly = 0, onScreen = false;
                 for (let k = 0; k < 12 && !onScreen; k++) {
-                    const a = (base + k * 30) * Math.PI / 180;
-                    lx = p.x + Math.cos(a) * rpx;
-                    ly = p.y + Math.sin(a) * rpx;
+                    const deg = base + k * 30;
+                    const a   = deg * Math.PI / 180;
+
+                    // Screen angle -90 is up, which is bearing 000.
+                    const bearing = (((deg + 90) % 360) + 360) % 360 * Math.PI / 180;
+                    const rHere = (prof ? ringRadiusAt(ring, prof, bearing) : ring.r)
+                                  * mPerPx;
+                    if (rHere < 10) continue;      // masked to nothing this way
+
+                    lx = p.x + Math.cos(a) * rHere;
+                    ly = p.y + Math.sin(a) * rHere;
                     onScreen = lx > 40 && lx < canvas.width - 40 &&
                                ly > 12 && ly < canvas.height - 12;
                 }
