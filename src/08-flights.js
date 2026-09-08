@@ -298,13 +298,19 @@ function flightExposure(f) {
 // Overlaid on the route line: thick solid where a weapon reaches, medium dashed
 // where something sees you but cannot shoot. Weight and pattern carry the
 // distinction, not colour alone.
-// Terrain and engaged are both red, and are told apart by weight and pattern:
-// terrain is a heavier, tightly dashed bar in a harder red, engaged is a
-// lighter solid line. Saturation alone is not relied on.
+// Terrain carries a WHITE hazard stripe over its red bar. Engaged is red too -
+// it is the danger colour and belongs on the thing that shoots you - so red
+// alone cannot distinguish them, and two shades of red at a glance do not
+// either. The stripe is the distinction; the red says both are bad.
+// Drawn UNDER the route line as a casing around it, so the flight colour stays
+// readable through the middle. The widths therefore have to clear the route's
+// own 5 px halo by enough to read as a band rather than a fringe - at 8 px only
+// a pixel and a half showed either side, which looked like an artefact.
 const EXPOSURE_STYLE = {
-    terrain:  { colour: '#ff3b30', width: 8, dash: [4, 3] },
-    engaged:  { colour: '#f0857a', width: 6, dash: [] },
-    detected: { colour: '#ffd166', width: 4, dash: [7, 5] },
+    terrain:  { colour: '#ff3b30', width: 15, dash: [],
+                over: '#ffffff', overWidth: 15, overDash: [6, 7] },
+    engaged:  { colour: '#f0857a', width: 12, dash: [] },
+    detected: { colour: '#ffd166', width: 10, dash: [9, 6] },
 };
 
 // The pending leg is louder than a placed one: heavier, fully opaque, and for
@@ -312,8 +318,8 @@ const EXPOSURE_STYLE = {
 // Two passes rather than one colour, so it reads as a warning by pattern as
 // well as by hue.
 const PENDING_STYLE = {
-    terrain:  { colour: '#ff3b30', width: 9, dash: [],
-                over: '#ff9b96', overWidth: 9, overDash: [6, 6] },
+    terrain:  { colour: '#ff3b30', width: 10, dash: [],
+                over: '#ffffff', overWidth: 10, overDash: [6, 6] },
     engaged:  { colour: '#ff6b5e', width: 7, dash: [] },
     detected: { colour: '#ffd166', width: 5, dash: [9, 6] },
 };
@@ -347,13 +353,23 @@ function drawExposure(ctx, f) {
 
             const st = EXPOSURE_STYLE[s];
             ctx.setLineDash(st.dash);
-            ctx.globalAlpha = 0.75;
+            ctx.globalAlpha = 0.9;
             ctx.strokeStyle = st.colour;
             ctx.lineWidth   = st.width;
             ctx.beginPath();
             ctx.moveTo(p0.x, p0.y);
             ctx.lineTo(p1.x, p1.y);
             ctx.stroke();
+
+            if (st.over) {
+                ctx.setLineDash(st.overDash);
+                ctx.strokeStyle = st.over;
+                ctx.lineWidth   = st.overWidth;
+                ctx.beginPath();
+                ctx.moveTo(p0.x, p0.y);
+                ctx.lineTo(p1.x, p1.y);
+                ctx.stroke();
+            }
         }
     }
     ctx.setLineDash([]);
