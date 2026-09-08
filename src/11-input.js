@@ -305,6 +305,19 @@ function renderTargets() {
 
 renderTargets();
 
+const flightSpeedEl     = document.getElementById('flightSpeed');
+const flightSpeedUnitEl = document.getElementById('flightSpeedUnit');
+
+flightSpeedEl.addEventListener('input', () => {
+    const f = flights[activeFlight];
+    const v = parseFloat(flightSpeedEl.value);
+    if (!f || !isFinite(v) || v < 0) return;
+    f.speed = speedToMs(v);
+    refreshLegLabels();
+    renderWaypoints();
+    if (currentMission) draw(currentMission);
+});
+
 const flightListEl = document.getElementById('flightList');
 const waypointListEl = document.getElementById('waypointList');
 const flightTotalEl = document.getElementById('flightTotal');
@@ -397,6 +410,86 @@ function refreshLegLabels() {
         .forEach((leg, i) => applyLegText(leg, f, i));
 }
 
+// Munition and target selection for one release point, plus the resulting
+// times of flight.
+function releaseBlock(f, i, w) {
+    const box = document.createElement('div');
+    box.className = 'rpBlock';
+
+    const pick = document.createElement('select');
+    pick.title = 'Munition released here';
+    pick.appendChild(new Option('Select a munition\u2026', ''));
+
+    const arsenal = ranges.arsenal || {};
+    // Ordered by reach, so what can be shot from furthest out comes first.
+    Object.keys(arsenal)
+        .sort((a, b) => arsenal[b].maxRange - arsenal[a].maxRange)
+        .forEach(name => {
+            const a = arsenal[name];
+            pick.appendChild(new Option(
+                name + '  (' + fmtRange(a.maxRange) + ', ' + a.flight.kind + ')', name));
+        });
+    pick.value = w.munition || '';
+    pick.addEventListener('change', () => {
+        w.munition = pick.value || null;
+        renderWaypoints();
+        if (currentMission) draw(currentMission);
+    });
+    box.appendChild(pick);
+
+    if (!targets.length) {
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = 'Designate targets first.';
+        box.appendChild(hint);
+        return box;
+    }
+
+    const solutions = releaseSolutions(f, i);
+
+    targets.forEach((t, ti) => {
+        const line = document.createElement('label');
+        line.className = 'rpTgt';
+
+        const on = document.createElement('input');
+        on.type = 'checkbox';
+        on.checked = (w.targetIds || []).includes(t.id);
+        on.addEventListener('change', () => {
+            w.targetIds = w.targetIds || [];
+            if (on.checked) w.targetIds.push(t.id);
+            else w.targetIds = w.targetIds.filter(x => x !== t.id);
+            renderWaypoints();
+            if (currentMission) draw(currentMission);
+        });
+
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = (ti + 1) + '. ' + t.name;
+
+        const tot = document.createElement('span');
+        tot.className = 'tot';
+        const s = solutions.find(x => x.id === t.id);
+        if (!on.checked) {
+            const pos = targetPos(t);
+            tot.textContent = pos ? fmtRange(bearingRange(w, pos).range) : '';
+            tot.style.opacity = 0.5;
+        } else if (!s || s.error) {
+            tot.textContent = s ? s.error : '';
+            tot.classList.add('bad');
+        } else if (s.sol && s.sol.reach) {
+            tot.textContent = fmtRange(s.range) + '  TOT ' + fmtTime(s.sol.time);
+        } else {
+            tot.textContent = s.sol ? s.sol.reason : 'no solution';
+            tot.classList.add('bad');
+        }
+
+        line.append(on, nm, tot);
+        box.appendChild(line);
+    });
+
+    return box;
+}
+
 function renderWaypoints() {
     waypointListEl.innerHTML = '';
     const f = flights[activeFlight];
@@ -406,6 +499,9 @@ function renderWaypoints() {
         waypointListEl.innerHTML = '<div class="hint">Select a flight.</div>';
         return;
     }
+
+    flightSpeedUnitEl.textContent = unitSystem === 'aviation' ? 'kt' : 'km/h';
+    flightSpeedEl.value = Math.round(speedFromMs(f.speed || 250));
 
     flightTotalEl.textContent = f.waypoints.length
         ? fmtRange(flightTotal(f)) + (routeMode ? '   adding\u2026' : '') : '';
@@ -450,8 +546,23 @@ function renderWaypoints() {
             if (currentMission) draw(currentMission);
         });
 
-        row.append(n, leg, alt, del);
+        // Marks this waypoint as the point the munition leaves the aircraft.
+        const rpBtn = document.createElement('button');
+        rpBtn.type = 'button';
+        rpBtn.className = 'rpBtn' + (w.rp ? ' on' : '');
+        rpBtn.textContent = 'RP';
+        rpBtn.title = 'Release point';
+        rpBtn.addEventListener('click', () => {
+            w.rp = !w.rp;
+            if (w.rp && !w.targetIds) { w.targetIds = []; w.munition = null; }
+            renderWaypoints();
+            if (currentMission) draw(currentMission);
+        });
+
+        row.append(n, leg, rpBtn, alt, del);
         waypointListEl.appendChild(row);
+
+        if (w.rp) waypointListEl.appendChild(releaseBlock(f, i, w));
     });
 
     if (!f.waypoints.length) {

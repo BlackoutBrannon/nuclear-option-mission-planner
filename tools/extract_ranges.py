@@ -65,6 +65,64 @@ UNITY_VERSION = "2022.3.62f2"
 # these can be checked against it.
 REFERENCE_RCS = 1.0
 
+# Air density is sampled from the game's own curve into a flat table, because
+# the planner only needs to look it up, not edit it. Linear interpolation
+# between 500 m steps is well inside the accuracy of everything else here.
+DENSITY_STEP_M = 500
+DENSITY_TOP_M  = 25000
+
+
+def curve_eval(curve, t):
+    """Unity AnimationCurve evaluation: cubic Hermite between keyframes."""
+    keys = (curve or {}).get("m_Curve") or []
+    if not keys:
+        return 0.0
+    if t <= keys[0]["time"]:
+        return keys[0]["value"]
+    if t >= keys[-1]["time"]:
+        return keys[-1]["value"]
+    for a, b in zip(keys, keys[1:]):
+        if a["time"] <= t <= b["time"]:
+            dt = b["time"] - a["time"]
+            if dt <= 0:
+                return a["value"]
+            u = (t - a["time"]) / dt
+            m0, m1 = a["outSlope"] * dt, b["inSlope"] * dt
+            u2, u3 = u * u, u * u * u
+            return ((2 * u3 - 3 * u2 + 1) * a["value"] + (u3 - 2 * u2 + u) * m0 +
+                    (-2 * u3 + 3 * u2) * b["value"] + (u3 - u2) * m1)
+    return keys[-1]["value"]
+
+
+def delta_v(mass, motors):
+    """Tsiolkovsky, staged, exactly as Missile.CalcDeltaV does it."""
+    total, m = 0.0, mass
+    for mo in motors:
+        fuel = mo.get("fuelMass", 0.0)
+        if fuel > 0 and m > fuel:
+            exhaust = mo.get("thrust", 0.0) * mo.get("burnTime", 0.0) / fuel
+            total += exhaust * math.log(m / (m - fuel))
+        m -= fuel
+    return total
+
+
+def glide_ratio(body):
+    """Best lift-to-drag over the modelled angle of attack range.
+
+    A glide weapon's reach is set by how far it can trade height for distance,
+    which is this ratio. Sampled rather than solved: the curves are arbitrary
+    and a scan of one degree steps is more than precise enough against a
+    weapon released by hand.
+    """
+    lift, drag = body.get("liftCurve"), body.get("dragCurve")
+    best = 0.0
+    for deg in range(1, 31):
+        t = math.radians(deg)
+        d = curve_eval(drag, t)
+        if d > 0:
+            best = max(best, curve_eval(lift, t) / d)
+    return best
+
 
 def pptr(d, key):
     """Path id behind a PPtr field, or None when it is unset."""
@@ -72,6 +130,79 @@ def pptr(d, key):
     if isinstance(v, dict) and v.get("m_PathID"):
         return v["m_PathID"]
     return None
+
+
+def components_of(gobj, mono, go_id):
+    """Every MonoBehaviour hanging off one GameObject."""
+    go = gobj.get(go_id)
+    if not go:
+        return []
+    out = []
+    for c in go.get("m_Component", []):
+        ref = c.get("component") if isinstance(c, dict) else None
+        if isinstance(ref, dict) and ref.get("m_PathID") in mono:
+            out.append(mono[ref["m_PathID"]])
+    return out
+
+
+def flight_model(info, gobj, mono):
+    """Everything needed to fly one munition, or None if it is not a weapon.
+
+    Four kinds, because the game flies them differently:
+
+      motor      thrust, then coast against drag - Missile.CalcRange
+      glide      no thrust; trades altitude for distance at its best L/D
+      ballistic  no thrust, no lift; falls under gravity while drag bleeds speed
+      gun        leaves at muzzle velocity and slows
+    """
+    gid = pptr(info, "weaponPrefab")
+    body = seeker = None
+    for comp in components_of(gobj, mono, gid) if gid else []:
+        if "motors" in comp or "supersonicDrag" in comp:
+            body = comp
+        elif "minSpeed" in comp:
+            seeker = comp
+
+    common = {
+        "muzzle":   info.get("muzzleVelocity", 0.0),
+        "dragCoef": info.get("dragCoef", 0.0),
+        "gravMult": info.get("gravMult", 1.0),
+        "mass":     info.get("massPerRound", 0.0),
+    }
+
+    if info.get("gun"):
+        return dict(common, kind="gun")
+
+    if not body:
+        return dict(common, kind="ballistic")
+
+    motors = [m for m in (body.get("motors") or [])]
+    thrust = max((m.get("thrust", 0.0) for m in motors), default=0.0)
+
+    model = {
+        "bodyMass": body.get("mass", 0.0),
+        "finArea":  body.get("finArea", 0.0),
+        "cd":       round(curve_eval(body.get("dragCurve"), math.pi / 360), 6),
+        "superDrag": body.get("supersonicDrag", 0.0),
+        "minSpeed": (seeker or {}).get("minSpeed", 0.0),
+    }
+    model.update(common)
+
+    if thrust > 0:
+        dry = body.get("mass", 0.0) - sum(m.get("fuelMass", 0.0) for m in motors)
+        model.update(
+            kind="motor",
+            dryMass=round(dry, 2),
+            burnTime=round(sum(m.get("burnTime", 0.0) for m in motors), 3),
+            lastThrust=motors[-1].get("thrust", 0.0),
+            deltaV=round(delta_v(body.get("mass", 0.0), motors), 1),
+        )
+    else:
+        ratio = glide_ratio(body)
+        model.update(kind="glide" if ratio > 1.5 else "ballistic",
+                     dryMass=round(body.get("mass", 0.0), 2),
+                     glideRatio=round(ratio, 2))
+    return model
 
 
 def load():
@@ -89,8 +220,15 @@ def main():
     env = load()
 
     mono = {}                 # path_id -> parsed dict
+    gobj = {}                 # path_id -> GameObject, for prefab components
     failed = 0
     for o in env.objects:
+        if o.type.name == "GameObject":
+            try:
+                gobj[o.path_id] = o.read_typetree()
+            except Exception:
+                pass
+            continue
         if o.type.name != "MonoBehaviour":
             continue
         try:
@@ -220,6 +358,7 @@ def main():
             tr = info.get("targetRequirements", {})
             entry = {
                 "name":        info.get("weaponName") or info.get("m_Name", ""),
+                "flight":      flight_model(info, gobj, mono),
                 "minRange":    tr.get("minRange", 0.0),
                 "maxRange":    tr.get("maxRange", 0.0),
                 "minAltitude": tr.get("minAltitude", 0.0),
@@ -258,6 +397,40 @@ def main():
         if "aircraftParameters" in d
     }
 
+    # Every weapon in the game, not only those bolted to a unit. Release points
+    # fire aircraft munitions, and aircraft carry no fixed stations - their
+    # loadouts are chosen per mission - so those weapons appear nowhere in
+    # `units` and would be missing from the munition picker.
+    arsenal = {}
+    for info in weapons.values():
+        name = info.get("weaponName") or info.get("m_Name") or ""
+        # Energy weapons, jammers, troops and cargo are not munitions with a
+        # time of flight, and a release point has nothing to do with them.
+        if not name or any(info.get(f) for f in
+                           ("hideInDisplay", "cargo", "energy", "jammer",
+                            "troops", "sling", "rearmGround")):
+            continue
+        tr = info.get("targetRequirements", {})
+        arsenal[name] = {
+            "short":       info.get("shortName") or name,
+            "flight":      flight_model(info, gobj, mono),
+            "minRange":    tr.get("minRange", 0.0),
+            "maxRange":    tr.get("maxRange", 0.0),
+            "minAltitude": tr.get("minAltitude", 0.0),
+            "maxAltitude": tr.get("maxAltitude", 0.0),
+            "guided":      bool(info.get("missile") or info.get("laserGuided")
+                                or info.get("glideBomb")),
+            "nuclear":     bool(info.get("nuclear")),
+        }
+
+    # The air density curve lives on GameAssets and is shared by every weapon.
+    density = None
+    for d in mono.values():
+        if "airDensityAltitude" in d:
+            density = [round(curve_eval(d["airDensityAltitude"], m / 1000.0), 5)
+                       for m in range(0, DENSITY_TOP_M + 1, DENSITY_STEP_M)]
+            break
+
     payload = {
         "_source": "extracted from resources.assets - see extract_ranges.py",
         "_formula": "radar detection_range = maxRange / minSignal * RCS**0.25",
@@ -265,6 +438,8 @@ def main():
                     "- independent of RCS",
         "_horizon": "sqrt(12742000*radarAlt) + sqrt(12742000*targetAlt) >= groundDist",
         "units": dict(sorted(armed.items())),
+        "airDensity": {"stepM": DENSITY_STEP_M, "table": density or []},
+        "arsenal": dict(sorted(arsenal.items())),
         "airframes": dict(sorted(airframes.items(), key=lambda kv: kv[1]["rcs"])),
     }
     with open(OUT, "w", encoding="utf-8") as f:
@@ -283,6 +458,19 @@ def main():
         print(f"   {failed} MonoBehaviours could not be laid out (unrelated classes)")
 
     print(f"   {len(airframes)} airframes for the RCS picker")
+    kinds = {}
+    for v in armed.values():
+        for w in v["weapons"]:
+            k = (w.get("flight") or {}).get("kind", "none")
+            kinds[k] = kinds.get(k, 0) + 1
+    print("   flight models: " + ", ".join(f"{v} {k}" for k, v in sorted(kinds.items())))
+    akinds = {}
+    for w in arsenal.values():
+        k = (w.get("flight") or {}).get("kind", "none")
+        akinds[k] = akinds.get(k, 0) + 1
+    print(f"   arsenal: {len(arsenal)} weapons - " +
+          ", ".join(f"{v} {k}" for k, v in sorted(akinds.items())))
+    print(f"   air density table: {len(density or [])} steps of {DENSITY_STEP_M} m")
     rcs = sorted(v["rcs"] for v in out.values() if v["rcs"] > 0)
     if rcs:
         print(f"\nRCS spread across {len(rcs)} types: "

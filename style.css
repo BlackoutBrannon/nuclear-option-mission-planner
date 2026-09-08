@@ -467,6 +467,40 @@ select {
   flex: 1; color: #9fb6c6;
   font-family: ui-monospace, Consolas, monospace; font-size: 10px;
 }
+/* A release point's detail block, indented under its waypoint row. */
+.rpBlock {
+  margin: 2px 0 6px 24px; padding: 6px 8px;
+  border-left: 2px solid #55707f;
+  background: rgba(34,48,57,.5); border-radius: 0 3px 3px 0;
+}
+.rpBlock select { width: 100%; margin-bottom: 5px; }
+.rpTgt {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; padding: 2px 0;
+}
+.rpTgt .nm { flex: 1 1 0; width: 0; overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+.rpTgt .tot {
+  font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+  white-space: nowrap; color: #6ee7b7;
+}
+.rpTgt .tot.bad { color: #f0857a; }
+
+.wpRow .rpBtn {
+  flex: none; background: #223039; color: #8a9aa6;
+  border: 1px solid #3d4a55; border-radius: 3px;
+  font-size: 9px; padding: 1px 4px; cursor: pointer; font-family: inherit;
+}
+.wpRow .rpBtn.on { background: #2c3d49; color: #e2ecf4; border-color: #8ecbff; }
+
+#flightSpeed {
+  width: 70px; text-align: right;
+  background: #223039; color: #e2ecf4;
+  border: 1px solid #55707f; border-radius: 3px;
+  padding: 2px 4px; font: inherit; font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .wpRow input.alt {
   width: 62px; text-align: right;
   background: #223039; color: #e2ecf4;

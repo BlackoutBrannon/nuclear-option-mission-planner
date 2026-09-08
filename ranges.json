@@ -28,6 +28,13 @@
    "weapons": [
     {
      "name": "20mm Rotary Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 0.27000001072883606,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 3000.0,
      "minAltitude": 0.0,
@@ -42,6 +49,22 @@
     },
     {
      "name": "IRM-S1",
+     "flight": {
+      "bodyMass": 10.0,
+      "finArea": 0.019999999552965164,
+      "cd": 0.104654,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 10.0,
+      "kind": "motor",
+      "dryMass": 6.0,
+      "burnTime": 2.0,
+      "lastThrust": 2750.0,
+      "deltaV": 702.4
+     },
      "minRange": 200.0,
      "maxRange": 5000.0,
      "minAltitude": 0.0,
@@ -80,6 +103,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -118,6 +148,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -132,6 +169,22 @@
     },
     {
      "name": "AGM-48",
+     "flight": {
+      "bodyMass": 50.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.022837,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "motor",
+      "dryMass": 30.0,
+      "burnTime": 3.5,
+      "lastThrust": 4000.0,
+      "deltaV": 357.6
+     },
      "minRange": 1000.0,
      "maxRange": 10000.0,
      "minAltitude": 0.0,
@@ -170,6 +223,13 @@
    "weapons": [
     {
      "name": "25mm Autocannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.6499999761581421,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 2200.0,
      "minAltitude": 0.0,
@@ -208,6 +268,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -246,6 +313,13 @@
    "weapons": [
     {
      "name": "25mm Autocannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.6499999761581421,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 2200.0,
      "minAltitude": 0.0,
@@ -260,6 +334,22 @@
     },
     {
      "name": "AT-145",
+     "flight": {
+      "bodyMass": 20.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.028903,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.009999999776482582,
+      "gravMult": 1.0,
+      "mass": 20.0,
+      "kind": "motor",
+      "dryMass": 10.0,
+      "burnTime": 6.5,
+      "lastThrust": 400.0,
+      "deltaV": 252.2
+     },
      "minRange": 500.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -298,6 +388,22 @@
    "weapons": [
     {
      "name": "IRM-S2",
+     "flight": {
+      "bodyMass": 60.0,
+      "finArea": 0.15000000596046448,
+      "cd": 0.053227,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 60.0,
+      "kind": "motor",
+      "dryMass": 35.0,
+      "burnTime": 2.0,
+      "lastThrust": 18000.0,
+      "deltaV": 776.2
+     },
      "minRange": 500.0,
      "maxRange": 10000.0,
      "minAltitude": 2.0,
@@ -375,6 +481,22 @@
    "weapons": [
     {
      "name": "RAM-45",
+     "flight": {
+      "bodyMass": 170.0,
+      "finArea": 0.5,
+      "cd": 0.024126,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 170.0,
+      "kind": "motor",
+      "dryMass": 101.99,
+      "burnTime": 7.01,
+      "lastThrust": 22000.0,
+      "deltaV": 1157.0
+     },
      "minRange": 700.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -389,6 +511,13 @@
     },
     {
      "name": "40mm Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.8999999761581421,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 7500.0,
      "minAltitude": 0.0,
@@ -403,6 +532,22 @@
     },
     {
      "name": "IRM-S2",
+     "flight": {
+      "bodyMass": 60.0,
+      "finArea": 0.15000000596046448,
+      "cd": 0.053227,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 60.0,
+      "kind": "motor",
+      "dryMass": 35.0,
+      "burnTime": 2.0,
+      "lastThrust": 18000.0,
+      "deltaV": 776.2
+     },
      "minRange": 500.0,
      "maxRange": 10000.0,
      "minAltitude": 2.0,
@@ -417,6 +562,13 @@
     },
     {
      "name": "76mm Cannon",
+     "flight": {
+      "muzzle": 950.0,
+      "dragCoef": 0.029999999329447746,
+      "gravMult": 1.0,
+      "mass": 6.300000190734863,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 25000.0,
      "minAltitude": 0.0,
@@ -455,6 +607,13 @@
    "weapons": [
     {
      "name": "30mm Rotary Cannon",
+     "flight": {
+      "muzzle": 825.0,
+      "dragCoef": 0.44999998807907104,
+      "gravMult": 1.0,
+      "mass": 0.5,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 2000.0,
      "minAltitude": 0.0,
@@ -539,6 +698,13 @@
    "weapons": [
     {
      "name": "20mm Rotary Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 0.27000001072883606,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 3000.0,
      "minAltitude": 0.0,
@@ -588,6 +754,13 @@
    "weapons": [
     {
      "name": "57mm Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 6.0,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 9000.0,
      "minAltitude": 0.0,
@@ -602,6 +775,22 @@
     },
     {
      "name": "RAM-45",
+     "flight": {
+      "bodyMass": 170.0,
+      "finArea": 0.5,
+      "cd": 0.024126,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 170.0,
+      "kind": "motor",
+      "dryMass": 101.99,
+      "burnTime": 7.01,
+      "lastThrust": 22000.0,
+      "deltaV": 1157.0
+     },
      "minRange": 700.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -616,6 +805,13 @@
     },
     {
      "name": "20mm Rotary Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 0.27000001072883606,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 3000.0,
      "minAltitude": 0.0,
@@ -630,6 +826,22 @@
     },
     {
      "name": "AGM-48",
+     "flight": {
+      "bodyMass": 50.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.022837,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "motor",
+      "dryMass": 30.0,
+      "burnTime": 3.5,
+      "lastThrust": 4000.0,
+      "deltaV": 357.6
+     },
      "minRange": 1000.0,
      "maxRange": 10000.0,
      "minAltitude": 0.0,
@@ -718,6 +930,13 @@
    "weapons": [
     {
      "name": "30mm Cannon",
+     "flight": {
+      "muzzle": 1200.0,
+      "dragCoef": 0.15000000596046448,
+      "gravMult": 1.0,
+      "mass": 0.8500000238418579,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -732,6 +951,22 @@
     },
     {
      "name": "AShM-300",
+     "flight": {
+      "bodyMass": 600.0,
+      "finArea": 2.3299999237060547,
+      "cd": 0.019235,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.0,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "motor",
+      "dryMass": 400.0,
+      "burnTime": 600.0,
+      "lastThrust": 5000.0,
+      "deltaV": 6082.0
+     },
      "minRange": 5000.0,
      "maxRange": 250000.0,
      "minAltitude": 0.0,
@@ -746,6 +981,13 @@
     },
     {
      "name": "155mm Railgun",
+     "flight": {
+      "muzzle": 2380.0,
+      "dragCoef": 0.02500000037252903,
+      "gravMult": 1.0,
+      "mass": 50.0,
+      "kind": "gun"
+     },
      "minRange": 300.0,
      "maxRange": 50000.0,
      "minAltitude": 0.0,
@@ -760,6 +1002,22 @@
     },
     {
      "name": "StratoLance R9",
+     "flight": {
+      "bodyMass": 500.0,
+      "finArea": 1.0,
+      "cd": 0.012264,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 500.0,
+      "kind": "motor",
+      "dryMass": 300.0,
+      "burnTime": 11.0,
+      "lastThrust": 40000.0,
+      "deltaV": 1392.7
+     },
      "minRange": 2000.0,
      "maxRange": 50000.0,
      "minAltitude": 500.0,
@@ -774,6 +1032,22 @@
     },
     {
      "name": "MMR-S3",
+     "flight": {
+      "bodyMass": 100.0,
+      "finArea": 0.30000001192092896,
+      "cd": 0.034478,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 100.0,
+      "kind": "motor",
+      "dryMass": 60.0,
+      "burnTime": 2.2,
+      "lastThrust": 28000.0,
+      "deltaV": 786.7
+     },
      "minRange": 1000.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -846,6 +1120,13 @@
    "weapons": [
     {
      "name": "23mm Autocannon",
+     "flight": {
+      "muzzle": 980.0,
+      "dragCoef": 0.3499999940395355,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 3000.0,
      "minAltitude": 0.0,
@@ -884,6 +1165,22 @@
    "weapons": [
     {
      "name": "AT-145",
+     "flight": {
+      "bodyMass": 20.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.028903,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.009999999776482582,
+      "gravMult": 1.0,
+      "mass": 20.0,
+      "kind": "motor",
+      "dryMass": 10.0,
+      "burnTime": 6.5,
+      "lastThrust": 400.0,
+      "deltaV": 252.2
+     },
      "minRange": 500.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -922,6 +1219,22 @@
    "weapons": [
     {
      "name": "IRM-S1",
+     "flight": {
+      "bodyMass": 10.0,
+      "finArea": 0.019999999552965164,
+      "cd": 0.104654,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 10.0,
+      "kind": "motor",
+      "dryMass": 6.0,
+      "burnTime": 2.0,
+      "lastThrust": 2750.0,
+      "deltaV": 702.4
+     },
      "minRange": 200.0,
      "maxRange": 5000.0,
      "minAltitude": 0.0,
@@ -960,6 +1273,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -1082,6 +1402,13 @@
    "weapons": [
     {
      "name": "30mm Cannon",
+     "flight": {
+      "muzzle": 1200.0,
+      "dragCoef": 0.15000000596046448,
+      "gravMult": 1.0,
+      "mass": 0.8500000238418579,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -1096,6 +1423,22 @@
     },
     {
      "name": "MMR-S3",
+     "flight": {
+      "bodyMass": 100.0,
+      "finArea": 0.30000001192092896,
+      "cd": 0.034478,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 100.0,
+      "kind": "motor",
+      "dryMass": 60.0,
+      "burnTime": 2.2,
+      "lastThrust": 28000.0,
+      "deltaV": 786.7
+     },
      "minRange": 1000.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -1110,6 +1453,22 @@
     },
     {
      "name": "RAM-45",
+     "flight": {
+      "bodyMass": 170.0,
+      "finArea": 0.5,
+      "cd": 0.024126,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 170.0,
+      "kind": "motor",
+      "dryMass": 101.99,
+      "burnTime": 7.01,
+      "lastThrust": 22000.0,
+      "deltaV": 1157.0
+     },
      "minRange": 700.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -1164,6 +1523,13 @@
    "weapons": [
     {
      "name": "20mm Rotary Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 0.27000001072883606,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 3000.0,
      "minAltitude": 0.0,
@@ -1178,6 +1544,13 @@
     },
     {
      "name": "127mm Cannon",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.009999999776482582,
+      "gravMult": 1.0,
+      "mass": 32.0,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 40000.0,
      "minAltitude": 0.0,
@@ -1192,6 +1565,22 @@
     },
     {
      "name": "IRM-S2",
+     "flight": {
+      "bodyMass": 60.0,
+      "finArea": 0.15000000596046448,
+      "cd": 0.053227,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 60.0,
+      "kind": "motor",
+      "dryMass": 35.0,
+      "burnTime": 2.0,
+      "lastThrust": 18000.0,
+      "deltaV": 776.2
+     },
      "minRange": 500.0,
      "maxRange": 10000.0,
      "minAltitude": 2.0,
@@ -1206,6 +1595,22 @@
     },
     {
      "name": "AGM-99",
+     "flight": {
+      "bodyMass": 450.0,
+      "finArea": 2.5,
+      "cd": 0.017707,
+      "superDrag": 0.5,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 450.0,
+      "kind": "motor",
+      "dryMass": 350.0,
+      "burnTime": 300.0,
+      "lastThrust": 3600.0,
+      "deltaV": 2714.2
+     },
      "minRange": 1000.0,
      "maxRange": 100000.0,
      "minAltitude": 0.0,
@@ -1220,6 +1625,22 @@
     },
     {
      "name": "NL-98",
+     "flight": {
+      "bodyMass": 210.0,
+      "finArea": 0.6000000238418579,
+      "cd": 0.009006,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 160.0,
+      "kind": "motor",
+      "dryMass": 150.0,
+      "burnTime": 10.0,
+      "lastThrust": 19500.0,
+      "deltaV": 1256.4
+     },
      "minRange": 2000.0,
      "maxRange": 50000.0,
      "minAltitude": 2.0,
@@ -1350,6 +1771,13 @@
    "weapons": [
     {
      "name": "155mm Cannon",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.15000000596046448,
+      "gravMult": 1.0,
+      "mass": 45.0,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 40000.0,
      "minAltitude": 0.0,
@@ -1450,6 +1878,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -1488,6 +1923,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -1502,6 +1944,22 @@
     },
     {
      "name": "IRM-S1",
+     "flight": {
+      "bodyMass": 10.0,
+      "finArea": 0.019999999552965164,
+      "cd": 0.104654,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 10.0,
+      "kind": "motor",
+      "dryMass": 6.0,
+      "burnTime": 2.0,
+      "lastThrust": 2750.0,
+      "deltaV": 702.4
+     },
      "minRange": 200.0,
      "maxRange": 5000.0,
      "minAltitude": 0.0,
@@ -1540,6 +1998,13 @@
    "weapons": [
     {
      "name": "80kw Laser",
+     "flight": {
+      "muzzle": 300000000.0,
+      "dragCoef": 0.0,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "ballistic"
+     },
      "minRange": 0.0,
      "maxRange": 8000.0,
      "minAltitude": 0.0,
@@ -1578,6 +2043,13 @@
    "weapons": [
     {
      "name": "12.7mm Rotary Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 2500.0,
      "minAltitude": 0.0,
@@ -1592,6 +2064,22 @@
     },
     {
      "name": "IRM-S1",
+     "flight": {
+      "bodyMass": 10.0,
+      "finArea": 0.019999999552965164,
+      "cd": 0.104654,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 10.0,
+      "kind": "motor",
+      "dryMass": 6.0,
+      "burnTime": 2.0,
+      "lastThrust": 2750.0,
+      "deltaV": 702.4
+     },
      "minRange": 200.0,
      "maxRange": 5000.0,
      "minAltitude": 0.0,
@@ -1630,6 +2118,13 @@
    "weapons": [
     {
      "name": "25mm Autocannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.6499999761581421,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 2200.0,
      "minAltitude": 0.0,
@@ -1644,6 +2139,22 @@
     },
     {
      "name": "AT-145",
+     "flight": {
+      "bodyMass": 20.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.028903,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.009999999776482582,
+      "gravMult": 1.0,
+      "mass": 20.0,
+      "kind": "motor",
+      "dryMass": 10.0,
+      "burnTime": 6.5,
+      "lastThrust": 400.0,
+      "deltaV": 252.2
+     },
      "minRange": 500.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -1682,6 +2193,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -1720,6 +2238,13 @@
    "weapons": [
     {
      "name": "25mm Autocannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.6499999761581421,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 2200.0,
      "minAltitude": 0.0,
@@ -1734,6 +2259,22 @@
     },
     {
      "name": "AT-145",
+     "flight": {
+      "bodyMass": 20.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.028903,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.009999999776482582,
+      "gravMult": 1.0,
+      "mass": 20.0,
+      "kind": "motor",
+      "dryMass": 10.0,
+      "burnTime": 6.5,
+      "lastThrust": 400.0,
+      "deltaV": 252.2
+     },
      "minRange": 500.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -1772,6 +2313,22 @@
    "weapons": [
     {
      "name": "IRM-S2",
+     "flight": {
+      "bodyMass": 60.0,
+      "finArea": 0.15000000596046448,
+      "cd": 0.053227,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 60.0,
+      "kind": "motor",
+      "dryMass": 35.0,
+      "burnTime": 2.0,
+      "lastThrust": 18000.0,
+      "deltaV": 776.2
+     },
      "minRange": 500.0,
      "maxRange": 10000.0,
      "minAltitude": 2.0,
@@ -1810,6 +2367,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -1824,6 +2388,13 @@
     },
     {
      "name": "130mm Cannon",
+     "flight": {
+      "muzzle": 1700.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 30.0,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 4500.0,
      "minAltitude": 0.0,
@@ -1867,6 +2438,13 @@
    "weapons": [
     {
      "name": "20kw Laser",
+     "flight": {
+      "muzzle": 300000000.0,
+      "dragCoef": 0.0,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "ballistic"
+     },
      "minRange": 0.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -1881,6 +2459,13 @@
     },
     {
      "name": "130mm Cannon",
+     "flight": {
+      "muzzle": 1700.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 30.0,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 4500.0,
      "minAltitude": 0.0,
@@ -1895,6 +2480,22 @@
     },
     {
      "name": "AT-145",
+     "flight": {
+      "bodyMass": 20.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.028903,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.009999999776482582,
+      "gravMult": 1.0,
+      "mass": 20.0,
+      "kind": "motor",
+      "dryMass": 10.0,
+      "burnTime": 6.5,
+      "lastThrust": 400.0,
+      "deltaV": 252.2
+     },
      "minRange": 500.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -1909,6 +2510,13 @@
     },
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -1981,6 +2589,22 @@
    "weapons": [
     {
      "name": "AGM-48",
+     "flight": {
+      "bodyMass": 50.0,
+      "finArea": 0.10000000149011612,
+      "cd": 0.022837,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "motor",
+      "dryMass": 30.0,
+      "burnTime": 3.5,
+      "lastThrust": 4000.0,
+      "deltaV": 357.6
+     },
      "minRange": 1000.0,
      "maxRange": 10000.0,
      "minAltitude": 0.0,
@@ -1995,6 +2619,13 @@
     },
     {
      "name": "12.7mm Rotary Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 2500.0,
      "minAltitude": 0.0,
@@ -2009,6 +2640,22 @@
     },
     {
      "name": "IRM-S1",
+     "flight": {
+      "bodyMass": 10.0,
+      "finArea": 0.019999999552965164,
+      "cd": 0.104654,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 10.0,
+      "kind": "motor",
+      "dryMass": 6.0,
+      "burnTime": 2.0,
+      "lastThrust": 2750.0,
+      "deltaV": 702.4
+     },
      "minRange": 200.0,
      "maxRange": 5000.0,
      "minAltitude": 0.0,
@@ -2023,6 +2670,13 @@
     },
     {
      "name": "30mm Cannon",
+     "flight": {
+      "muzzle": 1200.0,
+      "dragCoef": 0.15000000596046448,
+      "gravMult": 1.0,
+      "mass": 0.8500000238418579,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -2123,6 +2777,22 @@
    "weapons": [
     {
      "name": "RAM-45",
+     "flight": {
+      "bodyMass": 170.0,
+      "finArea": 0.5,
+      "cd": 0.024126,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 170.0,
+      "kind": "motor",
+      "dryMass": 101.99,
+      "burnTime": 7.01,
+      "lastThrust": 22000.0,
+      "deltaV": 1157.0
+     },
      "minRange": 700.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -2155,6 +2825,22 @@
    "weapons": [
     {
      "name": "StratoLance R9",
+     "flight": {
+      "bodyMass": 500.0,
+      "finArea": 1.0,
+      "cd": 0.012264,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 500.0,
+      "kind": "motor",
+      "dryMass": 300.0,
+      "burnTime": 11.0,
+      "lastThrust": 40000.0,
+      "deltaV": 1392.7
+     },
      "minRange": 2000.0,
      "maxRange": 50000.0,
      "minAltitude": 500.0,
@@ -2187,6 +2873,22 @@
    "weapons": [
     {
      "name": "RAM-45",
+     "flight": {
+      "bodyMass": 170.0,
+      "finArea": 0.5,
+      "cd": 0.024126,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 170.0,
+      "kind": "motor",
+      "dryMass": 101.99,
+      "burnTime": 7.01,
+      "lastThrust": 22000.0,
+      "deltaV": 1157.0
+     },
      "minRange": 700.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -2225,6 +2927,13 @@
    "weapons": [
     {
      "name": "30mm Cannon",
+     "flight": {
+      "muzzle": 1200.0,
+      "dragCoef": 0.15000000596046448,
+      "gravMult": 1.0,
+      "mass": 0.8500000238418579,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 4000.0,
      "minAltitude": 0.0,
@@ -2263,6 +2972,13 @@
    "weapons": [
     {
      "name": "57mm Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.15000000596046448,
+      "gravMult": 1.0,
+      "mass": 6.0,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 5500.0,
      "minAltitude": 0.0,
@@ -2312,6 +3028,13 @@
    "weapons": [
     {
      "name": "80kw Laser",
+     "flight": {
+      "muzzle": 300000000.0,
+      "dragCoef": 0.0,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "ballistic"
+     },
      "minRange": 0.0,
      "maxRange": 8000.0,
      "minAltitude": 0.0,
@@ -2326,6 +3049,22 @@
     },
     {
      "name": "RAM-45",
+     "flight": {
+      "bodyMass": 170.0,
+      "finArea": 0.5,
+      "cd": 0.024126,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 170.0,
+      "kind": "motor",
+      "dryMass": 101.99,
+      "burnTime": 7.01,
+      "lastThrust": 22000.0,
+      "deltaV": 1157.0
+     },
      "minRange": 700.0,
      "maxRange": 15000.0,
      "minAltitude": 2.0,
@@ -2340,6 +3079,13 @@
     },
     {
      "name": "20mm Rotary Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 0.27000001072883606,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 3000.0,
      "minAltitude": 0.0,
@@ -2412,6 +3158,13 @@
    "weapons": [
     {
      "name": "20mm Rotary Cannon",
+     "flight": {
+      "muzzle": 1100.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 0.27000001072883606,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 3000.0,
      "minAltitude": 0.0,
@@ -2519,6 +3272,13 @@
    "weapons": [
     {
      "name": "80kw Laser",
+     "flight": {
+      "muzzle": 300000000.0,
+      "dragCoef": 0.0,
+      "gravMult": 1.0,
+      "mass": 0.0,
+      "kind": "ballistic"
+     },
      "minRange": 0.0,
      "maxRange": 8000.0,
      "minAltitude": 0.0,
@@ -2580,6 +3340,22 @@
    "weapons": [
     {
      "name": "MLRS Rocket",
+     "flight": {
+      "bodyMass": 300.0,
+      "finArea": 0.05000000074505806,
+      "cd": 0.101985,
+      "superDrag": 0.10000000149011612,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 300.0,
+      "kind": "motor",
+      "dryMass": 200.0,
+      "burnTime": 2.0,
+      "lastThrust": 100000.0,
+      "deltaV": 810.9
+     },
      "minRange": 10000.0,
      "maxRange": 40000.0,
      "minAltitude": 0.0,
@@ -2618,6 +3394,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -2690,6 +3473,22 @@
    "weapons": [
     {
      "name": "StratoLance R9",
+     "flight": {
+      "bodyMass": 500.0,
+      "finArea": 1.0,
+      "cd": 0.012264,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 500.0,
+      "kind": "motor",
+      "dryMass": 300.0,
+      "burnTime": 11.0,
+      "lastThrust": 40000.0,
+      "deltaV": 1392.7
+     },
      "minRange": 2000.0,
      "maxRange": 50000.0,
      "minAltitude": 500.0,
@@ -2751,6 +3550,22 @@
    "weapons": [
     {
      "name": "Piledriver TBM",
+     "flight": {
+      "bodyMass": 2500.0,
+      "finArea": 1.5,
+      "cd": 0.006497,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 2500.0,
+      "kind": "motor",
+      "dryMass": 1500.0,
+      "burnTime": 40.0,
+      "lastThrust": 70000.0,
+      "deltaV": 1430.3
+     },
      "minRange": 20000.0,
      "maxRange": 250000.0,
      "minAltitude": 0.0,
@@ -2789,6 +3604,22 @@
    "weapons": [
     {
      "name": "Piledriver TBM (20kt)",
+     "flight": {
+      "bodyMass": 2500.0,
+      "finArea": 1.5,
+      "cd": 0.006497,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 2500.0,
+      "kind": "motor",
+      "dryMass": 1500.0,
+      "burnTime": 40.0,
+      "lastThrust": 70000.0,
+      "deltaV": 1430.3
+     },
      "minRange": 20000.0,
      "maxRange": 250000.0,
      "minAltitude": 0.0,
@@ -2850,6 +3681,22 @@
    "weapons": [
     {
      "name": "IRM-S1",
+     "flight": {
+      "bodyMass": 10.0,
+      "finArea": 0.019999999552965164,
+      "cd": 0.104654,
+      "superDrag": 0.0,
+      "minSpeed": 0.0,
+      "muzzle": 0.0,
+      "dragCoef": 0.5,
+      "gravMult": 1.0,
+      "mass": 10.0,
+      "kind": "motor",
+      "dryMass": 6.0,
+      "burnTime": 2.0,
+      "lastThrust": 2750.0,
+      "deltaV": 702.4
+     },
      "minRange": 200.0,
      "maxRange": 5000.0,
      "minAltitude": 0.0,
@@ -2888,6 +3735,13 @@
    "weapons": [
     {
      "name": "40mm GMG",
+     "flight": {
+      "muzzle": 240.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 30.0,
      "maxRange": 2200.0,
      "minAltitude": 0.0,
@@ -3006,6 +3860,13 @@
    "weapons": [
     {
      "name": "Light Machine Gun",
+     "flight": {
+      "muzzle": 920.0,
+      "dragCoef": 0.30000001192092896,
+      "gravMult": 1.0,
+      "mass": 0.03999999910593033,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1000.0,
      "minAltitude": 0.0,
@@ -3020,6 +3881,13 @@
     },
     {
      "name": "70mm Light AT",
+     "flight": {
+      "muzzle": 280.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 1.2999999523162842,
+      "kind": "gun"
+     },
      "minRange": 10.0,
      "maxRange": 1000.0,
      "minAltitude": 0.0,
@@ -3034,6 +3902,13 @@
     },
     {
      "name": "40mm Grenade",
+     "flight": {
+      "muzzle": 110.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 30.0,
      "maxRange": 400.0,
      "minAltitude": 0.0,
@@ -3072,6 +3947,13 @@
    "weapons": [
     {
      "name": "Light Machine Gun",
+     "flight": {
+      "muzzle": 920.0,
+      "dragCoef": 0.30000001192092896,
+      "gravMult": 1.0,
+      "mass": 0.03999999910593033,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1000.0,
      "minAltitude": 0.0,
@@ -3086,6 +3968,13 @@
     },
     {
      "name": "70mm Light AT",
+     "flight": {
+      "muzzle": 280.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 1.2999999523162842,
+      "kind": "gun"
+     },
      "minRange": 10.0,
      "maxRange": 1000.0,
      "minAltitude": 0.0,
@@ -3100,6 +3989,13 @@
     },
     {
      "name": "40mm Grenade",
+     "flight": {
+      "muzzle": 110.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 30.0,
      "maxRange": 400.0,
      "minAltitude": 0.0,
@@ -3138,6 +4034,13 @@
    "weapons": [
     {
      "name": "Light Machine Gun",
+     "flight": {
+      "muzzle": 920.0,
+      "dragCoef": 0.30000001192092896,
+      "gravMult": 1.0,
+      "mass": 0.03999999910593033,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1000.0,
      "minAltitude": 0.0,
@@ -3152,6 +4055,13 @@
     },
     {
      "name": "70mm Light AT",
+     "flight": {
+      "muzzle": 280.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 1.2999999523162842,
+      "kind": "gun"
+     },
      "minRange": 10.0,
      "maxRange": 1000.0,
      "minAltitude": 0.0,
@@ -3166,6 +4076,13 @@
     },
     {
      "name": "40mm Grenade",
+     "flight": {
+      "muzzle": 110.0,
+      "dragCoef": 0.10000000149011612,
+      "gravMult": 1.0,
+      "mass": 0.4000000059604645,
+      "kind": "gun"
+     },
      "minRange": 30.0,
      "maxRange": 400.0,
      "minAltitude": 0.0,
@@ -3204,6 +4121,13 @@
    "weapons": [
     {
      "name": "12.7mm Machine Gun",
+     "flight": {
+      "muzzle": 850.0,
+      "dragCoef": 0.20000000298023224,
+      "gravMult": 1.0,
+      "mass": 0.11999999731779099,
+      "kind": "gun"
+     },
      "minRange": 0.0,
      "maxRange": 1800.0,
      "minAltitude": 0.0,
@@ -3268,6 +4192,1397 @@
     }
    ],
    "weapons": []
+  }
+ },
+ "airDensity": {
+  "stepM": 500,
+  "table": [
+   1.22498,
+   1.17612,
+   1.12773,
+   1.07986,
+   1.03257,
+   0.98593,
+   0.93998,
+   0.89479,
+   0.8504,
+   0.80689,
+   0.76431,
+   0.7227,
+   0.68215,
+   0.64269,
+   0.60438,
+   0.56729,
+   0.53147,
+   0.49699,
+   0.46388,
+   0.43222,
+   0.40207,
+   0.37384,
+   0.34775,
+   0.3236,
+   0.30119,
+   0.28032,
+   0.26078,
+   0.24239,
+   0.22493,
+   0.20821,
+   0.19203,
+   0.17674,
+   0.16272,
+   0.14985,
+   0.13805,
+   0.12718,
+   0.11715,
+   0.10784,
+   0.09913,
+   0.09094,
+   0.08313,
+   0.07571,
+   0.06876,
+   0.06224,
+   0.05614,
+   0.05046,
+   0.04518,
+   0.04028,
+   0.03575,
+   0.03157,
+   0.02773
+  ]
+ },
+ "arsenal": {
+  "12.7mm Machine Gun": {
+   "short": "GUN 12.7MM",
+   "flight": {
+    "muzzle": 850.0,
+    "dragCoef": 0.20000000298023224,
+    "gravMult": 1.0,
+    "mass": 0.11999999731779099,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 1800.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "12.7mm Rotary Machine Gun": {
+   "short": "GUN 12.7MM ROT",
+   "flight": {
+    "muzzle": 850.0,
+    "dragCoef": 0.20000000298023224,
+    "gravMult": 1.0,
+    "mass": 0.11999999731779099,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 2500.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "127mm Cannon": {
+   "short": "127mm Cannon",
+   "flight": {
+    "muzzle": 850.0,
+    "dragCoef": 0.009999999776482582,
+    "gravMult": 1.0,
+    "mass": 32.0,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 40000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "130mm Cannon": {
+   "short": "130mm Cannon",
+   "flight": {
+    "muzzle": 1700.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 30.0,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 4500.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 200.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "155mm Cannon": {
+   "short": "155mm Cannon",
+   "flight": {
+    "muzzle": 850.0,
+    "dragCoef": 0.15000000596046448,
+    "gravMult": 1.0,
+    "mass": 45.0,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 40000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "155mm Railgun": {
+   "short": "155mm Railgun",
+   "flight": {
+    "muzzle": 2380.0,
+    "dragCoef": 0.02500000037252903,
+    "gravMult": 1.0,
+    "mass": 50.0,
+    "kind": "gun"
+   },
+   "minRange": 300.0,
+   "maxRange": 50000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "20mm Autocannon": {
+   "short": "GUN 20MM POD",
+   "flight": {
+    "muzzle": 1100.0,
+    "dragCoef": 0.5,
+    "gravMult": 1.0,
+    "mass": 0.27000001072883606,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 2000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "20mm Rotary Cannon": {
+   "short": "GUN 20MM ROT",
+   "flight": {
+    "muzzle": 1040.0,
+    "dragCoef": 0.550000011920929,
+    "gravMult": 1.0,
+    "mass": 0.27000001072883606,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 1600.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "23mm Autocannon": {
+   "short": "GUN 25MM POD",
+   "flight": {
+    "muzzle": 980.0,
+    "dragCoef": 0.3499999940395355,
+    "gravMult": 1.0,
+    "mass": 0.4000000059604645,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 3000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "25mm Autocannon": {
+   "short": "GUN 25MM POD",
+   "flight": {
+    "muzzle": 1100.0,
+    "dragCoef": 0.6499999761581421,
+    "gravMult": 1.0,
+    "mass": 0.4000000059604645,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 2200.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "25mm Rotary Cannon": {
+   "short": "GUN 25MM ROT",
+   "flight": {
+    "muzzle": 1100.0,
+    "dragCoef": 0.5,
+    "gravMult": 1.0,
+    "mass": 0.4000000059604645,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 1800.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "27mm Autocannon": {
+   "short": "GUN 27MM",
+   "flight": {
+    "muzzle": 1100.0,
+    "dragCoef": 0.30000001192092896,
+    "gravMult": 1.0,
+    "mass": 0.44999998807907104,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 2000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "30mm Cannon": {
+   "short": "30mm Cannon",
+   "flight": {
+    "muzzle": 1200.0,
+    "dragCoef": 0.15000000596046448,
+    "gravMult": 1.0,
+    "mass": 0.8500000238418579,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 4000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "30mm Chaingun": {
+   "short": "GUN 30MM",
+   "flight": {
+    "muzzle": 805.0,
+    "dragCoef": 0.4000000059604645,
+    "gravMult": 1.0,
+    "mass": 0.5,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 2000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "30mm Rotary Cannon": {
+   "short": "GUN 30MM ROT",
+   "flight": {
+    "muzzle": 825.0,
+    "dragCoef": 0.44999998807907104,
+    "gravMult": 1.0,
+    "mass": 0.5,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 2000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "35mm Autocannon": {
+   "short": "GUN 35MM",
+   "flight": {
+    "muzzle": 1175.0,
+    "dragCoef": 0.20000000298023224,
+    "gravMult": 1.0,
+    "mass": 1.399999976158142,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 3000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "40mm Cannon": {
+   "short": "40mm Cannon",
+   "flight": {
+    "muzzle": 1100.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.8999999761581421,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 7500.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "40mm GMG": {
+   "short": "40mm GMG",
+   "flight": {
+    "muzzle": 240.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.4000000059604645,
+    "kind": "gun"
+   },
+   "minRange": 30.0,
+   "maxRange": 2200.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "40mm Grenade": {
+   "short": "40mm Grenade",
+   "flight": {
+    "muzzle": 110.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.4000000059604645,
+    "kind": "gun"
+   },
+   "minRange": 30.0,
+   "maxRange": 400.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "57mm Cannon": {
+   "short": "57mm Cannon",
+   "flight": {
+    "muzzle": 1100.0,
+    "dragCoef": 0.15000000596046448,
+    "gravMult": 1.0,
+    "mass": 6.0,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 5500.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "70mm Light AT": {
+   "short": "70mm AT",
+   "flight": {
+    "muzzle": 280.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 1.2999999523162842,
+    "kind": "gun"
+   },
+   "minRange": 10.0,
+   "maxRange": 1000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "76mm Cannon": {
+   "short": "76mm Cannon",
+   "flight": {
+    "muzzle": 950.0,
+    "dragCoef": 0.029999999329447746,
+    "gravMult": 1.0,
+    "mass": 6.300000190734863,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 25000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "???": {
+   "short": "???",
+   "flight": {
+    "muzzle": 5000.0,
+    "dragCoef": 0.0,
+    "gravMult": 0.0,
+    "mass": 0.0010000000474974513,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 1000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "AAM-29 Scythe": {
+   "short": "AAM-29",
+   "flight": {
+    "bodyMass": 160.0,
+    "finArea": 0.5,
+    "cd": 0.023306,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 160.0,
+    "kind": "motor",
+    "dryMass": 100.0,
+    "burnTime": 8.0,
+    "lastThrust": 14000.0,
+    "deltaV": 1149.9
+   },
+   "minRange": 2000.0,
+   "maxRange": 35000.0,
+   "minAltitude": 2.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AAM-36 Scimitar": {
+   "short": "AAM-36",
+   "flight": {
+    "bodyMass": 200.0,
+    "finArea": 0.5,
+    "cd": 0.029794,
+    "superDrag": 0.5,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 200.0,
+    "kind": "motor",
+    "dryMass": 135.0,
+    "burnTime": 63.0,
+    "lastThrust": 8500.0,
+    "deltaV": 3447.7
+   },
+   "minRange": 5000.0,
+   "maxRange": 100000.0,
+   "minAltitude": 2.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AGM-48": {
+   "short": "AGM-48",
+   "flight": {
+    "bodyMass": 50.0,
+    "finArea": 0.10000000149011612,
+    "cd": 0.022837,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "motor",
+    "dryMass": 30.0,
+    "burnTime": 3.5,
+    "lastThrust": 4000.0,
+    "deltaV": 357.6
+   },
+   "minRange": 1000.0,
+   "maxRange": 10000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AGM-68": {
+   "short": "AGM-68",
+   "flight": {
+    "bodyMass": 250.0,
+    "finArea": 0.5,
+    "cd": 0.022925,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "motor",
+    "dryMass": 150.0,
+    "burnTime": 3.5,
+    "lastThrust": 22000.0,
+    "deltaV": 393.3
+   },
+   "minRange": 1000.0,
+   "maxRange": 15000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AGM-99": {
+   "short": "AGM-99",
+   "flight": {
+    "bodyMass": 450.0,
+    "finArea": 2.5,
+    "cd": 0.017707,
+    "superDrag": 0.5,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 450.0,
+    "kind": "motor",
+    "dryMass": 350.0,
+    "burnTime": 300.0,
+    "lastThrust": 3600.0,
+    "deltaV": 2714.2
+   },
+   "minRange": 1000.0,
+   "maxRange": 100000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 50.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AGR-18 Lynchpin": {
+   "short": "AGR-18",
+   "flight": {
+    "bodyMass": 11.0,
+    "finArea": 0.019999999552965164,
+    "cd": 0.102259,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.5,
+    "gravMult": 1.0,
+    "mass": 11.0,
+    "kind": "motor",
+    "dryMass": 6.5,
+    "burnTime": 1.1,
+    "lastThrust": 5800.0,
+    "deltaV": 745.9
+   },
+   "minRange": 500.0,
+   "maxRange": 6000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 1000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AGR-24 Kingpin": {
+   "short": "AGR-24",
+   "flight": {
+    "bodyMass": 58.0,
+    "finArea": 0.07000000029802322,
+    "cd": 0.181912,
+    "superDrag": 0.30000001192092896,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.5,
+    "gravMult": 1.0,
+    "mass": 58.0,
+    "kind": "motor",
+    "dryMass": 53.5,
+    "burnTime": 1.5,
+    "lastThrust": 28000.0,
+    "deltaV": 753.8
+   },
+   "minRange": 500.0,
+   "maxRange": 8000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 1000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AIR-2 Genie": {
+   "short": "AIR-2",
+   "flight": {
+    "bodyMass": 373.0,
+    "finArea": 1.5,
+    "cd": 0.022925,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 850.0,
+    "dragCoef": 0.0,
+    "gravMult": 1.0,
+    "mass": 373.0,
+    "kind": "motor",
+    "dryMass": 253.0,
+    "burnTime": 2.0,
+    "lastThrust": 162000.0,
+    "deltaV": 1048.1
+   },
+   "minRange": 10000.0,
+   "maxRange": 11000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": true
+  },
+  "ALM-C450": {
+   "short": "ALM-C450",
+   "flight": {
+    "bodyMass": 900.0,
+    "finArea": 3.0,
+    "cd": 0.019235,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.30000001192092896,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "motor",
+    "dryMass": 500.0,
+    "burnTime": 600.0,
+    "lastThrust": 4200.0,
+    "deltaV": 3703.1
+   },
+   "minRange": 2000.0,
+   "maxRange": 1000000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "ALND-4 (20kt)": {
+   "short": "ALND-4 (20kt)",
+   "flight": {
+    "bodyMass": 1280.0,
+    "finArea": 4.0,
+    "cd": 0.019235,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.30000001192092896,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "motor",
+    "dryMass": 880.0,
+    "burnTime": 1000.0,
+    "lastThrust": 4500.0,
+    "deltaV": 4215.3
+   },
+   "minRange": 5000.0,
+   "maxRange": 1000000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": true,
+   "nuclear": true
+  },
+  "ARAD-116": {
+   "short": "ARAD-116",
+   "flight": {
+    "bodyMass": 400.0,
+    "finArea": 0.5,
+    "cd": 0.01612,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 400.0,
+    "kind": "motor",
+    "dryMass": 250.0,
+    "burnTime": 12.0,
+    "lastThrust": 23000.0,
+    "deltaV": 1011.3
+   },
+   "minRange": 1000.0,
+   "maxRange": 60000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "ARAD-45": {
+   "short": "ARAD-45",
+   "flight": {
+    "bodyMass": 180.0,
+    "finArea": 0.5,
+    "cd": 0.017838,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 180.0,
+    "kind": "motor",
+    "dryMass": 112.0,
+    "burnTime": 7.0,
+    "lastThrust": 20000.0,
+    "deltaV": 976.8
+   },
+   "minRange": 1000.0,
+   "maxRange": 25000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AShM-300": {
+   "short": "ASHM-300",
+   "flight": {
+    "bodyMass": 600.0,
+    "finArea": 2.3299999237060547,
+    "cd": 0.019235,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.0,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "motor",
+    "dryMass": 400.0,
+    "burnTime": 600.0,
+    "lastThrust": 5000.0,
+    "deltaV": 6082.0
+   },
+   "minRange": 5000.0,
+   "maxRange": 250000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 50.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "AT-145": {
+   "short": "AT-145",
+   "flight": {
+    "bodyMass": 20.0,
+    "finArea": 0.10000000149011612,
+    "cd": 0.028903,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.009999999776482582,
+    "gravMult": 1.0,
+    "mass": 20.0,
+    "kind": "motor",
+    "dryMass": 10.0,
+    "burnTime": 6.5,
+    "lastThrust": 400.0,
+    "deltaV": 252.2
+   },
+   "minRange": 500.0,
+   "maxRange": 4000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 200.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "ATP-1": {
+   "short": "ATP-1",
+   "flight": {
+    "bodyMass": 45.0,
+    "finArea": 0.125,
+    "cd": 0.0313,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "motor",
+    "dryMass": 30.0,
+    "burnTime": 2.2,
+    "lastThrust": 5000.0,
+    "deltaV": 297.3
+   },
+   "minRange": 1000.0,
+   "maxRange": 8000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "CBO-400": {
+   "short": "CBO-400",
+   "flight": {
+    "bodyMass": 400.0,
+    "finArea": 0.30000001192092896,
+    "cd": 0.040865,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 400.0,
+    "kind": "glide",
+    "dryMass": 400.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "Demolition Bomb": {
+   "short": "DEMO BOMB",
+   "flight": {
+    "bodyMass": 10000.0,
+    "finArea": 4.0,
+    "cd": 0.040865,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.20000000298023224,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "glide",
+    "dryMass": 10000.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "Eyeball Mk.II": {
+   "short": "Eyeball Mk.II",
+   "flight": {
+    "bodyMass": 50.0,
+    "finArea": 0.10000000149011612,
+    "cd": 0.022837,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 50.0,
+    "kind": "motor",
+    "dryMass": 30.0,
+    "burnTime": 3.5,
+    "lastThrust": 4000.0,
+    "deltaV": 357.6
+   },
+   "minRange": 1000.0,
+   "maxRange": 10000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "GBM-500LR": {
+   "short": "GBM-500LR",
+   "flight": {
+    "bodyMass": 500.0,
+    "finArea": 2.0,
+    "cd": 0.010217,
+    "superDrag": 3.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 500.0,
+    "kind": "glide",
+    "dryMass": 500.0,
+    "glideRatio": 12.03
+   },
+   "minRange": 1000.0,
+   "maxRange": 10000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "GPO-2P Auger": {
+   "short": "GPO-2P",
+   "flight": {
+    "bodyMass": 1000.0,
+    "finArea": 1.0,
+    "cd": 0.040877,
+    "superDrag": 0.5,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.20000000298023224,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "glide",
+    "dryMass": 1000.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "GPO-500": {
+   "short": "GPO-500",
+   "flight": {
+    "bodyMass": 500.0,
+    "finArea": 0.5,
+    "cd": 0.040865,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "glide",
+    "dryMass": 500.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "GPO-N (1.5kt)": {
+   "short": "GPO-N (1.5kt)",
+   "flight": {
+    "bodyMass": 400.0,
+    "finArea": 0.30000001192092896,
+    "cd": 0.040865,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 400.0,
+    "kind": "glide",
+    "dryMass": 400.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": true
+  },
+  "GPO-N (250kt)": {
+   "short": "GPO-N (250kt)",
+   "flight": {
+    "bodyMass": 400.0,
+    "finArea": 0.30000001192092896,
+    "cd": 0.040865,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 400.0,
+    "kind": "glide",
+    "dryMass": 400.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": true
+  },
+  "GS25": {
+   "short": "GS25",
+   "flight": {
+    "bodyMass": 25.0,
+    "finArea": 0.10000000149011612,
+    "cd": 0.028021,
+    "superDrag": 3.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": -0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 125.0,
+    "kind": "glide",
+    "dryMass": 25.0,
+    "glideRatio": 3.34
+   },
+   "minRange": 1000.0,
+   "maxRange": 10000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 1000000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "IRM-S1": {
+   "short": "IRM-S1",
+   "flight": {
+    "bodyMass": 10.0,
+    "finArea": 0.019999999552965164,
+    "cd": 0.104654,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.5,
+    "gravMult": 1.0,
+    "mass": 10.0,
+    "kind": "motor",
+    "dryMass": 6.0,
+    "burnTime": 2.0,
+    "lastThrust": 2750.0,
+    "deltaV": 702.4
+   },
+   "minRange": 200.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 10000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "IRM-S2": {
+   "short": "IRM-S2",
+   "flight": {
+    "bodyMass": 60.0,
+    "finArea": 0.15000000596046448,
+    "cd": 0.053227,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 60.0,
+    "kind": "motor",
+    "dryMass": 35.0,
+    "burnTime": 2.0,
+    "lastThrust": 18000.0,
+    "deltaV": 776.2
+   },
+   "minRange": 500.0,
+   "maxRange": 10000.0,
+   "minAltitude": 2.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "Light Machine Gun": {
+   "short": "7.5MM LMG",
+   "flight": {
+    "muzzle": 920.0,
+    "dragCoef": 0.30000001192092896,
+    "gravMult": 1.0,
+    "mass": 0.03999999910593033,
+    "kind": "gun"
+   },
+   "minRange": 0.0,
+   "maxRange": 1000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "MLRS Rocket": {
+   "short": "MLRS R",
+   "flight": {
+    "bodyMass": 300.0,
+    "finArea": 0.05000000074505806,
+    "cd": 0.101985,
+    "superDrag": 0.10000000149011612,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.5,
+    "gravMult": 1.0,
+    "mass": 300.0,
+    "kind": "motor",
+    "dryMass": 200.0,
+    "burnTime": 2.0,
+    "lastThrust": 100000.0,
+    "deltaV": 810.9
+   },
+   "minRange": 10000.0,
+   "maxRange": 40000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 1000.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "MMR-S3": {
+   "short": "MMR-S3",
+   "flight": {
+    "bodyMass": 100.0,
+    "finArea": 0.30000001192092896,
+    "cd": 0.034478,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 100.0,
+    "kind": "motor",
+    "dryMass": 60.0,
+    "burnTime": 2.2,
+    "lastThrust": 28000.0,
+    "deltaV": 786.7
+   },
+   "minRange": 1000.0,
+   "maxRange": 15000.0,
+   "minAltitude": 2.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "NL-98": {
+   "short": "NL-98",
+   "flight": {
+    "bodyMass": 210.0,
+    "finArea": 0.6000000238418579,
+    "cd": 0.009006,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 160.0,
+    "kind": "motor",
+    "dryMass": 150.0,
+    "burnTime": 10.0,
+    "lastThrust": 19500.0,
+    "deltaV": 1256.4
+   },
+   "minRange": 2000.0,
+   "maxRange": 50000.0,
+   "minAltitude": 2.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "PAB-125": {
+   "short": "PAB-125",
+   "flight": {
+    "bodyMass": 125.0,
+    "finArea": 0.10000000149011612,
+    "cd": 0.040877,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "glide",
+    "dryMass": 125.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 4000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "PAB-125HD": {
+   "short": "PAB-125HD",
+   "flight": {
+    "bodyMass": 125.0,
+    "finArea": 0.10000000149011612,
+    "cd": 0.500774,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 125.0,
+    "kind": "ballistic",
+    "dryMass": 125.0,
+    "glideRatio": 1.37
+   },
+   "minRange": 0.0,
+   "maxRange": 4000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "PAB-250": {
+   "short": "PAB-250",
+   "flight": {
+    "bodyMass": 250.0,
+    "finArea": 0.20000000298023224,
+    "cd": 0.040865,
+    "superDrag": 1.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 0.0,
+    "kind": "glide",
+    "dryMass": 250.0,
+    "glideRatio": 3.26
+   },
+   "minRange": 0.0,
+   "maxRange": 5000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": false,
+   "nuclear": false
+  },
+  "PAB-250LR": {
+   "short": "PAB-250LR",
+   "flight": {
+    "bodyMass": 270.0,
+    "finArea": 1.0,
+    "cd": 0.008217,
+    "superDrag": 3.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 270.0,
+    "kind": "glide",
+    "dryMass": 270.0,
+    "glideRatio": 13.53
+   },
+   "minRange": 1000.0,
+   "maxRange": 10000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "PAB-80LR": {
+   "short": "PAB-80LR",
+   "flight": {
+    "bodyMass": 125.0,
+    "finArea": 0.5,
+    "cd": 0.008217,
+    "superDrag": 3.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": -0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 125.0,
+    "kind": "glide",
+    "dryMass": 125.0,
+    "glideRatio": 13.53
+   },
+   "minRange": 1000.0,
+   "maxRange": 10000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 1000000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "Piledriver TBM": {
+   "short": "TBM HE",
+   "flight": {
+    "bodyMass": 2500.0,
+    "finArea": 1.5,
+    "cd": 0.006497,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 2500.0,
+    "kind": "motor",
+    "dryMass": 1500.0,
+    "burnTime": 40.0,
+    "lastThrust": 70000.0,
+    "deltaV": 1430.3
+   },
+   "minRange": 20000.0,
+   "maxRange": 250000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "Piledriver TBM (20kt)": {
+   "short": "TBM 20kt",
+   "flight": {
+    "bodyMass": 2500.0,
+    "finArea": 1.5,
+    "cd": 0.006497,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 2500.0,
+    "kind": "motor",
+    "dryMass": 1500.0,
+    "burnTime": 40.0,
+    "lastThrust": 70000.0,
+    "deltaV": 1430.3
+   },
+   "minRange": 20000.0,
+   "maxRange": 250000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": true
+  },
+  "RAM-45": {
+   "short": "RAM-45",
+   "flight": {
+    "bodyMass": 170.0,
+    "finArea": 0.5,
+    "cd": 0.024126,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.20000000298023224,
+    "gravMult": 1.0,
+    "mass": 170.0,
+    "kind": "motor",
+    "dryMass": 101.99,
+    "burnTime": 7.01,
+    "lastThrust": 22000.0,
+    "deltaV": 1157.0
+   },
+   "minRange": 700.0,
+   "maxRange": 15000.0,
+   "minAltitude": 2.0,
+   "maxAltitude": 20000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "StratoLance R9": {
+   "short": "R9",
+   "flight": {
+    "bodyMass": 500.0,
+    "finArea": 1.0,
+    "cd": 0.012264,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.20000000298023224,
+    "gravMult": 1.0,
+    "mass": 500.0,
+    "kind": "motor",
+    "dryMass": 300.0,
+    "burnTime": 11.0,
+    "lastThrust": 40000.0,
+    "deltaV": 1392.7
+   },
+   "minRange": 2000.0,
+   "maxRange": 50000.0,
+   "minAltitude": 500.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
+  },
+  "Tusko-B (HE)": {
+   "short": "Tusko-B",
+   "flight": {
+    "bodyMass": 650.0,
+    "finArea": 1.25,
+    "cd": 0.017002,
+    "superDrag": 0.0,
+    "minSpeed": 0.0,
+    "muzzle": 0.0,
+    "dragCoef": 0.10000000149011612,
+    "gravMult": 1.0,
+    "mass": 650.0,
+    "kind": "motor",
+    "dryMass": 350.0,
+    "burnTime": 20.0,
+    "lastThrust": 22000.0,
+    "deltaV": 907.9
+   },
+   "minRange": 3000.0,
+   "maxRange": 60000.0,
+   "minAltitude": 0.0,
+   "maxAltitude": 100000.0,
+   "guided": true,
+   "nuclear": false
   }
  },
  "airframes": {

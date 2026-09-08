@@ -257,6 +257,21 @@ function fmtAlt(metres) {
         : Math.round(metres) + ' m';
 }
 
+// Speeds are knots or kilometres per hour, matching how each system quotes them.
+function fmtSpeed(mps) {
+    return unitSystem === 'aviation'
+        ? Math.round(mps * 1.943844) + ' kt'
+        : Math.round(mps * 3.6) + ' km/h';
+}
+
+function speedToMs(shown) {
+    return unitSystem === 'aviation' ? shown / 1.943844 : shown / 3.6;
+}
+
+function speedFromMs(mps) {
+    return unitSystem === 'aviation' ? mps * 1.943844 : mps * 3.6;
+}
+
 function fmtBearing(deg) {
     return String(Math.round(deg) % 360).padStart(3, '0') + '°';
 }

@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Flights, routes, waypoints and designated targets.
+   Flights, routes, waypoints, designated targets, and time on target.
 
    Part 8 of 11 of the planner. These files are plain scripts sharing one
    global scope, loaded in the order listed in index.html - not ES modules - so
@@ -64,6 +64,9 @@ function newFlight() {
         name: 'Flight ' + (flights.length + 1),
         colour: FLIGHT_COLOURS[flights.length % FLIGHT_COLOURS.length],
         visible: true,
+        // Release speed feeds straight into time of flight, so a flight needs
+        // one even before it has a route. 250 m/s is a workable cruise.
+        speed: 250,
         waypoints: [],
     });
     activeFlight = flights.length - 1;
@@ -145,6 +148,7 @@ function drawFlights(ctx) {
         // ON TOP of the route line, unlike the exposure on placed legs. This is
         // a warning about the click you are about to make, so it has to win
         // against the line it is warning about.
+        drawReleasePoints(ctx, f);
         if (fi === activeFlight) drawPendingLeg(ctx);
     }
 }
@@ -473,9 +477,16 @@ function pendingLegText() {
 //   point   stores its own coordinates, for a place rather than a thing - a
 //           bridge, a revetment, a mark on a road
 // ---------------------------------------------------------------------------
-const targets = [];       // { kind, path?, x?, z?, name }
+// Ids are stable across removals, because a release point refers to targets by
+// id. Positions in the list shift; a reference must not.
+let nextTargetId = 1;
+const targets = [];       // { id, kind, path?, x?, z?, name }
 
 const TARGET_COLOUR = '#ff5c52';
+
+function targetById(id) {
+    return targets.find(t => t.id === id) || null;
+}
 
 function targetPos(t) {
     if (t.kind === 'point') return { x: t.x, z: t.z };
@@ -487,13 +498,15 @@ function targetPos(t) {
 function designateUnit(unit) {
     const path = unitPath(unit);
     if (targets.some(t => t.path === path)) return;   // already designated
-    targets.push({ kind: 'unit', path: path, name: unitName(unit.type) });
+    targets.push({ id: nextTargetId++, kind: 'unit', path: path,
+                   name: unitName(unit.type) });
     renderTargets();
     if (currentMission) draw(currentMission);
 }
 
 function designatePoint(at) {
-    targets.push({ kind: 'point', x: at.x, z: at.z, name: 'Point target' });
+    targets.push({ id: nextTargetId++, kind: 'point', x: at.x, z: at.z,
+                   name: 'Point target' });
     renderTargets();
     if (currentMission) draw(currentMission);
 }
@@ -544,5 +557,255 @@ function drawTargets(ctx) {
         ctx.fillText(String(i + 1), bx, by + 0.5);
     });
 
+    ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Munition flight and time on target
+//
+// A port of the game's own model rather than an estimate. Missile.CalcRange
+// steps a missile forward in time, accumulating distance against drag until it
+// falls below its seeker's minimum speed; running the same integration and
+// stopping at the target's distance gives the time to reach it.
+//
+// Validated against the game's cached WeaponInfo.maxSpeed, which it computes
+// once from the same equations: StratoLance R9 caches 1393 m/s and the ported
+// delta-v gives 1393, Piledriver 1430 against 1430.
+//
+// Four kinds, because the game flies them differently:
+//
+//   motor      boost under thrust, then coast - the CalcRange integration
+//   glide      no thrust; trades altitude for distance at its best lift/drag
+//   ballistic  no thrust, no lift; falls under gravity while drag bleeds speed
+//   gun        leaves at muzzle velocity and slows
+//
+// Every result is an estimate in the sense that the real weapon is guided and
+// manoeuvring, which costs energy this model does not charge for. Treat a time
+// as a floor rather than a promise.
+// ---------------------------------------------------------------------------
+const G = 9.81;
+
+function airDensity(altM) {
+    const d = (ranges.airDensity || {});
+    const table = d.table || [];
+    if (!table.length) return 1.225;
+
+    const f = Math.max(0, altM) / (d.stepM || 500);
+    const i = Math.min(table.length - 1, Math.floor(f));
+    const j = Math.min(table.length - 1, i + 1);
+    return table[i] + (table[j] - table[i]) * (f - i);
+}
+
+// Time for one munition to cover `dist` on the ground, released at `speed` and
+// `launchAlt`, against a target at `targetAlt`. Returns null when it cannot
+// reach - out of envelope, or out of energy before it arrives.
+function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
+    const f = w && w.flight;
+    if (!f || !(dist > 0)) return null;
+    if (w.maxRange && dist > w.maxRange) return { reach: false, reason: 'beyond max range' };
+    if (w.minRange && dist < w.minRange) return { reach: false, reason: 'inside min range' };
+
+    // Density is taken at the midpoint of the climb or dive, as the game does.
+    const rho = airDensity((launchAlt + targetAlt) / 2);
+    const drop = launchAlt - targetAlt;
+
+    if (f.kind === 'gun') {
+        // BulletSim decelerates a shell by dragCoef/muzzleVelocity, not by the
+        // frontal-area form the bodies use:
+        //     v -= |v| * v * (dragCoef * dt / muzzleVelocity)
+        const muzzle = f.muzzle || 0;
+        if (muzzle <= 0) return { reach: false, reason: 'no muzzle velocity' };
+
+        const k = (f.dragCoef || 0) / muzzle;
+        let v = muzzle + speed, t = 0, d = 0;
+        const dt = 0.05;
+        while (d < dist && t < 300 && v > 40) {
+            d += dt * v; t += dt; v -= dt * v * v * k;
+        }
+        return d >= dist ? { reach: true, time: t, impact: v }
+                         : { reach: false, reason: 'out of energy' };
+    }
+
+    if (f.kind === 'ballistic') {
+        // The game's own CCIP integration, in two dimensions: gravity plus
+        // quadratic drag along the velocity vector, stepped until it reaches
+        // the target's height.
+        //     k = 0.5 * Cd * rho * finArea / mass
+        if (drop <= 0) return { reach: false, reason: 'no height to fall' };
+
+        const k = 0.5 * (f.cd || 0.05) * rho * (f.finArea || 0.2) /
+                  Math.max(1, f.dryMass || f.mass || 250);
+        let vx = speed + (f.muzzle || 0), vy = 0, h = drop, d = 0, t = 0;
+        const dt = 0.05;
+
+        while (h > 0 && t < 300) {
+            const v = Math.hypot(vx, vy) || 1;
+            d  += vx * dt;
+            h  -= vy * dt;
+            t  += dt;
+            vy += (G * (f.gravMult || 1) - (vy / v) * k * v * v) * dt;
+            vx -= (vx / v) * k * v * v * dt;
+            if (d >= dist) break;
+        }
+        if (h > 0) return { reach: false, reason: 'falls short' };
+        return d >= dist ? { reach: true, time: t, impact: Math.hypot(vx, vy) }
+                         : { reach: false, reason: 'falls short' };
+    }
+
+    if (f.kind === 'glide') {
+        // A glider trades height for distance at its best lift-to-drag, so its
+        // reach is drop * L/D. Along the glide, gravity feeds energy in at
+        // g*sin(theta) while drag takes it out, and the speed settles where the
+        // two balance - which is what makes a heavy, clean weapon arrive sooner
+        // than a light draggy one over the same distance.
+        const ld = f.glideRatio || 0;
+        if (ld <= 0) return { reach: false, reason: 'no glide performance' };
+        if (drop <= 0) return { reach: false, reason: 'no height to trade' };
+        if (dist > drop * ld) return { reach: false, reason: 'beyond glide range' };
+
+        const sinTheta = 1 / Math.sqrt(1 + ld * ld);
+        const k = 0.5 * (f.cd || 0.02) * rho * (f.finArea || 0.5) /
+                  Math.max(1, f.dryMass || f.mass || 250);
+
+        let v = Math.max(40, speed), d = 0, t = 0;
+        const dt = 0.1;
+        while (d < dist && t < 600) {
+            d += v * dt;
+            t += dt;
+            v += (G * sinTheta - k * v * v) * dt;
+            if (v < 30) break;
+        }
+        return d >= dist ? { reach: true, time: t, impact: v }
+                         : { reach: false, reason: 'out of energy' };
+    }
+
+    // --- motor: the CalcRange integration -------------------------------
+    const cd = f.cd || 0.02, area = f.finArea || 1, dry = Math.max(1, f.dryMass || 1);
+    const vTerm = Math.sqrt((f.lastThrust || 0) / (cd * rho * 0.5 * area));
+    const vPeak = Math.min(speed + (f.deltaV || 0), vTerm);
+    const burn  = f.burnTime || 0;
+
+    // Boost covers ground too. The game averages launch and peak speed over the
+    // burn for short burns, and uses the terminal speed for sustained ones.
+    let d = (burn < 30) ? ((speed + vPeak) / 2) * burn : vTerm * burn;
+    let t = burn;
+    if (d >= dist) return { reach: true, time: dist / Math.max(1, d / burn), impact: vPeak };
+
+    let v = vPeak, dt = 0.1;
+    const k = 0.5 * cd * rho * area / dry;
+    const minSpeed = f.minSpeed || 0;
+
+    for (let i = 0; i < 120 && d < dist; i++) {
+        d += dt * v;
+        t += dt;
+        v -= dt * v * v * k;
+        dt += 0.05;                       // the game grows its step the same way
+        if (i > 10 && v < minSpeed) break;
+    }
+    return d >= dist ? { reach: true, time: t, impact: v }
+                     : { reach: false, reason: 'out of energy' };
+}
+
+function fmtTime(seconds) {
+    const s = Math.round(seconds);
+    return s < 60 ? s + 's' : Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+// ---------------------------------------------------------------------------
+// Release points
+//
+// A waypoint marked as a release point carries a munition and the targets it is
+// engaging, and reports a time of flight to each. Not every target gets shot at
+// from every release point, so the targets are chosen per release point rather
+// than assumed.
+//
+// The time is measured from the release point, which is what matters against an
+// air defence: it is how long the munition is in the air and the defence has to
+// react, not how long the aircraft has been flying.
+// ---------------------------------------------------------------------------
+function isReleasePoint(w) {
+    return !!w.rp;
+}
+
+// Time of flight from one release point to each of its targets.
+function releaseSolutions(f, i) {
+    const w = f.waypoints[i];
+    if (!w || !w.rp) return [];
+
+    const munition = (ranges.arsenal || {})[w.munition];
+    return (w.targetIds || []).map(id => {
+        const t = targetById(id);
+        const pos = t && targetPos(t);
+        if (!pos) return { id: id, name: '(target gone)', error: 'missing' };
+
+        const br = bearingRange(w, pos);
+        // Target altitude is the ground under it: a designated target is a
+        // thing on the map, not something at the aircraft's height.
+        const groundAlt = terrain ? terrainAt(pos.x, pos.z) : 0;
+
+        if (!munition) {
+            return { id: id, name: t.name, bearing: br.bearing, range: br.range,
+                     error: 'no munition' };
+        }
+        const sol = timeOfFlight(munition, br.range, f.speed || 250,
+                                 w.alt, groundAlt);
+        return { id: id, name: t.name, bearing: br.bearing, range: br.range,
+                 sol: sol };
+    });
+}
+
+// Release points are drawn as a filled triangle with lines to what they engage,
+// so a glance shows which targets are being serviced from where.
+function drawReleasePoints(ctx, f) {
+    if (!f.visible) return;
+
+    ctx.save();
+    f.waypoints.forEach((w, i) => {
+        if (!w.rp) return;
+        const p = toScreen(w.x, w.z);
+
+        for (const sol of releaseSolutions(f, i)) {
+            const t = targetById(sol.id);
+            const pos = t && targetPos(t);
+            if (!pos) continue;
+            const q = toScreen(pos.x, pos.z);
+
+            ctx.setLineDash([6, 5]);
+            ctx.strokeStyle = 'rgba(11,16,20,0.8)';
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+
+            // A shot that cannot reach is drawn faint, so an impossible pairing
+            // is visible without opening the panel.
+            const ok = sol.sol && sol.sol.reach;
+            ctx.globalAlpha = ok ? 0.95 : 0.35;
+            ctx.strokeStyle = f.colour;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+            ctx.globalAlpha = 1;
+            ctx.setLineDash([]);
+
+            const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
+            if (Math.hypot(q.x - p.x, q.y - p.y) > 70) {
+                plate(ctx, ok ? 'TOT ' + fmtTime(sol.sol.time)
+                              : (sol.sol ? sol.sol.reason : 'no munition'),
+                      mx, my, ok ? f.colour : 'rgba(240,133,122,0.8)');
+            }
+        }
+
+        // The marker itself, over the line ends.
+        for (const pass of [{ c: '#0b1014', lw: 5 }, { c: f.colour, lw: 2 }]) {
+            ctx.strokeStyle = pass.c;
+            ctx.lineWidth   = pass.lw;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - 11);
+            ctx.lineTo(p.x + 10, p.y + 7);
+            ctx.lineTo(p.x - 10, p.y + 7);
+            ctx.closePath();
+            ctx.stroke();
+        }
+        ctx.fillStyle = f.colour;
+        ctx.fill();
+    });
     ctx.restore();
 }
