@@ -285,6 +285,43 @@ function renderFlights() {
     renderWaypoints();
 }
 
+// Writes one leg's text into an existing span. Separated from renderWaypoints
+// so the labels can be refreshed without rebuilding the rows: rebuilding while
+// an altitude box is being typed into would destroy that box and take the
+// focus and caret with it.
+function applyLegText(leg, f, i) {
+    leg.style.color = '';               // cleared, or a stale colour persists
+
+    if (i === 0) { leg.textContent = 'start'; return; }
+
+    const br = bearingRange(f.waypoints[i - 1], f.waypoints[i]);
+    let text = fmtBearing(br.bearing) + '  ' + fmtRange(br.range);
+
+    // How much of this leg is threatened, in the same units as the leg itself,
+    // so the two numbers can be read against each other.
+    const legs = (showExposure && ringUnits.size) ? flightExposure(f) : null;
+    const t = legs && legs[i - 1] && legs[i - 1].tally;
+    if (t && (t.engaged > 1 || t.detected > 1 || t.terrain > 1)) {
+        const bits = [];
+        if (t.terrain  > 1) bits.push(fmtRange(t.terrain) + ' BELOW GROUND');
+        if (t.engaged  > 1) bits.push(fmtRange(t.engaged) + ' engaged');
+        if (t.detected > 1) bits.push(fmtRange(t.detected) + ' seen');
+        text += '   ' + bits.join(', ');
+        leg.style.color = t.terrain > 1 ? '#ffffff'
+                        : t.engaged > 1 ? '#f0857a' : '#ffd166';
+    }
+    leg.textContent = text;
+}
+
+// Every leg is refreshed, not just the one edited: a waypoint's altitude sets
+// the exposure of the leg into it and the leg out of it.
+function refreshLegLabels() {
+    const f = flights[activeFlight];
+    if (!f) return;
+    waypointListEl.querySelectorAll('.wpRow .leg')
+        .forEach((leg, i) => applyLegText(leg, f, i));
+}
+
 function renderWaypoints() {
     waypointListEl.innerHTML = '';
     const f = flights[activeFlight];
@@ -308,27 +345,7 @@ function renderWaypoints() {
 
         const leg = document.createElement('span');
         leg.className = 'leg';
-        if (i === 0) {
-            leg.textContent = 'start';
-        } else {
-            const br = bearingRange(f.waypoints[i - 1], w);
-            let text = fmtBearing(br.bearing) + '  ' + fmtRange(br.range);
-
-            // How much of this leg is threatened, in the same units as the leg
-            // itself, so the two numbers can be read against each other.
-            const legs = (showExposure && ringUnits.size) ? flightExposure(f) : null;
-            const t = legs && legs[i - 1] && legs[i - 1].tally;
-            if (t && (t.engaged > 1 || t.detected > 1 || t.terrain > 1)) {
-                const bits = [];
-                if (t.terrain  > 1) bits.push(fmtRange(t.terrain) + ' BELOW GROUND');
-                if (t.engaged  > 1) bits.push(fmtRange(t.engaged) + ' engaged');
-                if (t.detected > 1) bits.push(fmtRange(t.detected) + ' seen');
-                text += '   ' + bits.join(', ');
-                leg.style.color = t.terrain > 1 ? '#ffffff'
-                                : t.engaged > 1 ? '#f0857a' : '#ffd166';
-            }
-            leg.textContent = text;
-        }
+        applyLegText(leg, f, i);
 
         // Altitude is shown in the unit currently selected in the bar, and
         // stored in metres, so switching units never alters the route.
@@ -343,6 +360,7 @@ function renderWaypoints() {
             const v = parseFloat(alt.value);
             if (!isFinite(v) || v < 0) return;
             w.alt = unitSystem === 'aviation' ? v / FT_PER_M : v;
+            refreshLegLabels();          // in place, so this box keeps focus
             if (currentMission) draw(currentMission);
         });
 
