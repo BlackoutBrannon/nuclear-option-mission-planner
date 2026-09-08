@@ -22,10 +22,8 @@ echo   Serving on http://localhost:8000
 echo   Close this window to stop.
 echo.
 
-REM Opens the default browser. The server below starts in milliseconds, long
-REM before the browser finishes launching, so there is no race in practice.
-start "" http://localhost:8000
-
+REM serve.py opens the browser itself, once it has the port. Opening it here
+REM as well produced two windows.
 python tools\serve.py 8000
 
 REM Reached only if the server exits or fails - most likely port 8000 already

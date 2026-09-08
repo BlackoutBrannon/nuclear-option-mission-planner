@@ -37,19 +37,32 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 class Server(socketserver.ThreadingTCPServer):
-    allow_reuse_address = True
+    # Deliberately NOT allow_reuse_address. On Windows that flag is
+    # SO_REUSEADDR, which lets a second server bind a port another process is
+    # already listening on: both appear to start, and which one answers a
+    # request is not defined. Leaving it off makes the second instance fail
+    # loudly instead, which is the whole point of the check below.
+    allow_reuse_address = False
 
 
 if __name__ == "__main__":
     os.chdir(ROOT)
     url = f"http://localhost:{PORT}"
+
+    # Bind first, open the browser second. Opening it before the port is held
+    # sends the browser to a server that may never start, and the connection
+    # error it shows then looks nothing like the real problem of the port
+    # already being in use.
+    try:
+        httpd = Server(("127.0.0.1", PORT), Handler)
+    except OSError as e:
+        sys.exit(f"\n  could not listen on {PORT}: {e}\n"
+                 f"  Another server is probably already using it.\n")
+
     print(f"\n  Nuclear Option Mission Planner\n  {url}\n  Ctrl+C to stop.\n")
     webbrowser.open(url)
     try:
-        with Server(("127.0.0.1", PORT), Handler) as httpd:
+        with httpd:
             httpd.serve_forever()
     except KeyboardInterrupt:
         print("\n  stopped")
-    except OSError as e:
-        sys.exit(f"could not listen on {PORT}: {e}\n"
-                 f"Another server may already be using it.")
