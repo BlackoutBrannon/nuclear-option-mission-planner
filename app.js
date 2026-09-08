@@ -41,7 +41,36 @@ async function loadCatalogue() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Threat data: RCS, radar parameters and weapon envelopes, extracted from the
+// game's own serialized fields by tools/extract_ranges.py. Never from unit
+// descriptions - those quote detection figures, not the range a launcher
+// commits at.
+// ---------------------------------------------------------------------------
+let ranges = { units: {}, airframes: {} };
+
+async function loadRanges() {
+    try {
+        const response = await fetch('ranges.json?v=' + Date.now());
+        if (!response.ok) throw new Error('HTTP ' + response.status + ' ' + response.statusText);
+        ranges = await response.json();
+        console.log('ranges loaded:',
+                    Object.keys(ranges.airframes).length, 'airframes,',
+                    Object.keys(ranges.units).length, 'units with envelopes');
+    } catch (err) {
+        // A silent failure here would look like "the game has no SAMs", which
+        // is far worse than an empty picker. Say so where it can be seen.
+        console.error('ranges.json failed to load:', err);
+    }
+    // These run whether or not the fetch worked, so a failure leaves a disabled
+    // picker rather than an empty one that looks ready.
+    buildRcsPicker();
+    refreshAltField();
+    updateOwnship();
+}
+
 loadCatalogue();
+loadRanges();
 
 
 function mapName(path) {
@@ -75,7 +104,146 @@ basemap.onload = () => {
 
 const mapArea = document.getElementById('mapArea');
 
-const PANEL_W = 300;   // must match #panel width in the CSS
+// ---------------------------------------------------------------------------
+// The panel is a floating window: moved, resized, and closed. Geometry lives
+// here as ONE object rather than as separate variables, because it is saved,
+// restored and clamped as a unit - splitting it would mean remembering to do
+// each of those four times.
+//
+// `want` is what you asked for; the values written to the CSS are `want`
+// clamped to the current window. Keeping the two apart is what lets a panel
+// squeezed by a small window grow back when the window grows.
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Floating windows
+//
+// There are two of these now, so the behaviour lives in ONE factory rather than
+// being copied. Copying it would mean every later fix - a clamp, a save, a
+// keyboard shortcut - had to be made twice, and the second one would eventually
+// be forgotten.
+//
+// Each window owns a `want` object: what you asked for. What gets written to
+// the CSS is `want` clamped to the current viewport, so a window squeezed by a
+// small screen returns to where you put it when the screen grows.
+// ---------------------------------------------------------------------------
+const PANEL_MIN_W = 210;
+const PANEL_MIN_H = 160;
+
+// Height of the status bar, read from the CSS rather than repeated here, so the
+// two can never drift apart.
+function barH() {
+    return parseInt(getComputedStyle(document.documentElement)
+                    .getPropertyValue('--barH'), 10) || 30;
+}
+
+function makeWindow(id, storageKey, defaults) {
+    const el      = document.getElementById(id);
+    const head    = document.getElementById(id + 'Head');
+    const closeBt = document.getElementById(id + 'Close');
+    const edge    = document.getElementById(id + 'Resize');
+    const corner  = document.getElementById(id + 'Corner');
+    const toggle  = document.getElementById(id + 'Toggle');
+
+    const want = Object.assign({ x: 12, y: 12, w: 300, h: 0, open: true }, defaults);
+
+    // GEOMETRY is remembered; OPEN/CLOSED deliberately is not. Closing the main
+    // panel once should not mean every future session starts with the drop zone
+    // hidden and no obvious way to load a mission.
+    try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (saved && typeof saved === 'object') {
+            for (const k of ['x', 'y', 'w', 'h']) {
+                if (typeof saved[k] === 'number') want[k] = saved[k];
+            }
+        }
+    } catch (e) { /* absent or corrupt - the defaults are fine */ }
+
+    function apply() {
+        el.hidden = !want.open;
+        if (toggle) toggle.setAttribute('aria-pressed', String(want.open));
+        if (!want.open) return;
+
+        const maxW = Math.max(PANEL_MIN_W, window.innerWidth  - 40);
+        const maxH = Math.max(PANEL_MIN_H, window.innerHeight - barH() - 24);
+
+        const w = Math.min(Math.max(PANEL_MIN_W, want.w), maxW);
+        const h = Math.min(Math.max(PANEL_MIN_H, want.h || maxH), maxH);
+        const x = Math.min(Math.max(0, want.x), window.innerWidth  - w);
+        const y = Math.min(Math.max(0, want.y), window.innerHeight - barH() - h);
+
+        el.style.left   = x + 'px';
+        el.style.top    = y + 'px';
+        el.style.width  = w + 'px';
+        el.style.height = h + 'px';
+    }
+
+    function save() {
+        try { localStorage.setItem(storageKey, JSON.stringify(want)); }
+        catch (e) { /* private mode */ }
+    }
+
+    // One drag routine for all three handles. Each supplies only what it
+    // changes, so moving and resizing cannot drift apart in behaviour.
+    function drag(handle, onDrag) {
+        if (!handle) return;
+        handle.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();                // no text selection, no map pan
+
+            const from = { x: e.clientX, y: e.clientY,
+                           px: want.x, py: want.y, pw: want.w,
+                           ph: want.h || el.offsetHeight };
+
+            handle.classList.add('dragging');
+            document.body.classList.add('resizing');
+
+            function move(ev) {
+                onDrag(from, ev.clientX - from.x, ev.clientY - from.y);
+                apply();
+            }
+            function up() {
+                window.removeEventListener('mousemove', move);
+                window.removeEventListener('mouseup', up);
+                handle.classList.remove('dragging');
+                document.body.classList.remove('resizing');
+                save();                        // written once, at the end
+            }
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', up);
+        });
+    }
+
+    drag(head,   (f, dx, dy) => { want.x = f.px + dx; want.y = f.py + dy; });
+    drag(edge,   (f, dx)     => { want.w = f.pw + dx; });
+    drag(corner, (f, dx, dy) => { want.w = f.pw + dx; want.h = f.ph + dy; });
+
+    function setOpen(open) { want.open = open; apply(); save(); }
+
+    if (closeBt) closeBt.addEventListener('click', (e) => {
+        e.stopPropagation();                   // must not also start a drag
+        setOpen(false);
+    });
+    if (toggle) toggle.addEventListener('click', () => setOpen(!want.open));
+
+    // Double-click the title bar to restore the default position and size.
+    if (head) head.addEventListener('dblclick', (e) => {
+        if (e.target === closeBt) return;
+        Object.assign(want, { x: defaults.x, y: defaults.y,
+                              w: defaults.w, h: defaults.h || 0 });
+        apply();
+        save();
+    });
+
+    apply();
+    return { want: want, apply: apply, save: save, setOpen: setOpen, el: el };
+}
+
+const mainWin = makeWindow('panel', 'panel',
+                           { x: 12, y: 12, w: 300, h: 0, open: true });
+const ringWin = makeWindow('ringPanel', 'ringPanel',
+                           { x: 326, y: 12, w: 330, h: 460, open: false });
+
+function setPanelOpen(open) { mainWin.setOpen(open); }
 
 // The canvas is now the whole window, which is not the map's shape - so the map
 // has to be fitted into it rather than filling it. Two transforms stack:
@@ -94,13 +262,13 @@ function computeFit() {
     const mw = currentMap.maxX - currentMap.minX;
     const mh = currentMap.maxZ - currentMap.minZ;
 
-    // Fit into the part of the window the panel does not cover, so a freshly
-    // loaded mission is not half hidden behind it.
-    const usableW = Math.max(50, canvas.width - PANEL_W);
-    const scale   = Math.min(usableW / mw, canvas.height / mh) * 0.96;   // margin
+    // The panel floats over the map and can be moved or closed, so the map is
+    // fitted to the whole canvas. Reserving space for it would mean the fit
+    // changing every time you dragged the window somewhere else.
+    const scale = Math.min(canvas.width / mw, canvas.height / mh) * 0.96;  // margin
 
     fit.scale   = scale;
-    fit.offsetX = PANEL_W + (usableW - mw * scale) / 2;
+    fit.offsetX = (canvas.width - mw * scale) / 2;
     fit.offsetY = (canvas.height - mh * scale) / 2;
 }
 
@@ -120,6 +288,8 @@ function setMap(name) {
 
 // Setting canvas.width wipes the canvas, so a resize always needs a redraw.
 window.addEventListener('resize', () => {
+    mainWin.apply();                  // keep them on screen and within limits
+    ringWin.apply();
     sizeCanvas();
     if (currentMission) draw(currentMission);
 });
@@ -163,6 +333,151 @@ function bearingRange(from, to) {
 }
 
 let unitSystem = 'aviation';         // or 'metric'
+
+// ---------------------------------------------------------------------------
+// Own-ship state. Threat rings are drawn against a specific aircraft at a
+// specific altitude, because the game's own detection maths depends on both:
+//
+//   radar detection range = maxRange / minSignal * RCS^0.25
+//   radar horizon         = sqrt(2 * earthRadius * altitude), per end
+//
+// Stored in metres and in raw RCS regardless of what the bar displays, so the
+// unit toggle changes presentation only and never the numbers we compute with.
+// ---------------------------------------------------------------------------
+const EARTH_DIAMETER = 12742000;     // metres - the game uses this literal
+const FT_PER_M = 3.280839895;
+
+let ownRCS = 0.08;                   // FS-12 Revoker, a middle-of-the-road value
+let ownAltM = 3048;                  // 10,000 ft
+
+// Slider travel is CUBIC in altitude, not linear.
+//
+// The horizon goes as sqrt(h), so the difference between 100 ft and 1,000 ft
+// matters far more than between 40,000 and 41,000. On a linear 0-60,000 ft
+// track everything below 2,000 ft lives in the first 3% of the bar and is
+// unusable. Cubing gives the low end most of the travel:
+//
+//     10% -> 60 ft    30% -> 1,620 ft    50% -> 7,500 ft    100% -> 60,000 ft
+//
+// The typed box is unchanged and stays authoritative, so this only affects how
+// the slider feels, never what a value means.
+const ALT_MAX_M = 60000 / FT_PER_M;      // 60,000 ft service ceiling
+const ALT_CURVE = 3;
+const SLIDER_STEPS = 1000;
+
+const rcsPreset = document.getElementById('rcsPreset');
+const altSlider = document.getElementById('altSlider');
+const altInput  = document.getElementById('altInput');
+const altUnit   = document.getElementById('altUnit');
+const stHorizon = document.getElementById('stHorizon');
+
+// Distance to the horizon from a given height. Each end of the link gets its
+// own; the game adds them and rejects the contact if the sum falls short.
+function horizonM(altM) {
+    return Math.sqrt(EARTH_DIAMETER * Math.max(0, altM));
+}
+
+function buildRcsPicker() {
+    const frames = Object.entries(ranges.airframes || {});
+    rcsPreset.innerHTML = '';
+
+    if (!frames.length) {
+        rcsPreset.disabled = true;
+        rcsPreset.appendChild(new Option('no data', ''));
+        return;
+    }
+
+    // Already sorted by RCS in the file, so the list reads stealthiest first.
+    for (const [key, a] of frames) {
+        // The number is in the label deliberately: RCS drives the ring radius,
+        // so it should be readable without opening anything.
+        rcsPreset.appendChild(new Option(a.name + '  (' + a.rcs + ')', key));
+    }
+    rcsPreset.appendChild(new Option('Custom…', 'custom'));
+
+    const initial = frames.find(([, a]) => a.rcs === ownRCS) || frames[0];
+    rcsPreset.value = initial[0];
+    ownRCS = initial[1].rcs;
+}
+
+rcsPreset.addEventListener('change', () => {
+    if (rcsPreset.value === 'custom') {
+        const entered = prompt('Radar cross section (game units, e.g. 0.05):', ownRCS);
+        const n = parseFloat(entered);
+        // Reject anything non-positive: RCS^0.25 of zero is zero range, which
+        // would silently draw no rings at all.
+        if (isFinite(n) && n > 0) ownRCS = n;
+        else rcsPreset.value = findPresetKey();
+    } else {
+        ownRCS = ranges.airframes[rcsPreset.value].rcs;
+    }
+    updateOwnship();
+});
+
+function findPresetKey() {
+    for (const [key, a] of Object.entries(ranges.airframes || {})) {
+        if (a.rcs === ownRCS) return key;
+    }
+    return 'custom';
+}
+
+function sliderToAlt(pos) {
+    const t = pos / SLIDER_STEPS;
+    return ALT_MAX_M * Math.pow(t, ALT_CURVE);
+}
+
+function altToSlider(altM) {
+    const t = Math.pow(Math.min(1, Math.max(0, altM / ALT_MAX_M)), 1 / ALT_CURVE);
+    return Math.round(t * SLIDER_STEPS);
+}
+
+// Dragging lands on 3712 ft otherwise. Snap in whatever unit is on screen, so
+// the number is round in the unit you are actually reading.
+function snapAlt(displayValue) {
+    const step = displayValue <   200 ? 10
+               : displayValue <  1000 ? 20
+               : displayValue < 10000 ? 100
+               : 500;
+    return Math.round(displayValue / step) * step;
+}
+
+altSlider.addEventListener('input', () => {
+    const raw = sliderToAlt(parseInt(altSlider.value, 10));
+    const inDisplay = (unitSystem === 'aviation') ? raw * FT_PER_M : raw;
+    const snapped = snapAlt(inDisplay);
+    ownAltM = (unitSystem === 'aviation') ? snapped / FT_PER_M : snapped;
+
+    // Write the box directly. Setting .value does NOT fire an input event, so
+    // the two controls cannot bounce updates off each other.
+    altInput.value = Math.round(snapped);
+    updateOwnship();
+});
+
+altInput.addEventListener('input', () => {
+    const n = parseFloat(altInput.value);
+    if (!isFinite(n) || n < 0) return;          // mid-typing "-" or "" - ignore
+    ownAltM = (unitSystem === 'aviation') ? n / FT_PER_M : n;
+    altSlider.value = altToSlider(ownAltM);
+    updateOwnship();
+});
+
+// Rewrites the altitude box in the current unit and refreshes the readout.
+// Called on the unit toggle as well, so the box shows feet or metres to match.
+function refreshAltField() {
+    altUnit.textContent = (unitSystem === 'aviation') ? 'ft' : 'm';
+    altInput.step  = (unitSystem === 'aviation') ? 500 : 100;
+    altInput.value = Math.round((unitSystem === 'aviation')
+                                ? ownAltM * FT_PER_M : ownAltM);
+    // The slider is unit-agnostic - it holds a fraction of the ceiling - so a
+    // unit change only restates the box, never moves the handle.
+    altSlider.value = altToSlider(ownAltM);
+}
+
+function updateOwnship() {
+    stHorizon.textContent = 'HORIZON ' + fmtRange(horizonM(ownAltM));
+    renderRingTree();           // radar reach in the tree depends on RCS
+    if (currentMission) draw(currentMission);
+}
 
 function fmtRange(metres) {
     return unitSystem === 'aviation'
@@ -314,7 +629,10 @@ function collectUnits(mission) {
                 group:      group,
                 role:       role,
                 x:          u.globalPosition.x,
-                z:          u.globalPosition.z
+                z:          u.globalPosition.z,
+                // Kept for the radar horizon: a mast on a hill sees further
+                // than one at sea level, and the game adds both ends.
+                y:          u.globalPosition.y || 0
             });
         }
     }
@@ -511,7 +829,8 @@ function drawSymbol(ctx, x, y, unit) {
     ctx.drawImage(entry.canvas, x - entry.anchor.x, y - entry.anchor.y);
 }
 
-const BULL = '255,209,102';                 // rose colour, as rgb components
+const BULL     = '204,211,218';             // rose colour, rgb components
+const BULL_HEX = '#ccd3da';                 // the same colour, for solid strokes
 
 // Range rings and radials. Drawn in WORLD units, unlike the unit symbols - a
 // 5 NM ring has to stay 5 NM wide as you zoom, or it means nothing.
@@ -613,6 +932,266 @@ function drawBullseyeRose(ctx) {
     ctx.restore();
 }
 
+// ---------------------------------------------------------------------------
+// Automatic threat rings
+//
+// Every radius below comes from ranges.json, which is extracted from the game's
+// own serialized fields - never from a unit description.
+//
+// Three kinds, told apart by LINE PATTERN rather than colour alone:
+//
+//   weapon    solid        the range it will actually shoot you at
+//   radar     long dash    where its radar detects YOUR aircraft's RCS
+//   optical   dotted       eyeball / IR range, which RCS does not change
+//
+// A weapon whose altitude band excludes you is drawn faint and sparse: it is
+// still there, it just cannot reach you where you are.
+// ---------------------------------------------------------------------------
+const showRings = { radar: true, optical: false, weapon: true };
+
+// Which individual UNITS draw rings, held as unitPath strings - the same keys
+// the layer tree uses. Empty means none: rings stay off until you ask for them,
+// because a real mission has ~750 units with envelopes and all of them at once
+// is unreadable. The ring-type switches decide WHICH rings; this decides WHOSE.
+const ringUnits = new Set();
+
+const RING_STYLE = {
+    weapon:  { colour: '#f0857a', dash: [],      width: 1.8 },
+    radar:   { colour: '#8ecbff', dash: [9, 6],  width: 1.5 },
+    optical: { colour: '#ffd166', dash: [2, 4],  width: 1.5 },
+};
+
+// Ring toggles. These must be wired AFTER `showRings` exists: a top-level
+// `const` is in the temporal dead zone until its own line runs, so reading it
+// higher up throws before the page ever paints.
+for (const [id, key] of [['ringWeapon', 'weapon'], ['ringRadar', 'radar'],
+                         ['ringOptical', 'optical']]) {
+    const box = document.getElementById(id);
+    box.checked = showRings[key];
+    box.addEventListener('change', () => {
+        showRings[key] = box.checked;
+        if (currentMission) draw(currentMission);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// The ring tree
+//
+// Same five levels as the layer tree - affiliation, group, role, type, unit -
+// because that is the shape you already navigate. Ticking is per UNIT, not per
+// type, so "one flight clears these three sites and the second routes past the
+// rest" is expressible: untick the three, leave the others ringed.
+//
+// Only units that actually have envelope data appear, so the tree does not fill
+// with fuel trucks that can draw nothing.
+// ---------------------------------------------------------------------------
+const ringTreeEl   = document.getElementById('ringTree');
+const ringCollapsed = new Set();
+const LONG_RANGE_M = 15000;
+
+// Longest reach a type has, in metres. Radar is quoted against the CURRENTLY
+// selected aircraft rather than a reference target, so the number answers
+// "what reaches me" and moves when you change RCS.
+function typeReach(type) {
+    const e = (ranges.units || {})[type];
+    if (!e) return 0;
+    const weapon = e.weapons.reduce((m, w) => Math.max(m, w.maxRange), 0);
+    const radar  = e.radars.reduce((m, r) => Math.max(
+        m, r.minSignal ? r.maxRange / r.minSignal * Math.pow(ownRCS, 0.25) : 0), 0);
+    // Optical counts too, or a unit whose only sensor is a pair of eyes reads
+    // as nothing while still being able to draw a ring.
+    const optical = e.optical.reduce((m, o) => Math.max(
+        m, Math.min(o.visualRange, ownVisibleRange() * o.magnification)), 0);
+
+    // Projected onto the ground at your current altitude, so the column agrees
+    // with the ring on the map. Emitters are assumed near sea level, which they
+    // are - the per-unit y is used when the ring is actually drawn.
+    const slant = Math.max(weapon, radar, optical);
+    return slant > ownAltM ? Math.sqrt(slant * slant - ownAltM * ownAltM) : 0;
+}
+
+const ringSpec = {
+    container: ringTreeEl,
+    collapsed: ringCollapsed,
+    // Only things that can draw a ring at all.
+    filter: u => !!(ranges.units || {})[u.type],
+    isOn:  p => ringUnits.has(p),
+    setOn: (paths, on) => paths.forEach(p => on ? ringUnits.add(p)
+                                                : ringUnits.delete(p)),
+    refresh: () => { renderRingTree(); if (currentMission) draw(currentMission); },
+    render:  () => renderRingTree(),
+    // An em dash rather than "0.0 NM": zero would look like missing data when
+    // it actually means you are above everything this type can reach.
+    extraForType: t => { const r = typeReach(t); return r > 0 ? fmtRange(r) : '\u2014'; },
+    emptyText: 'Load a mission to list what can shoot at you.',
+};
+
+function renderRingTree() {
+    if (!currentMission) {
+        ringTreeEl.innerHTML =
+            '<div class="hint">Load a mission to list what can shoot at you.</div>';
+        return;
+    }
+    buildTree(ringSpec, unitsOf(currentMission));
+}
+
+// Bulk selection. Works on units, like the tree itself, so "long range" picks
+// every individual emplacement of a type that reaches far enough.
+function setRingUnits(pick) {
+    ringUnits.clear();
+    if (currentMission) {
+        for (const u of unitsOf(currentMission)) {
+            if (!(ranges.units || {})[u.type]) continue;
+            if (pick(u)) ringUnits.add(unitPath(u));
+        }
+    }
+    renderRingTree();
+    if (currentMission) draw(currentMission);
+}
+
+document.getElementById('ringNone').addEventListener('click',
+    () => setRingUnits(() => false));
+document.getElementById('ringAll').addEventListener('click',
+    () => setRingUnits(() => true));
+document.getElementById('ringLong').addEventListener('click',
+    () => setRingUnits(u => typeReach(u.type) >= LONG_RANGE_M));
+
+// Visual range of the aircraft currently selected in the bar. Optical sensors
+// test the TARGET's visibility, so this moves with the airframe - but not with
+// RCS, which is the whole point of keeping the two separate.
+function ownVisibleRange() {
+    const a = (ranges.airframes || {})[rcsPreset.value];
+    return a ? a.visibleRange : 3000;
+}
+
+// What rings a single unit should produce right now. Recomputed per draw
+// because every one of them depends on the bar, which the user is dragging.
+function threatRingsFor(unit) {
+    if (!ringUnits.has(unitPath(unit))) return [];
+    const entry = (ranges.units || {})[unit.type];
+    if (!entry) return [];
+
+    const rings = [];
+
+    // Radar horizon: the game adds the distance to the horizon from each end
+    // and rejects the contact if the sum falls short. A mast is a few metres
+    // up even when the vehicle is at sea level. This one IS a ground distance -
+    // DetectorManager tests it against the flattened vector.
+    const emitterAlt = Math.max(unit.y, 0) + 10;
+    const horizon = horizonM(ownAltM) + horizonM(emitterAlt);
+
+    // Every range in the game is SLANT range: Turret uses aimVector.magnitude,
+    // the radar uses FastMath.Distance, and FastMath.InRange sums x, y and z.
+    // A map is flat, so what we can draw is the ground projection of that
+    // sphere - which is why an envelope shrinks as you climb, and closes
+    // entirely once you are higher than the weapon can reach at all.
+    const dh = Math.abs(ownAltM - emitterAlt);
+    const groundFrom = slant =>
+        slant > dh ? Math.sqrt(slant * slant - dh * dh) : 0;
+
+    if (showRings.radar) {
+        for (const r of entry.radars) {
+            if (!r.minSignal) continue;
+            const slant  = r.maxRange / r.minSignal * Math.pow(ownRCS, 0.25);
+            const ground = groundFrom(slant);
+            if (ground <= 0) continue;
+            rings.push({
+                kind:  'radar',
+                r:     Math.min(ground, horizon),
+                // True when the horizon is the binding limit, not the radar -
+                // worth showing, because climbing would give the ring back.
+                capped: ground > horizon,
+                label: 'RADAR ' + fmtRange(Math.min(ground, horizon)),
+            });
+        }
+    }
+
+    if (showRings.optical) {
+        for (const o of entry.optical) {
+            const ground = groundFrom(
+                Math.min(o.visualRange, ownVisibleRange() * o.magnification));
+            if (ground <= 0) continue;
+            rings.push({ kind: 'optical', r: ground, label: 'VIS' });
+        }
+    }
+
+    if (showRings.weapon) {
+        for (const w of entry.weapons) {
+            const ground = groundFrom(w.maxRange);
+            if (ground <= 0) continue;          // you are above its reach entirely
+            rings.push({
+                kind:   'weapon',
+                r:      ground,
+                // The altitude band is a separate hard gate in
+                // TargetRequirements - a weapon can be in range and still not
+                // be cleared to engage at your height.
+                inBand: ownAltM >= w.minAltitude && ownAltM <= w.maxAltitude,
+                label:  w.name + '  ' + fmtRange(ground),
+            });
+        }
+    }
+
+    return rings;
+}
+
+// Drawn UNDER the unit symbols, like the bullseye rose and the manual rings.
+function drawThreatRings(ctx, units) {
+    if (!ringUnits.size) return;
+    if (!showRings.radar && !showRings.optical && !showRings.weapon) return;
+
+    const mPerPx = fit.scale * view.scale;
+
+    ctx.save();
+    for (const unit of units) {
+        const rings = threatRingsFor(unit);
+        if (!rings.length) continue;
+
+        const p = toScreen(unit.x, unit.z);
+
+        for (let i = 0; i < rings.length; i++) {
+            const ring = rings[i];
+            const rpx = ring.r * mPerPx;
+            if (rpx < 3) continue;                   // too small to read
+            const style = RING_STYLE[ring.kind];
+            const inert = ring.inBand === false;
+
+            // Halo first, as everywhere else, so a thin ring survives terrain.
+            ctx.setLineDash(inert ? [3, 7] : style.dash);
+            ctx.strokeStyle = 'rgba(11,16,20,0.55)';
+            ctx.lineWidth   = style.width + 2;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.globalAlpha = inert ? 0.3 : 0.85;
+            ctx.strokeStyle = style.colour;
+            ctx.lineWidth   = style.width;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Label only when the ring is big enough on screen to carry one,
+            // or a busy map turns into a wall of text.
+            //
+            // Fanned around the upper arc rather than all parked at twelve
+            // o'clock: a ship with four weapons produced four labels stacked on
+            // top of each other, which is worse than no label at all.
+            if (rpx > 70) {
+                const a  = (-90 + i * 22) * Math.PI / 180;
+                const lx = p.x + Math.cos(a) * rpx;
+                const ly = p.y + Math.sin(a) * rpx;
+                if (lx > 40 && lx < canvas.width - 40 && ly > 12 && ly < canvas.height - 12) {
+                    plate(ctx, ring.label + (ring.capped ? ' (horizon)' : ''),
+                          lx, ly, inert ? 'rgba(240,133,122,0.5)' : style.colour);
+                }
+            }
+        }
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+}
+
 // The centre mark, drawn on top of the units so it is never buried. Constant
 // screen size, unlike the rose.
 function drawBullseyeCentre(ctx) {
@@ -622,7 +1201,7 @@ function drawBullseyeCentre(ctx) {
 
     ctx.save();
     // Dark halo first, then the bright mark, so it reads on any terrain.
-    for (const pass of [{ c: '#0b1014', w: 4 }, { c: '#ffd166', w: 1.6 }]) {
+    for (const pass of [{ c: '#0b1014', w: 4 }, { c: BULL_HEX, w: 1.6 }]) {
         ctx.strokeStyle = pass.c;
         ctx.lineWidth   = pass.w;
 
@@ -642,7 +1221,7 @@ function drawBullseyeCentre(ctx) {
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#0b1014';
     ctx.strokeText('BULLSEYE', p.x + 17, p.y - 6);
-    ctx.fillStyle = '#ffd166';
+    ctx.fillStyle = BULL_HEX;
     ctx.fillText('BULLSEYE', p.x + 17, p.y - 6);
 
     ctx.restore();
@@ -659,7 +1238,57 @@ function drawBullseyeCentre(ctx) {
 // Points are world metres, like the bullseye, so a measurement stays put on the
 // ground as you pan and zoom.
 // ---------------------------------------------------------------------------
-const MEAS = '110,231,183';                 // measurement colour, rgb components
+const MEAS = '110,231,183';                 // measuring-tool colour, rgb components
+
+// Range rings get their own colour, chosen by the user and stored ON each ring,
+// so changing the picker never repaints rings you already placed. Named options
+// rather than a bare swatch: a colour you cannot name is a colour you cannot
+// ask a wingman about, and the name is what carries the meaning.
+const RING_COLOURS = [
+    ['Grey',    '#c8ced6'],
+    ['White',   '#ffffff'],
+    ['Amber',   '#ffd166'],
+    ['Green',   '#6ee7b7'],
+    ['Cyan',    '#67d4f0'],
+    ['Magenta', '#e58fd0'],
+    ['Red',     '#f08a7f']
+];
+
+let ringColour = RING_COLOURS[0][1];
+
+const ringPreset = document.getElementById('ringPreset');
+const ringCustom = document.getElementById('ringCustom');
+
+for (const [name, hex] of RING_COLOURS) {
+    const opt = document.createElement('option');
+    opt.value = hex;
+    opt.textContent = name;
+    ringPreset.appendChild(opt);
+}
+const customOpt = document.createElement('option');
+customOpt.value = 'custom';
+customOpt.textContent = 'Custom…';
+ringPreset.appendChild(customOpt);
+
+function ringColourName() {
+    const hit = RING_COLOURS.find(c => c[1] === ringColour);
+    return hit ? hit[0].toLowerCase() : 'the chosen colour';
+}
+
+function setRingColour(hex) {
+    ringColour = hex;
+    ringCustom.value = hex;
+    // Show the name if it is one of ours, otherwise fall to "Custom".
+    ringPreset.value = RING_COLOURS.some(c => c[1] === hex) ? hex : 'custom';
+}
+
+ringPreset.addEventListener('change', () => {
+    if (ringPreset.value === 'custom') ringCustom.click();   // open the picker
+    else setRingColour(ringPreset.value);
+});
+ringCustom.addEventListener('input', () => setRingColour(ringCustom.value));
+
+setRingColour(ringColour);
 
 // kind 'path'   - a run of legs, each labelled with its own bearing and range
 // kind 'circle'  - a ring of a radius you drag out, for "how far does this
@@ -705,18 +1334,28 @@ function drawRings(ctx) {
         const p   = toScreen(ring.x, ring.z);
         const rpx = ring.r * fit.scale * view.scale;
 
-        for (const pass of [{ c: '11,16,20', w: 4, a: 0.7 },
-                            { c: MEAS,      w: 1.5, a: 0.8 }]) {
-            ctx.strokeStyle = 'rgba(' + pass.c + ',' + pass.a + ')';
-            ctx.lineWidth   = pass.w;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
-            ctx.stroke();
-        }
+        const col = ring.colour || ringColour;
+
+        // Halo underneath, then the ring itself - the halo is what makes a pale
+        // grey ring legible over snow or a pale coastline.
+        ctx.strokeStyle = 'rgba(11,16,20,0.7)';
+        ctx.lineWidth   = 4;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        ctx.strokeStyle = col;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle   = 'rgba(' + MEAS + ',0.9)';
+        ctx.fillStyle   = col;
         ctx.strokeStyle = '#0b1014';
         ctx.lineWidth   = 1.5;
         ctx.fill();
@@ -726,7 +1365,7 @@ function drawRings(ctx) {
         const ly = p.y - rpx;
         if (ly > 10 && ly < canvas.height - 10 && p.x > 0 && p.x < canvas.width) {
             plate(ctx, (ring.label ? ring.label + '  ' : '') + fmtRange(ring.r),
-                  p.x, ly);
+                  p.x, ly, col);
         }
     }
     ctx.restore();
@@ -751,7 +1390,7 @@ function endMeasure() {
         const r = measureRadius();
         if (r > 0) {
             rings.push({ x: measure.points[0].x, z: measure.points[0].z,
-                         r: r, label: measure.label });
+                         r: r, label: measure.label, colour: ringColour });
         }
         clearMeasure();
         return;
@@ -781,15 +1420,21 @@ function measureTotal() {
 
 // A label with a dark plate behind it. Text over terrain needs the same
 // treatment the rose needed - contrast of its own, not a colour we hope reads.
-function plate(ctx, text, x, y) {
+function plate(ctx, text, x, y, colour) {
+    colour = colour || 'rgb(' + MEAS + ')';
     ctx.font = '11px ui-monospace, Consolas, monospace';
     const w = ctx.measureText(text).width;
     ctx.fillStyle = 'rgba(11,16,20,0.85)';
     ctx.fillRect(x - w / 2 - 4, y - 8, w + 8, 16);
-    ctx.strokeStyle = 'rgba(' + MEAS + ',0.5)';
+    // Border in the same colour but faded. globalAlpha rather than an rgba
+    // string, because the colour arrives as a hex and cannot carry an alpha.
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = colour;
     ctx.lineWidth   = 1;
     ctx.strokeRect(x - w / 2 - 4, y - 8, w + 8, 16);
-    ctx.fillStyle    = 'rgb(' + MEAS + ')';
+    ctx.restore();
+    ctx.fillStyle    = colour;
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text, x, y);
@@ -808,19 +1453,23 @@ function drawMeasureCircle(ctx) {
 
     ctx.save();
 
-    for (const pass of [{ c: '11,16,20', w: 5 }, { c: MEAS, w: 2 }]) {
-        ctx.strokeStyle = 'rgba(' + pass.c + ',0.9)';
-        ctx.lineWidth   = pass.w;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
-        ctx.stroke();
-    }
+    ctx.strokeStyle = 'rgba(11,16,20,0.9)';
+    ctx.lineWidth   = 5;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = ringColour;
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+    ctx.stroke();
 
     // The radius, dashed - a different shape from the solid path tool, so the
     // two read apart without depending on the colour difference.
     const q = toScreen(edge.x, edge.z);
     ctx.setLineDash([5, 4]);
-    ctx.strokeStyle = 'rgba(' + MEAS + ',0.85)';
+    ctx.strokeStyle = ringColour;
     ctx.lineWidth   = 1.5;
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
@@ -830,13 +1479,14 @@ function drawMeasureCircle(ctx) {
 
     ctx.beginPath();
     ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-    ctx.fillStyle   = 'rgb(' + MEAS + ')';
+    ctx.fillStyle   = ringColour;
     ctx.strokeStyle = '#0b1014';
     ctx.lineWidth   = 2;
     ctx.fill();
     ctx.stroke();
 
-    plate(ctx, 'R ' + fmtRange(br.range), (p.x + q.x) / 2, (p.y + q.y) / 2);
+    plate(ctx, 'R ' + fmtRange(br.range), (p.x + q.x) / 2, (p.y + q.y) / 2,
+          ringColour);
 
     ctx.restore();
 }
@@ -972,8 +1622,12 @@ function unitPath(u) {
     return typePath(u) + '/' + u.uid;
 }
 
+function groupPath(u) {
+    return affiliationOf(u) + '/' + u.group;
+}
+
 function rolePath(u) {
-    return affiliationOf(u) + '/' + u.group + '/' + u.role;
+    return groupPath(u) + '/' + u.role;
 }
 
 function typePath(u) {
@@ -986,7 +1640,23 @@ function isVisible(u) {
 
 // One row plus an empty container for its children, which is returned so the
 // caller can add them.
-function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit) {
+// ---------------------------------------------------------------------------
+// Tree rendering
+//
+// TWO trees use this now - the layer tree (what is visible) and the ring tree
+// (what draws threat rings) - so the structure lives in one place and each
+// caller supplies a `spec` saying what a tick MEANS to it:
+//
+//   isOn(path)          is this leaf ticked?
+//   setOn(paths, bool)  tick or untick these leaves
+//   refresh()           redraw whatever this tree controls
+//
+// The layer tree stores the INVERSE of its ticks (a set of hidden paths); the
+// ring tree stores them directly. Hiding that behind isOn/setOn is what lets
+// one renderer serve both without either knowing about the other.
+// ---------------------------------------------------------------------------
+function addNode(spec, parent, depth, label, count, paths, collapseKey,
+                 cssClass, unit, extra) {
     const row = document.createElement('div');
     row.className = 'ltRow';
     row.style.paddingLeft = (depth * 11 + 4) + 'px';   // five levels in 300px
@@ -994,17 +1664,17 @@ function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit
     const twisty = document.createElement('span');
     twisty.className = 'ltTwisty';
     twisty.textContent = collapseKey
-        ? (collapsedKeys.has(collapseKey) ? '▶' : '▼')
+        ? (spec.collapsed.has(collapseKey) ? '\u25b6' : '\u25bc')
         : '';
     row.appendChild(twisty);
 
-    // A parent is checked if ANY leaf under it is shown, and indeterminate if
-    // only some are - the standard tri-state you get in a file browser.
-    const shown = paths.filter(p => !hiddenPaths.has(p)).length;
+    // A parent is checked if ANY leaf under it is on, and indeterminate if only
+    // some are - the standard tri-state you get in a file browser.
+    const on = paths.filter(p => spec.isOn(p)).length;
     const box = document.createElement('input');
     box.type = 'checkbox';
-    box.checked = shown > 0;
-    box.indeterminate = shown > 0 && shown < paths.length;
+    box.checked = on > 0;
+    box.indeterminate = on > 0 && on < paths.length;
     row.appendChild(box);
 
     const lab = document.createElement('span');
@@ -1012,13 +1682,22 @@ function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit
     lab.textContent = label;
     row.appendChild(lab);
 
+    // Optional trailing detail. The ring tree puts a reach here, so you can
+    // pick the long-range threats without opening every branch.
+    if (extra) {
+        const ex = document.createElement('span');
+        ex.className = 'ltExtra';
+        ex.textContent = extra;
+        row.appendChild(ex);
+    }
+
     const cnt = document.createElement('span');
     cnt.className = 'ltCount';
     cnt.textContent = count;
     row.appendChild(cnt);
 
-    // Hovering an individual unit's row rings it on the map, so you can tell
-    // which of five identical emplacements this row refers to.
+    // Hovering a unit row rings it on the map, so you can tell which of five
+    // identical emplacements this row refers to.
     if (unit) {
         row.addEventListener('mouseenter', () => {
             hoveredUnit = unit;
@@ -1031,20 +1710,19 @@ function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit
     }
 
     const kids = document.createElement('div');
-    if (collapseKey && collapsedKeys.has(collapseKey)) kids.style.display = 'none';
+    if (collapseKey && spec.collapsed.has(collapseKey)) kids.style.display = 'none';
 
     box.addEventListener('change', () => {
-        if (box.checked) paths.forEach(p => hiddenPaths.delete(p));
-        else             paths.forEach(p => hiddenPaths.add(p));
-        refreshTree();
+        spec.setOn(paths, box.checked);
+        spec.refresh();
     });
 
     if (collapseKey) {
         row.addEventListener('click', (e) => {
             if (e.target === box) return;      // the checkbox handles its own clicks
-            if (collapsedKeys.has(collapseKey)) collapsedKeys.delete(collapseKey);
-            else collapsedKeys.add(collapseKey);
-            renderTree(unitsOf(currentMission));
+            if (spec.collapsed.has(collapseKey)) spec.collapsed.delete(collapseKey);
+            else spec.collapsed.add(collapseKey);
+            spec.render();
         });
     }
 
@@ -1053,14 +1731,13 @@ function addNode(parent, depth, label, count, paths, collapseKey, cssClass, unit
     return kids;
 }
 
-function renderTree(units) {
-    // Count into affiliation -> group -> role. Only what the mission actually
-    // contains gets a branch, so there are never empty rows to wade through.
+function buildTree(spec, units) {
     // affiliation -> group -> role -> type -> [units]
     // Storing the units themselves rather than counts, because the deepest
     // level needs each individual unit to hover and toggle.
     const tree = {};
     for (const u of units) {
+        if (spec.filter && !spec.filter(u)) continue;
         const a = affiliationOf(u);
         tree[a] = tree[a] || {};
         tree[a][u.group] = tree[a][u.group] || {};
@@ -1070,7 +1747,13 @@ function renderTree(units) {
         types[u.type].push(u);
     }
 
-    layerTree.innerHTML = '';
+    spec.container.innerHTML = '';
+
+    if (!Object.keys(tree).length) {
+        spec.container.innerHTML =
+            '<div class="hint">' + (spec.emptyText || '') + '</div>';
+        return;
+    }
 
     // Collect every unit sitting under part of the tree, at any depth.
     function under(node) {
@@ -1086,21 +1769,21 @@ function renderTree(units) {
         const groups   = tree[aff];
         const affUnits = under(groups);
 
-        const affKids = addNode(layerTree, 0, AFF_LABEL[aff], affUnits.length,
-                                pathsOf(affUnits), aff, 'ltAff');
+        const affKids = addNode(spec, spec.container, 0, AFF_LABEL[aff],
+                                affUnits.length, pathsOf(affUnits), aff, 'ltAff');
 
         for (const g of Object.keys(groups).sort()) {
-            const roles   = groups[g];
-            const gKey    = aff + '/' + g;
-            const gUnits  = under(roles);
-            const gKids   = addNode(affKids, 1, g, gUnits.length,
-                                    pathsOf(gUnits), gKey, null);
+            const roles  = groups[g];
+            const gKey   = aff + '/' + g;
+            const gUnits = under(roles);
+            const gKids  = addNode(spec, affKids, 1, g, gUnits.length,
+                                   pathsOf(gUnits), gKey, null);
 
             for (const r of Object.keys(roles).sort()) {
                 const types  = roles[r];
                 const rKey   = gKey + '/' + r;
                 const rUnits = under(types);
-                const rKids  = addNode(gKids, 2, r, rUnits.length,
+                const rKids  = addNode(spec, gKids, 2, r, rUnits.length,
                                        pathsOf(rUnits), rKey, 'ltRole');
 
                 // Sorted by display name, not by key - the key is an internal
@@ -1111,17 +1794,33 @@ function renderTree(units) {
                 for (const t of sortedTypes) {
                     const list  = types[t];
                     const tKey  = rKey + '/' + t;
-                    const tKids = addNode(rKids, 3, unitName(t), list.length,
-                                          pathsOf(list), tKey, 'ltType');
+                    const tKids = addNode(spec, rKids, 3, unitName(t), list.length,
+                                          pathsOf(list), tKey, 'ltType', null,
+                                          spec.extraForType && spec.extraForType(t));
 
                     for (const u of list) {
-                        addNode(tKids, 4, u.unitName, '',
+                        addNode(spec, tKids, 4, u.unitName, '',
                                 [unitPath(u)], null, 'ltUnit', u);
                     }
                 }
             }
         }
     }
+}
+
+// --- the layer tree: a tick means "shown on the map" -----------------------
+const layerSpec = {
+    container: layerTree,
+    collapsed: collapsedKeys,
+    isOn:  p => !hiddenPaths.has(p),
+    setOn: (paths, on) => paths.forEach(p => on ? hiddenPaths.delete(p)
+                                               : hiddenPaths.add(p)),
+    refresh: () => refreshTree(),
+    render:  () => renderTree(unitsOf(currentMission)),
+};
+
+function renderTree(units) {
+    buildTree(layerSpec, units);
 }
 
 // Redraw the map and rebuild the tree, so counts and tri-states stay honest.
@@ -1162,6 +1861,7 @@ function draw(mission) {
     // Under the units: a rose spanning the map must not sit on top of them.
     drawBullseyeRose(ctx);
     drawRings(ctx);
+    drawThreatRings(ctx, units);
 
     for (const unit of units) {
         const p = toScreen(unit.x, unit.z);
@@ -1225,7 +1925,7 @@ function showTip(unit, clientX, clientY) {
         '<div class="n">' + unitName(unit.type) + '</div>' +
         '<div class="r">' + unit.group + ' &middot; ' + unit.role + '</div>' +
         '<div>' + factionLabel(unit.faction) + ' &middot; ' + affil + '</div>' +
-        (bullseye ? '<div style="color:#ffd166;margin-top:4px;">BULLSEYE '
+        (bullseye ? '<div style="color:' + BULL_HEX + ';margin-top:4px;">BULLSEYE '
                     + fmtBullseye(unit) + '</div>' : '') +
         (entry.description ? '<div style="margin-top:5px;color:#9fb0bd;">'
                              + entry.description + '</div>' : '') +
@@ -1270,7 +1970,8 @@ function updateStatus(sx, sy) {
 document.getElementById('unitToggle').addEventListener('click', (e) => {
     unitSystem = (unitSystem === 'aviation') ? 'metric' : 'aviation';
     e.target.textContent = (unitSystem === 'aviation') ? 'NM / ft' : 'km / m';
-    if (currentMission) draw(currentMission);
+    refreshAltField();
+    updateOwnship();
 });
 
 canvas.addEventListener('mousemove', (e) => {
@@ -1376,6 +2077,10 @@ function showMenu(clientX, clientY, title, subtitle, items) {
 canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();               // suppress the browser's own menu
     tip.style.display = 'none';
+
+    // Every item below is about a place on the map, and toWorld cannot answer
+    // "where is this" before a map exists. updateStatus guards the same way.
+    if (!currentMap) return;
 
     const unit = unitAt(e.offsetX, e.offsetY);
 
@@ -1491,6 +2196,13 @@ canvas.addEventListener('contextmenu', (e) => {
             ...(hitRing >= 0 ? [{ label: 'Remove this ring', run: () => {
                 rings.splice(hitRing, 1);
                 if (currentMission) draw(currentMission);
+            }}, { label: 'Recolour this ring ' + ringColourName(), run: () => {
+                rings[hitRing].colour = ringColour;
+                if (currentMission) draw(currentMission);
+            }}] : []),
+            ...(rings.length > 1 ? [{ label: 'Recolour all rings ' + ringColourName(), run: () => {
+                for (const r of rings) r.colour = ringColour;
+                if (currentMission) draw(currentMission);
             }}] : []),
             ...(rings.length ? [{ label: 'Clear all rings', run: () => {
                 rings.length = 0;
@@ -1602,16 +2314,27 @@ drop.addEventListener('drop', async (e) => {
   // in the previous mission would stay hidden in this one.
   hiddenPaths.clear();
 
-  // Roles and types start collapsed, so you see affiliation -> group -> role
-  // and drill in only where you need to. Five levels open at once would be
-  // hundreds of rows.
+  // Everything below affiliation starts collapsed, so a 900-unit mission opens
+  // as two rows - Hostile and Friendly - and you drill only where you need to.
+  // Leaving groups open filled the panel before you had read anything.
+  // Both trees collapse together. The ring tree needs its own set rather than
+  // sharing one, or opening a branch in one would open it in the other.
   collapsedKeys.clear();
+  ringCollapsed.clear();
   for (const u of unitsOf(mission)) {
-      collapsedKeys.add(rolePath(u));
-      collapsedKeys.add(typePath(u));
+      for (const keys of [collapsedKeys, ringCollapsed]) {
+          keys.add(groupPath(u));
+          keys.add(rolePath(u));
+          keys.add(typePath(u));
+      }
   }
 
+  // A new mission means a new threat picture: forget which types were ringed,
+  // and rebuild the list from what is actually out there.
+  ringUnits.clear();
+
   setMap(mapName(mission.MapKey.Path));
+  renderRingTree();
 
   out.textContent = `${file.name}
 

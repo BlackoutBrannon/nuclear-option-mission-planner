@@ -1,0 +1,3345 @@
+{
+ "_source": "extracted from resources.assets - see extract_ranges.py",
+ "_formula": "radar detection_range = maxRange / minSignal * RCS**0.25",
+ "_optical": "optical/IR range = min(visualRange, target.visibleRange * magnification) - independent of RCS",
+ "_horizon": "sqrt(12742000*radarAlt) + sqrt(12742000*targetAlt) >= groundDist",
+ "units": {
+  "6x6_1_AA": {
+   "name": "AFV6 AA",
+   "code": "AA",
+   "rcs": 1.0,
+   "visibleRange": 5000.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 1.7999999523162842,
+   "size": [
+    7.199999809265137,
+    3.0999999046325684,
+    2.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 2.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "20mm Rotary Cannon",
+     "minRange": 0.0,
+     "maxRange": 3000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 4000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "IRM-S1",
+     "minRange": 200.0,
+     "maxRange": 5000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 10000.0,
+     "maxSpeed": 700.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "6x6_1_APC": {
+   "name": "AFV6 APC",
+   "code": "APC",
+   "rcs": 1.0,
+   "visibleRange": 5000.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 1.2999999523162842,
+   "size": [
+    7.199999809265137,
+    3.0999999046325684,
+    2.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "6x6_1_AT": {
+   "name": "AFV6 AT",
+   "code": "AT",
+   "rcs": 1.0,
+   "visibleRange": 5000.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 2.0999999046325684,
+   "size": [
+    7.199999809265137,
+    3.0999999046325684,
+    2.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6500.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "AGM-48",
+     "minRange": 1000.0,
+     "maxRange": 10000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "6x6_1_IFV": {
+   "name": "AFV6 IFV",
+   "code": "IFV",
+   "rcs": 1.0,
+   "visibleRange": 5000.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 1.5,
+   "size": [
+    7.199999809265137,
+    3.0999999046325684,
+    2.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 4000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "25mm Autocannon",
+     "minRange": 0.0,
+     "maxRange": 2200.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    }
+   ]
+  },
+  "AFV8_APC": {
+   "name": "AFV8 APC",
+   "code": "APC",
+   "rcs": 1.0,
+   "visibleRange": 5500.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 5.199999809265137,
+   "size": [
+    8.199999809265137,
+    3.0999999046325684,
+    2.799999952316284
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "AFV8_IFV": {
+   "name": "AFV8 IFV",
+   "code": "IFV",
+   "rcs": 1.0,
+   "visibleRange": 5500.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 6.099999904632568,
+   "size": [
+    8.199999809265137,
+    3.0999999046325684,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "25mm Autocannon",
+     "minRange": 0.0,
+     "maxRange": 2200.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    },
+    {
+     "name": "AT-145",
+     "minRange": 500.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 200.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "AFV8_SAM": {
+   "name": "AFV8 Mobile Air Defense",
+   "code": "SAM IR",
+   "rcs": 1.0,
+   "visibleRange": 5500.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 7.5,
+   "size": [
+    8.199999809265137,
+    3.0999999046325684,
+    4.0
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 7000.0,
+     "magnification": 4.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "IRM-S2",
+     "minRange": 500.0,
+     "maxRange": 10000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 935.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "AGM_scanner1": {
+   "name": "Eyeball Mk.II",
+   "code": "MSL",
+   "rcs": 0.02,
+   "visibleRange": 2000.0,
+   "iconRange": 0.0,
+   "armorTier": 0.10000000149011612,
+   "value": 0.09000000357627869,
+   "size": [
+    1.600000023841858,
+    0.20000000298023224,
+    0.20000000298023224
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "AssaultCarrier1": {
+   "name": "Annex Class Carrier",
+   "code": "SHP",
+   "rcs": 1.0,
+   "visibleRange": 50000.0,
+   "iconRange": 40000.0,
+   "armorTier": 5.0,
+   "value": 3500.0,
+   "size": [
+    242.0,
+    40.0,
+    50.0
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 15000.0,
+     "magnification": 3.0,
+     "maxSpeed": 1000.0
+    },
+    {
+     "visualRange": 6000.0,
+     "magnification": 1.0,
+     "maxSpeed": 500.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "RAM-45",
+     "minRange": 700.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 20000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "40mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 7500.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    },
+    {
+     "name": "IRM-S2",
+     "minRange": 500.0,
+     "maxRange": 10000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 935.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "76mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 25000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "AttackHelo1": {
+   "name": "SAH-46 Chicane",
+   "code": "SAH-46",
+   "rcs": 0.02,
+   "visibleRange": 2000.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 31.0,
+   "size": [
+    16.600000381469727,
+    7.400000095367432,
+    4.099999904632568
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.5,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "30mm Rotary Cannon",
+     "minRange": 0.0,
+     "maxRange": 2000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 200.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "CAS1": {
+   "name": "A-19 Brawler",
+   "code": "A-19",
+   "rcs": 0.6,
+   "visibleRange": 3500.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 36.0,
+   "size": [
+    18.0,
+    19.0,
+    3.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "COIN": {
+   "name": "CI-22 Cricket",
+   "code": "CI-22",
+   "rcs": 0.5,
+   "visibleRange": 2000.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 11.5,
+   "size": [
+    10.399999618530273,
+    11.600000381469727,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 2.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "CRAMTrailer1": {
+   "name": "HLT-CRAM",
+   "code": "AAA",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 10.5,
+   "size": [
+    10.5,
+    2.799999952316284,
+    4.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 10.0,
+     "maxSpeed": 1000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "20mm Rotary Cannon",
+     "minRange": 0.0,
+     "maxRange": 3000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 4000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "Corvette1": {
+   "name": "Shard Class Corvette",
+   "code": "SHP",
+   "rcs": 1.0,
+   "visibleRange": 15000.0,
+   "iconRange": 40000.0,
+   "armorTier": 4.0,
+   "value": 190.0,
+   "size": [
+    76.19999694824219,
+    10.5,
+    13.800000190734863
+   ],
+   "radars": [
+    {
+     "maxRange": 25000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 2.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 50000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 9000.0,
+     "magnification": 1.0,
+     "maxSpeed": 500.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "57mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 9000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 6.0
+    },
+    {
+     "name": "RAM-45",
+     "minRange": 700.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 20000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "20mm Rotary Cannon",
+     "minRange": 0.0,
+     "maxRange": 3000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 4000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "AGM-48",
+     "minRange": 1000.0,
+     "maxRange": 10000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "Darkreach": {
+   "name": "SFB-81 Darkreach",
+   "code": "SFB-81",
+   "rcs": 0.01,
+   "visibleRange": 5000.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 225.0,
+   "size": [
+    27.399999618530273,
+    36.5,
+    3.950000047683716
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 0.30000001192092896,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 60.0,
+     "jamTolerance": 0.5,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 12000.0,
+     "magnification": 2.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "Destroyer1": {
+   "name": "Dynamo Class Destroyer",
+   "code": "SHP",
+   "rcs": 1.0,
+   "visibleRange": 30000.0,
+   "iconRange": 40000.0,
+   "armorTier": 5.0,
+   "value": 1350.0,
+   "size": [
+    162.0,
+    22.0,
+    32.0
+   ],
+   "radars": [
+    {
+     "maxRange": 60000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.800000011920929,
+     "refDetection": 120000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 15000.0,
+     "magnification": 3.0,
+     "maxSpeed": 2000.0
+    },
+    {
+     "visualRange": 6000.0,
+     "magnification": 1.0,
+     "maxSpeed": 500.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "30mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    },
+    {
+     "name": "AShM-300",
+     "minRange": 5000.0,
+     "maxRange": 250000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 50.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 8.0
+    },
+    {
+     "name": "155mm Railgun",
+     "minRange": 300.0,
+     "maxRange": 50000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 9.0
+    },
+    {
+     "name": "StratoLance R9",
+     "minRange": 2000.0,
+     "maxRange": 50000.0,
+     "minAltitude": 500.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "MMR-S3",
+     "minRange": 1000.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 1200.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "EW1": {
+   "name": "EW-25 Medusa",
+   "code": "EW-25",
+   "rcs": 0.006,
+   "visibleRange": 3500.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 145.0,
+   "size": [
+    19.200000762939453,
+    18.100000381469727,
+    4.5
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 0.15000000596046448,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 60.0,
+     "jamTolerance": 0.5,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "Emplacement1_23mm": {
+   "name": "23mm AAA Emplacement",
+   "code": "AAA",
+   "rcs": 1.0,
+   "visibleRange": 500.0,
+   "iconRange": 5000.0,
+   "armorTier": 2.0,
+   "value": 0.25,
+   "size": [
+    5.0,
+    5.0,
+    1.7999999523162842
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 4000.0,
+     "magnification": 1.2000000476837158,
+     "maxSpeed": 400.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "23mm Autocannon",
+     "minRange": 0.0,
+     "maxRange": 3000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    }
+   ]
+  },
+  "Emplacement1_ATGM": {
+   "name": "AT-145 Emplacement",
+   "code": "ATGM",
+   "rcs": 1.0,
+   "visibleRange": 500.0,
+   "iconRange": 5000.0,
+   "armorTier": 2.0,
+   "value": 0.25,
+   "size": [
+    5.0,
+    5.0,
+    1.600000023841858
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.2000000476837158,
+     "maxSpeed": 200.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "AT-145",
+     "minRange": 500.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 200.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "Emplacement1_MANPADS": {
+   "name": "IRM-S1 Emplacement",
+   "code": "MANPADS",
+   "rcs": 1.0,
+   "visibleRange": 500.0,
+   "iconRange": 5000.0,
+   "armorTier": 2.0,
+   "value": 0.25,
+   "size": [
+    5.0,
+    5.0,
+    1.7999999523162842
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 4000.0,
+     "magnification": 1.2000000476837158,
+     "maxSpeed": 400.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "IRM-S1",
+     "minRange": 200.0,
+     "maxRange": 5000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 10000.0,
+     "maxSpeed": 700.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "Emplacement1_MG": {
+   "name": "12.7mm MG Emplacement",
+   "code": "MG",
+   "rcs": 1.0,
+   "visibleRange": 500.0,
+   "iconRange": 5000.0,
+   "armorTier": 2.0,
+   "value": 0.10000000149011612,
+   "size": [
+    5.0,
+    5.0,
+    1.600000023841858
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 200.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "FastBomber1": {
+   "name": "Alkyon AB-4",
+   "code": "AB-4",
+   "rcs": 0.0025,
+   "visibleRange": 5000.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 390.0,
+   "size": [
+    24.899999618530273,
+    31.600000381469727,
+    4.380000114440918
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 0.30000001192092896,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 60.0,
+     "jamTolerance": 0.5,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 12000.0,
+     "magnification": 2.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "Fighter1": {
+   "name": "FS-12 Revoker",
+   "code": "FS-12",
+   "rcs": 0.08,
+   "visibleRange": 3000.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 65.0,
+   "size": [
+    15.800000190734863,
+    11.0,
+    5.199999809265137
+   ],
+   "radars": [
+    {
+     "maxRange": 40000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 0.20000000298023224,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 30.0,
+     "jamTolerance": 0.5,
+     "refDetection": 80000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 0.699999988079071,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "FleetCarrier1": {
+   "name": "Hyperion Class Carrier",
+   "code": "SHP",
+   "rcs": 1.0,
+   "visibleRange": 50000.0,
+   "iconRange": 40000.0,
+   "armorTier": 5.0,
+   "value": 3500.0,
+   "size": [
+    267.0,
+    64.0,
+    48.0
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 1.0,
+     "maxSpeed": 500.0
+    },
+    {
+     "visualRange": 15000.0,
+     "magnification": 3.0,
+     "maxSpeed": 1000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "30mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    },
+    {
+     "name": "MMR-S3",
+     "minRange": 1000.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 1200.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "RAM-45",
+     "minRange": 700.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 20000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "Frigate1": {
+   "name": "Argus Class Frigate",
+   "code": "SHP",
+   "rcs": 1.0,
+   "visibleRange": 15000.0,
+   "iconRange": 40000.0,
+   "armorTier": 4.0,
+   "value": 750.0,
+   "size": [
+    112.0,
+    15.0,
+    38.0
+   ],
+   "radars": [
+    {
+     "maxRange": 60000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 120000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 1.0,
+     "maxSpeed": 500.0
+    },
+    {
+     "visualRange": 15000.0,
+     "magnification": 3.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "20mm Rotary Cannon",
+     "minRange": 0.0,
+     "maxRange": 3000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 4000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "127mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 40000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    },
+    {
+     "name": "IRM-S2",
+     "minRange": 500.0,
+     "maxRange": 10000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 935.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "AGM-99",
+     "minRange": 1000.0,
+     "maxRange": 100000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 50.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 6.0
+    },
+    {
+     "name": "NL-98",
+     "minRange": 2000.0,
+     "maxRange": 50000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "HLT-FC": {
+   "name": "HLT Fire Control",
+   "code": "CMD",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 2.299999952316284,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "HLT-FT": {
+   "name": "HLT Fuel Tanker",
+   "code": "FUEL",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.5099999904632568,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.0
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "HLT-L": {
+   "name": "HLT Flatbed",
+   "code": "TRK",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.46000000834465027,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.0
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "HLT-M": {
+   "name": "HLT Munitions Truck",
+   "code": "AMMO",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 2.490000009536743,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "HLT-MART": {
+   "name": "HLT Mobile Artillery",
+   "code": "ARTY",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 14.0,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.0
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "155mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 40000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "HLT-R": {
+   "name": "HLT Radar Truck",
+   "code": "RDR",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 20.0,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    4.099999904632568
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 0.0
+    },
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "HLT-T": {
+   "name": "HLT Tractor",
+   "code": "TRK",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.44999998807907104,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.0
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "LCV45": {
+   "name": "LCV45 Recon Truck",
+   "code": "MRAP",
+   "rcs": 1.0,
+   "visibleRange": 4500.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 0.6499999761581421,
+   "size": [
+    6.599999904632568,
+    2.5,
+    3.5999999046325684
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "LandingCraft1": {
+   "name": "OTB-31 landing craft",
+   "code": "LCAC",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 20000.0,
+   "armorTier": 1.0,
+   "value": 90.0,
+   "size": [
+    26.100000381469727,
+    13.899999618530273,
+    7.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 1.0,
+     "maxSpeed": 340.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "IRM-S1",
+     "minRange": 200.0,
+     "maxRange": 5000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 10000.0,
+     "maxSpeed": 700.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "LaserTrailer1": {
+   "name": "HLT-HEL",
+   "code": "LADS",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 18.5,
+   "size": [
+    10.5,
+    2.799999952316284,
+    7.900000095367432
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 10.0,
+     "maxSpeed": 1000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "80kw Laser",
+     "minRange": 0.0,
+     "maxRange": 8000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": false,
+     "armorTierEffectiveness": 1.0
+    }
+   ]
+  },
+  "LightTruck1_AA": {
+   "name": "LCV25 AA",
+   "code": "LCV25",
+   "rcs": 1.0,
+   "visibleRange": 4000.0,
+   "iconRange": 0.0,
+   "armorTier": 2.0,
+   "value": 0.4399999976158142,
+   "size": [
+    5.5,
+    2.4000000953674316,
+    2.5999999046325684
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.5,
+     "maxSpeed": 350.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Rotary Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 2500.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "IRM-S1",
+     "minRange": 200.0,
+     "maxRange": 5000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 10000.0,
+     "maxSpeed": 700.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "LightTruck1_AT": {
+   "name": "LCV25 AT",
+   "code": "LCV25",
+   "rcs": 1.0,
+   "visibleRange": 4000.0,
+   "iconRange": 0.0,
+   "armorTier": 2.0,
+   "value": 0.550000011920929,
+   "size": [
+    5.5,
+    2.4000000953674316,
+    2.5999999046325684
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "25mm Autocannon",
+     "minRange": 0.0,
+     "maxRange": 2200.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    },
+    {
+     "name": "AT-145",
+     "minRange": 500.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 200.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "Linebreaker_APC": {
+   "name": "Linebreaker APC",
+   "code": "APC",
+   "rcs": 1.0,
+   "visibleRange": 5500.0,
+   "iconRange": 0.0,
+   "armorTier": 4.0,
+   "value": 7.199999809265137,
+   "size": [
+    7.900000095367432,
+    3.9000000953674316,
+    2.700000047683716
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 4000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "Linebreaker_IFV": {
+   "name": "Linebreaker IFV",
+   "code": "IFV",
+   "rcs": 1.0,
+   "visibleRange": 5500.0,
+   "iconRange": 0.0,
+   "armorTier": 4.0,
+   "value": 8.100000381469727,
+   "size": [
+    7.900000095367432,
+    3.9000000953674316,
+    3.299999952316284
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "25mm Autocannon",
+     "minRange": 0.0,
+     "maxRange": 2200.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    },
+    {
+     "name": "AT-145",
+     "minRange": 500.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 200.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "Linebreaker_SAM": {
+   "name": "Linebreaker SAM",
+   "code": "SAM IR",
+   "rcs": 1.0,
+   "visibleRange": 5500.0,
+   "iconRange": 0.0,
+   "armorTier": 4.0,
+   "value": 9.5,
+   "size": [
+    7.900000095367432,
+    3.9000000953674316,
+    4.099999904632568
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 8000.0,
+     "magnification": 4.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "IRM-S2",
+     "minRange": 500.0,
+     "maxRange": 10000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 935.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "MBT": {
+   "name": "Type-12 MBT",
+   "code": "MBT",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 6.0,
+   "value": 11.199999809265137,
+   "size": [
+    8.199999809265137,
+    4.199999809265137,
+    2.799999952316284
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "130mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 4500.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 200.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "MBT1": {
+   "name": "Spearhead MBT",
+   "code": "MBT",
+   "rcs": 1.0,
+   "visibleRange": 6500.0,
+   "iconRange": 0.0,
+   "armorTier": 6.0,
+   "value": 15.300000190734863,
+   "size": [
+    8.5,
+    4.199999809265137,
+    3.200000047683716
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.0,
+     "maxSpeed": 500.0
+    },
+    {
+     "visualRange": 4500.0,
+     "magnification": 3.0,
+     "maxSpeed": 500.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "20kw Laser",
+     "minRange": 0.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 1000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": false,
+     "armorTierEffectiveness": 1.0
+    },
+    {
+     "name": "130mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 4500.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 200.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    },
+    {
+     "name": "AT-145",
+     "minRange": 500.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 200.0,
+     "maxSpeed": 30.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    },
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "Multirole1": {
+   "name": "KR-67 Ifrit",
+   "code": "KR-67",
+   "rcs": 0.0015,
+   "visibleRange": 3500.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 126.0,
+   "size": [
+    19.0,
+    14.300000190734863,
+    4.599999904632568
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 0.11999999731779099,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 30.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "PatrolBoat1": {
+   "name": "Surf Class Patrol Boat",
+   "code": "PB",
+   "rcs": 1.0,
+   "visibleRange": 5000.0,
+   "iconRange": 40000.0,
+   "armorTier": 2.0,
+   "value": 26.0,
+   "size": [
+    30.0,
+    8.0,
+    9.199999809265137
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 7000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "AGM-48",
+     "minRange": 1000.0,
+     "maxRange": 10000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    },
+    {
+     "name": "12.7mm Rotary Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 2500.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "IRM-S1",
+     "minRange": 200.0,
+     "maxRange": 5000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 10000.0,
+     "maxSpeed": 700.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "30mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    }
+   ]
+  },
+  "QuadVTOL1": {
+   "name": "VL-49 Tarantula",
+   "code": "VL-49",
+   "rcs": 3.0,
+   "visibleRange": 4500.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 118.0,
+   "size": [
+    28.5,
+    22.700000762939453,
+    6.099999904632568
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.5,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "RadarContainer1": {
+   "name": "Radar Container",
+   "code": "RDR",
+   "rcs": 1.0,
+   "visibleRange": 3000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 12.5,
+   "size": [
+    4.800000190734863,
+    1.600000023841858,
+    1.600000023841858
+   ],
+   "radars": [
+    {
+     "maxRange": 17000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.5,
+     "refDetection": 34000.0
+    }
+   ],
+   "optical": [],
+   "weapons": []
+  },
+  "RadarSAM1": {
+   "name": "T9K41 Boltstrike",
+   "code": "SAM R",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 4.0,
+   "value": 12.5,
+   "size": [
+    8.600000381469727,
+    3.799999952316284,
+    5.199999809265137
+   ],
+   "radars": [
+    {
+     "maxRange": 25000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.5,
+     "refDetection": 50000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.0,
+     "maxSpeed": 0.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "RAM-45",
+     "minRange": 700.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 20000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "SAMTrailer1": {
+   "name": "StratoLance R9 Launcher",
+   "code": "SAM R",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 12.5,
+   "size": [
+    10.5,
+    2.799999952316284,
+    7.900000095367432
+   ],
+   "radars": [],
+   "optical": [],
+   "weapons": [
+    {
+     "name": "StratoLance R9",
+     "minRange": 2000.0,
+     "maxRange": 50000.0,
+     "minAltitude": 500.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "SAMTurret1": {
+   "name": "Boltstrike RAM45 Launcher",
+   "code": "SAM R",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 7.0,
+   "size": [
+    4.800000190734863,
+    1.600000023841858,
+    1.600000023841858
+   ],
+   "radars": [],
+   "optical": [],
+   "weapons": [
+    {
+     "name": "RAM-45",
+     "minRange": 700.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 20000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "SPAAG1": {
+   "name": "AeroSentry SPAAG",
+   "code": "SPAAG",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 4.0,
+   "value": 8.0,
+   "size": [
+    8.399999618530273,
+    3.5999999046325684,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 3.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "30mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 4000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    }
+   ]
+  },
+  "SPAAG2": {
+   "name": "FGA-57 Anvil",
+   "code": "SPAAG",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 4.0,
+   "value": 9.0,
+   "size": [
+    7.900000095367432,
+    3.9000000953674316,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 4500.0,
+     "magnification": 3.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "57mm Cannon",
+     "minRange": 0.0,
+     "maxRange": 5500.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 6.0
+    }
+   ]
+  },
+  "SmallCarrier1": {
+   "name": "Cursor Class LFD",
+   "code": "SHP",
+   "rcs": 1.0,
+   "visibleRange": 15000.0,
+   "iconRange": 40000.0,
+   "armorTier": 4.0,
+   "value": 800.0,
+   "size": [
+    96.0,
+    36.0,
+    28.0
+   ],
+   "radars": [
+    {
+     "maxRange": 25000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 2.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 50000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 9000.0,
+     "magnification": 1.0,
+     "maxSpeed": 500.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "80kw Laser",
+     "minRange": 0.0,
+     "maxRange": 8000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": false,
+     "armorTierEffectiveness": 1.0
+    },
+    {
+     "name": "RAM-45",
+     "minRange": 700.0,
+     "maxRange": 15000.0,
+     "minAltitude": 2.0,
+     "maxAltitude": 20000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    },
+    {
+     "name": "20mm Rotary Cannon",
+     "minRange": 0.0,
+     "maxRange": 3000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 4000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "SmallFighter1": {
+   "name": "FS-20 Vortex",
+   "code": "FS-20",
+   "rcs": 0.001,
+   "visibleRange": 2500.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 90.0,
+   "size": [
+    14.100000381469727,
+    9.300000190734863,
+    3.0999999046325684
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 0.15000000596046448,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 30.0,
+     "jamTolerance": 0.5,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "Truck2-CRAM": {
+   "name": "MSV CRAM",
+   "code": "AAA",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 20.0,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    4.099999904632568
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 10.0,
+     "maxSpeed": 1000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "20mm Rotary Cannon",
+     "minRange": 0.0,
+     "maxRange": 3000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 4000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "Truck2-FC": {
+   "name": "MSV Fire Control",
+   "code": "CMD",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 2.299999952316284,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "Truck2-FT": {
+   "name": "MSV Fuel Tanker",
+   "code": "FUEL",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.5099999904632568,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "Truck2-L": {
+   "name": "MSV Flatbed",
+   "code": "TRK",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.46000000834465027,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "Truck2-LADS": {
+   "name": "MSV LADS",
+   "code": "LADS",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 20.0,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    4.099999904632568
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 10.0,
+     "maxSpeed": 1000.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "80kw Laser",
+     "minRange": 0.0,
+     "maxRange": 8000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": false,
+     "armorTierEffectiveness": 1.0
+    }
+   ]
+  },
+  "Truck2-M": {
+   "name": "MSV Munitions",
+   "code": "AMMO",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 2.490000009536743,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "Truck2-MLRS": {
+   "name": "MSV MLRS",
+   "code": "MLRS",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 11.0,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "MLRS Rocket",
+     "minRange": 10000.0,
+     "maxRange": 40000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 1000.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": false,
+     "armorTierEffectiveness": 7.0
+    }
+   ]
+  },
+  "Truck2-MRAP": {
+   "name": "MSV MRAP",
+   "code": "MRAP",
+   "rcs": 1.0,
+   "visibleRange": 4500.0,
+   "iconRange": 0.0,
+   "armorTier": 3.0,
+   "value": 0.6499999761581421,
+   "size": [
+    6.599999904632568,
+    2.5999999046325684,
+    3.5999999046325684
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 6000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "Truck2-R": {
+   "name": "MSV Radar",
+   "code": "RDR",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 20.0,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    4.099999904632568
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 360.0,
+     "jamTolerance": 0.699999988079071,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "Truck2-RSAM": {
+   "name": "MSV R9 Stratolance Launcher",
+   "code": "SAM R",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 13.399999618530273,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "StratoLance R9",
+     "minRange": 2000.0,
+     "maxRange": 50000.0,
+     "minAltitude": 500.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "Truck2-T": {
+   "name": "MSV Tractor",
+   "code": "TRK",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.44999998807907104,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": []
+  },
+  "Truck2-TBM": {
+   "name": "MSV Ballistic Missile Launcher",
+   "code": "TBM",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 15.699999809265137,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "Piledriver TBM",
+     "minRange": 20000.0,
+     "maxRange": 250000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 9.0
+    }
+   ]
+  },
+  "Truck2-TBM-N": {
+   "name": "MSV Nuclear Ballistic Missile Launcher",
+   "code": "TBM",
+   "rcs": 1.0,
+   "visibleRange": 6000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 15.699999809265137,
+   "size": [
+    10.100000381469727,
+    2.700000047683716,
+    3.4000000953674316
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 3000.0,
+     "magnification": 1.0,
+     "maxSpeed": 250.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "Piledriver TBM (20kt)",
+     "minRange": 20000.0,
+     "maxRange": 250000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 50.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 9.0
+    }
+   ]
+  },
+  "UFO": {
+   "name": "???",
+   "code": "???",
+   "rcs": 0.08,
+   "visibleRange": 3000.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 1996.0,
+   "size": [
+    13.600000381469727,
+    13.600000381469727,
+    3.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 2.0,
+     "maxSpeed": 10000.0
+    }
+   ],
+   "weapons": []
+  },
+  "UGV1_SAM": {
+   "name": "Hexhound SAM",
+   "code": "UGV",
+   "rcs": 1.0,
+   "visibleRange": 1200.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 1.5,
+   "size": [
+    2.700000047683716,
+    1.600000023841858,
+    1.2000000476837158
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 2000.0,
+     "magnification": 1.0,
+     "maxSpeed": 200.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "IRM-S1",
+     "minRange": 200.0,
+     "maxRange": 5000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 10000.0,
+     "maxSpeed": 700.0,
+     "minRadar": 0.0,
+     "minIR": 0.05000000074505806,
+     "lineOfSight": true,
+     "missile": true,
+     "gun": false,
+     "armorTierEffectiveness": 4.0
+    }
+   ]
+  },
+  "UGV1_grenade": {
+   "name": "Hexhound GMG",
+   "code": "UGV",
+   "rcs": 1.0,
+   "visibleRange": 1200.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.800000011920929,
+   "size": [
+    2.700000047683716,
+    1.600000023841858,
+    1.2000000476837158
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 2000.0,
+     "magnification": 1.0,
+     "maxSpeed": 200.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "40mm GMG",
+     "minRange": 30.0,
+     "maxRange": 2200.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 5.0
+    }
+   ]
+  },
+  "UGVDozer1": {
+   "name": "M12 Jackknife",
+   "code": "CEV",
+   "rcs": 1.0,
+   "visibleRange": 1200.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 2.0,
+   "size": [
+    4.199999809265137,
+    1.7000000476837158,
+    1.649999976158142
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 2000.0,
+     "magnification": 1.0,
+     "maxSpeed": 200.0
+    }
+   ],
+   "weapons": []
+  },
+  "UtilityHelo1": {
+   "name": "UH-90 Ibis",
+   "code": "UH-90",
+   "rcs": 0.03,
+   "visibleRange": 3000.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 29.5,
+   "size": [
+    14.15999984741211,
+    6.360000133514404,
+    4.619999885559082
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.5,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "VTOLTrainer1": {
+   "name": "VT-7 Vagrant",
+   "code": "VT-7",
+   "rcs": 0.12,
+   "visibleRange": 2500.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 28.899999618530273,
+   "size": [
+    13.399999618530273,
+    9.800000190734863,
+    3.8499999046325684
+   ],
+   "radars": [
+    {
+     "maxRange": 35000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.699999988079071,
+     "clutterFactor": 0.15000000596046448,
+     "dopplerFactor": 0.10000000149011612,
+     "cone": 30.0,
+     "jamTolerance": 0.5,
+     "refDetection": 50000.0
+    }
+   ],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  },
+  "VehicleDepot1": {
+   "name": "Vehicle Depot",
+   "code": "BLD",
+   "rcs": 1.0,
+   "visibleRange": 10000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 12.0,
+   "size": [
+    67.0,
+    67.0,
+    12.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 2000.0,
+     "magnification": 1.0,
+     "maxSpeed": 50.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "Light Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "70mm Light AT",
+     "minRange": 10.0,
+     "maxRange": 1000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    },
+    {
+     "name": "40mm Grenade",
+     "minRange": 30.0,
+     "maxRange": 400.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 6.0
+    }
+   ]
+  },
+  "gabionBunker1": {
+   "name": "Infantry Bunker",
+   "code": "BNKR",
+   "rcs": 1.0,
+   "visibleRange": 500.0,
+   "iconRange": 0.0,
+   "armorTier": 2.0,
+   "value": 0.10000000149011612,
+   "size": [
+    10.0,
+    10.0,
+    4.5
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 1200.0,
+     "magnification": 1.5,
+     "maxSpeed": 100.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "Light Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "70mm Light AT",
+     "minRange": 10.0,
+     "maxRange": 1000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    },
+    {
+     "name": "40mm Grenade",
+     "minRange": 30.0,
+     "maxRange": 400.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 6.0
+    }
+   ]
+  },
+  "guardTower1": {
+   "name": "Guard Tower",
+   "code": "TWR",
+   "rcs": 1.0,
+   "visibleRange": 5000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 0.25,
+   "size": [
+    10.0,
+    10.0,
+    25.0
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 5000.0,
+     "magnification": 1.0,
+     "maxSpeed": 50.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "Light Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    },
+    {
+     "name": "70mm Light AT",
+     "minRange": 10.0,
+     "maxRange": 1000.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 7.0
+    },
+    {
+     "name": "40mm Grenade",
+     "minRange": 30.0,
+     "maxRange": 400.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100.0,
+     "maxSpeed": 40.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": false,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 6.0
+    }
+   ]
+  },
+  "pillbox": {
+   "name": "Pillbox",
+   "code": "BNKR",
+   "rcs": 1.0,
+   "visibleRange": 2000.0,
+   "iconRange": 0.0,
+   "armorTier": 5.0,
+   "value": 0.25,
+   "size": [
+    10.0,
+    10.0,
+    4.0
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 2200.0,
+     "magnification": 1.0,
+     "maxSpeed": 50.0
+    }
+   ],
+   "weapons": [
+    {
+     "name": "12.7mm Machine Gun",
+     "minRange": 0.0,
+     "maxRange": 1800.0,
+     "minAltitude": 0.0,
+     "maxAltitude": 100000.0,
+     "maxSpeed": 100000.0,
+     "minRadar": 0.0,
+     "minIR": 0.0,
+     "lineOfSight": true,
+     "missile": false,
+     "gun": true,
+     "armorTierEffectiveness": 3.0
+    }
+   ]
+  },
+  "radarStation1": {
+   "name": "Radar Station",
+   "code": "RDR",
+   "rcs": 1.0,
+   "visibleRange": 10000.0,
+   "iconRange": 0.0,
+   "armorTier": 1.0,
+   "value": 25.0,
+   "size": [
+    20.0,
+    25.799999237060547,
+    36.599998474121094
+   ],
+   "radars": [
+    {
+     "maxRange": 50000.0,
+     "maxSignal": 4.0,
+     "minSignal": 0.5,
+     "clutterFactor": 1.0,
+     "dopplerFactor": 0.15000000596046448,
+     "cone": 360.0,
+     "jamTolerance": 0.5,
+     "refDetection": 100000.0
+    }
+   ],
+   "optical": [],
+   "weapons": []
+  },
+  "trainer": {
+   "name": "T/A-30 Compass",
+   "code": "T/A-30",
+   "rcs": 0.12,
+   "visibleRange": 2500.0,
+   "iconRange": 100000.0,
+   "armorTier": 1.0,
+   "value": 21.799999237060547,
+   "size": [
+    13.199999809265137,
+    12.100000381469727,
+    3.299999952316284
+   ],
+   "radars": [],
+   "optical": [
+    {
+     "visualRange": 10000.0,
+     "magnification": 1.0,
+     "maxSpeed": 2000.0
+    }
+   ],
+   "weapons": []
+  }
+ },
+ "airframes": {
+  "SmallFighter1": {
+   "name": "FS-20 Vortex",
+   "rcs": 0.001,
+   "visibleRange": 2500.0
+  },
+  "Multirole1": {
+   "name": "KR-67 Ifrit",
+   "rcs": 0.0015,
+   "visibleRange": 3500.0
+  },
+  "FastBomber1": {
+   "name": "Alkyon AB-4",
+   "rcs": 0.0025,
+   "visibleRange": 5000.0
+  },
+  "EW1": {
+   "name": "EW-25 Medusa",
+   "rcs": 0.006,
+   "visibleRange": 3500.0
+  },
+  "Darkreach": {
+   "name": "SFB-81 Darkreach",
+   "rcs": 0.01,
+   "visibleRange": 5000.0
+  },
+  "AttackHelo1": {
+   "name": "SAH-46 Chicane",
+   "rcs": 0.02,
+   "visibleRange": 2000.0
+  },
+  "UtilityHelo1": {
+   "name": "UH-90 Ibis",
+   "rcs": 0.03,
+   "visibleRange": 3000.0
+  },
+  "Fighter1": {
+   "name": "FS-12 Revoker",
+   "rcs": 0.08,
+   "visibleRange": 3000.0
+  },
+  "UFO": {
+   "name": "???",
+   "rcs": 0.08,
+   "visibleRange": 3000.0
+  },
+  "trainer": {
+   "name": "T/A-30 Compass",
+   "rcs": 0.12,
+   "visibleRange": 2500.0
+  },
+  "VTOLTrainer1": {
+   "name": "VT-7 Vagrant",
+   "rcs": 0.12,
+   "visibleRange": 2500.0
+  },
+  "COIN": {
+   "name": "CI-22 Cricket",
+   "rcs": 0.5,
+   "visibleRange": 2000.0
+  },
+  "CAS1": {
+   "name": "A-19 Brawler",
+   "rcs": 0.6,
+   "visibleRange": 3500.0
+  },
+  "QuadVTOL1": {
+   "name": "VL-49 Tarantula",
+   "rcs": 3.0,
+   "visibleRange": 4500.0
+  }
+ }
+}

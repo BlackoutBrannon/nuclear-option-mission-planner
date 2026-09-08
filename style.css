@@ -24,35 +24,154 @@ html, body {
   height: 100%;
 }
 
+/* A floating window, not a docked sidebar. Position and size are set from
+   JavaScript and remembered between sessions; the values here only apply for
+   the instant before that runs. */
 #panel {
   position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 300px;
+  left: 12px; top: 12px;
+  width: 300px; height: 70%;
+  border-radius: 5px;
+  overflow: hidden;                 /* keeps the rounded corners honest */
   z-index: 5;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #2a353d;
+  border: 1px solid #2a353d;
   background: rgba(19, 26, 32, 0.94);
   backdrop-filter: blur(3px);       /* map faintly visible behind the panel */
-  box-shadow: 2px 0 12px rgba(0,0,0,.45);
+  box-shadow: 0 6px 22px rgba(0,0,0,.5);
 }
 
-#panelHead {
-  padding: 10px 14px;
+#panel[hidden], #ringPanel[hidden] { display: none; }
+
+/* The second window shares the first one's look. Selector list rather than a
+   shared class so the existing markup did not have to change. */
+#ringPanel {
+  position: absolute;
+  left: 326px; top: 12px;
+  width: 330px; height: 460px;
+  z-index: 5;
+  display: flex; flex-direction: column;
+  border: 1px solid #2a353d;
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(19, 26, 32, 0.94);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 6px 22px rgba(0,0,0,.5);
+}
+#ringPanelBody {
+  flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px 14px;
+}
+
+#ringPanelHead { /* shares the rules below */ }
+#panelHead, #ringPanelHead {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 8px 8px 14px;
   border-bottom: 1px solid #2a353d;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
+  cursor: grab;                     /* says "drag me" before you try it */
+  user-select: none;
 }
+#panelHead:active { cursor: grabbing; }
+#panelTitle { flex: 1; }
+
+#panelClose, #ringPanelClose {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  background: transparent; color: #8b98a5;
+  border: 1px solid transparent; border-radius: 3px;
+  font-size: 17px; line-height: 1; cursor: pointer;
+  font-family: inherit;
+}
+#panelClose:hover, #ringPanelClose:hover { background: #3a2226; border-color: #6d3b3f; color: #f3b3b3; }
+
+/* Bottom-right corner: width AND height together. */
+#panelCorner, #ringPanelCorner {
+  position: absolute;
+  right: 0; bottom: 0;
+  width: 16px; height: 16px;
+  cursor: nwse-resize;
+  z-index: 7;
+  background:
+    linear-gradient(135deg, transparent 0 48%, #4d5c68 48% 60%, transparent 60%) no-repeat,
+    linear-gradient(135deg, transparent 0 68%, #4d5c68 68% 80%, transparent 80%) no-repeat;
+  opacity: .55;
+}
+#panelCorner:hover, #panelCorner.dragging,
+#ringPanelCorner:hover, #ringPanelCorner.dragging { opacity: 1; }
 
 #panelBody {
   flex: 1;                          /* soak up remaining height */
   overflow-y: auto;                 /* scroll here, not the page */
+  overflow-x: hidden;               /* narrow panel wraps rather than scrolls sideways */
   padding: 12px 14px;
 }
 
+/* Visible grip, not just an invisible hot zone - you should be able to see that
+   the edge is draggable without discovering it by accident. */
+#panelResize, #ringPanelResize {
+  position: absolute;
+  top: 0; bottom: 16px; right: 0;
+  width: 7px;
+  cursor: col-resize;
+  z-index: 6;
+  background:
+    linear-gradient(#4d5c68, #4d5c68) center / 2px 34px no-repeat;
+  opacity: .5;
+  transition: opacity .12s;
+}
+#panelResize:hover, #panelResize.dragging,
+#ringPanelResize:hover, #ringPanelResize.dragging { opacity: 1; }
+#panelResize.dragging, #ringPanelResize.dragging { background-color: rgba(142,203,255,.18); }
+
+/* While dragging, stop the pointer selecting text across the whole page. */
+body.resizing { user-select: none; cursor: col-resize; }
+
+.row { display: flex; gap: 6px; align-items: center; }
+.row select { flex: 1; }
+.row input[type="color"] {
+  width: 30px; height: 26px; padding: 0;
+  background: #1c262d;
+  border: 1px solid #2f3d47;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.hint { font-size: 11px; color: #6f7d88; margin-top: 5px; line-height: 1.4; }
+
+.ringToggle { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+
+/* A sample of the line each ring actually draws. The pattern is what tells
+   them apart, so the key shows the pattern rather than a colour chip. */
+.key { width: 26px; height: 0; border-top-width: 2px; flex: none; }
+.key-weapon  { border-top: 2px solid  #f0857a; }
+.key-radar   { border-top: 2px dashed #8ecbff; }
+.key-optical { border-top: 2px dotted #ffd166; }
+
+.ringActions { display: flex; gap: 6px; margin-bottom: 8px; }
+.ringActions button {
+  flex: 1;
+  background: #223039; color: #cdd9e3;
+  border: 1px solid #55707f; border-radius: 3px;
+  padding: 3px 6px; font-size: 11px; font-family: inherit; cursor: pointer;
+}
+.ringActions button:hover { background: #2c3d49; }
+
+/* Trailing detail on a tree row - the ring tree shows each type's reach. */
+.ltExtra {
+  color: #9fb6c6; font-family: ui-monospace, Consolas, monospace;
+  font-size: 10px; font-variant-numeric: tabular-nums;
+  margin-left: auto; padding-left: 6px; white-space: nowrap;
+}
+
+/* The map stops above the status bar rather than running under it, so the
+   canvas never contains pixels you cannot see. --barH is the single place that
+   height is stated; the bar itself reads it too. */
+:root { --barH: 30px; }
+
 #mapArea {
   position: absolute;
-  inset: 0;                         /* fills the whole window, under the panel */
+  inset: 0 0 var(--barH) 0;
   overflow: hidden;
   background: #0d1216;
 }
@@ -146,27 +265,96 @@ select {
 /* Status bar, bottom right over the map. */
 #status {
   position: fixed;
-  right: 12px; bottom: 12px;
+  left: 0; right: 0; bottom: 0;
+  height: var(--barH);
   z-index: 15;
   display: flex; align-items: center; gap: 14px;
-  padding: 6px 10px;
-  background: rgba(11, 16, 20, .88);
-  border: 1px solid #2a353d;
-  border-radius: 4px;
+  padding: 0 10px;
+  background: #0e141a;
+  border-top: 1px solid #2a353d;
   font-family: ui-monospace, Consolas, monospace;
   font-size: 12px;
   color: #b8c5d0;
   font-variant-numeric: tabular-nums;   /* digits stop jittering as they change */
 }
-#stBull { color: #ffd166; }
+#stBull { color: #ccd3da; }
 #stMeas { color: #6ee7b7; }
-#unitToggle {
+#status .spacer { flex: 1; }        /* pushes what follows to the right */
+
+.barField {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; letter-spacing: .06em; color: #7d8b96;
+  text-transform: uppercase; cursor: pointer;
+}
+.barField select, .barField input {
+  background: #223039; color: #e2ecf4;
+  border: 1px solid #55707f; border-radius: 3px;
+  padding: 2px 4px; font-size: 11px; font-family: inherit;
+  text-transform: none; letter-spacing: 0;
+}
+.barField select:hover, .barField input:hover { border-color: #7d9cad; }
+.barField select:focus, .barField input:focus {
+  outline: none; border-color: #3da5ff; box-shadow: 0 0 0 1px #3da5ff;
+}
+.barField input[type="number"] {
+  width: 66px; text-align: right; font-variant-numeric: tabular-nums;
+}
+
+#altSlider {
+  width: 132px; padding: 0; border: 0; background: transparent;
+  accent-color: #8ecbff;            /* the filled track and thumb */
+  cursor: ew-resize;
+}
+/* The tick marks a datalist draws are tiny and easy to miss, so the track also
+   carries its own gradient stripes at the same six altitudes. */
+#altSlider::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 1px, #55707f 1px 2px, transparent 2px 100%)
+      0 0 / 100% 100% no-repeat,
+    #2a353d;
+}
+/* The handle needs to be findable against a dark bar AND against a bright
+   basemap showing through, so it carries BOTH outlines: white inside, near
+   black outside. Contrast on either side, rather than trusting one colour. */
+#altSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px; margin-top: -5px;
+  border-radius: 50%;
+  background: #3da5ff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #0b1014, 0 1px 3px rgba(0,0,0,.6);
+}
+#altSlider::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #3da5ff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #0b1014;
+}
+#altSlider:hover::-webkit-slider-thumb { background: #6fbcff; }
+.barField select { max-width: 190px; }
+#altUnit { color: #6f7d88; font-size: 10px; }
+#stHorizon { color: #9fb6c6; }
+#status .vsep {
+  width: 1px; height: 16px;
+  background: #2a353d;
+  margin: 0 -4px;
+}
+
+#unitToggle, #panelToggle, #ringPanelToggle {
   background: #1c262d; color: #cdd9e3;
   border: 1px solid #3d4a55; border-radius: 3px;
   padding: 3px 8px; font-size: 11px; cursor: pointer;
   font-family: inherit;
 }
-#unitToggle:hover { background: #24313a; }
+#unitToggle:hover, #panelToggle:hover, #ringPanelToggle:hover { background: #24313a; }
+/* Pressed-in look while the panel is open, so the button's state is readable
+   from its shape and not only from its colour. */
+#panelToggle[aria-pressed="true"], #ringPanelToggle[aria-pressed="true"] {
+  background: #2c3d49; border-color: #5a6e7c; color: #eaf2f8;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
+}
 
 /* Context menu. Fixed, like the tooltip, because it is placed from
    clientX/clientY. Unlike the tooltip it DOES take pointer events - you

@@ -11,7 +11,12 @@
   <div id="app">
 
     <aside id="panel">
-      <div id="panelHead">Nuclear Option — Mission Planner</div>
+      <!-- The title bar is also the drag handle. The close button sits inside
+           it but stops the drag, or every click on it would move the window. -->
+      <div id="panelHead">
+        <span id="panelTitle">Mission Planner</span>
+        <button id="panelClose" title="Close (reopen from the bar below)">&times;</button>
+      </div>
 
       <div id="panelBody">
         <div id="drop">Drop a mission .json here</div>
@@ -32,9 +37,61 @@
         </div>
 
         <div class="group">
+          <div class="title">Manual rings</div>
+          <div class="row">
+            <select id="ringPreset" title="Colour for new range rings"></select>
+            <input type="color" id="ringCustom" value="#c8ced6"
+                   title="Any other colour">
+          </div>
+          <div class="hint">Applies to rings you draw next.</div>
+        </div>
+
+        <div class="group">
           <a href="symbols.html" target="_blank" class="sheetLink">Symbology sheet &rarr;</a>
         </div>
       </div>
+
+      <!-- Drag the panel wider or narrower. Sits on the right edge, over the
+           border, and is deliberately wider than it looks so it is easy to grab. -->
+      <div id="panelResize" title="Drag to resize"></div>
+      <div id="panelCorner" title="Drag to resize"></div>
+    </aside>
+
+    <!-- Second floating window, same machinery as the first. Threat rings need
+         per-type control on a 900-unit mission, which is far too much to live
+         in a section of the main panel. -->
+    <aside id="ringPanel" hidden>
+      <div id="ringPanelHead">
+        <span>Threat Rings</span>
+        <button id="ringPanelClose" title="Close (reopen from the bar below)">&times;</button>
+      </div>
+
+      <div id="ringPanelBody">
+        <div class="group">
+          <div class="title">Ring types</div>
+          <label class="ringToggle"><input type="checkbox" id="ringWeapon" checked>
+            <span class="key key-weapon"></span> Weapon envelope</label>
+          <label class="ringToggle"><input type="checkbox" id="ringRadar" checked>
+            <span class="key key-radar"></span> Radar detection</label>
+          <label class="ringToggle"><input type="checkbox" id="ringOptical">
+            <span class="key key-optical"></span> Optical / IR</label>
+          <div class="hint">Radar rings follow the RCS and altitude in the bar
+            below. Optical rings do not — RCS does not affect eyeballs.</div>
+        </div>
+
+        <div class="group">
+          <div class="title">Show rings for</div>
+          <div class="ringActions">
+            <button id="ringNone" type="button">None</button>
+            <button id="ringAll" type="button">All</button>
+            <button id="ringLong" type="button" title="Everything reaching beyond 15 km">Long range</button>
+          </div>
+          <div id="ringTree" class="ltTree"></div>
+        </div>
+      </div>
+
+      <div id="ringPanelResize" title="Drag to resize"></div>
+      <div id="ringPanelCorner" title="Drag to resize"></div>
     </aside>
 
     <main id="mapArea">
@@ -46,10 +103,38 @@
   <div id="tip"></div>
   <div id="menu"></div>
 
+  <!-- Full-width bottom bar. Holds the readouts, the way back to a closed
+       panel, and room for whatever tools come next. -->
   <div id="status">
+    <button id="panelToggle" title="Show or hide the mission panel">Panel</button>
+    <button id="ringPanelToggle" title="Show or hide the threat ring controls">Rings</button>
+    <span class="vsep"></span>
     <span id="stPos">—</span>
     <span id="stBull"></span>
     <span id="stMeas"></span>
+
+    <span class="spacer"></span>
+
+    <!-- Own-ship state. Every threat ring is drawn against THIS aircraft at
+         THIS altitude, so the two controls belong with the readouts rather
+         than buried in a panel that can be closed. -->
+    <label class="barField" title="Your aircraft - radar rings scale with its RCS">
+      RCS <select id="rcsPreset"></select>
+    </label>
+    <label class="barField" title="Your altitude - sets the radar horizon and which weapons can reach you">
+      ALT
+      <input type="range" id="altSlider" min="0" max="1000" value="0" step="1"
+             list="altMarks" title="Drag - low altitude gets most of the travel">
+      <datalist id="altMarks">
+        <option value="185"></option><option value="316"></option>
+        <option value="398"></option><option value="550"></option>
+        <option value="693"></option><option value="874"></option>
+      </datalist>
+      <input type="number" id="altInput" min="0" step="500" value="10000">
+      <span id="altUnit">ft</span>
+    </label>
+    <span id="stHorizon" title="Radar horizon from your altitude: sqrt(2 x earth radius x altitude)"></span>
+    <span class="vsep"></span>
     <button id="unitToggle" title="Switch between nautical and metric">NM / ft</button>
   </div>
 
