@@ -61,7 +61,10 @@ let view = { scale: 1, panX: 0, panY: 0 };
 // A single named reference point. Positions are then expressed as a bearing
 // and range from it - the standard radio format, "bandits bullseye 270 for 45"
 // - rather than as raw coordinates.
-let bullseye = null;         // { x, z } in world metres, or null
+let bullseye = null;          // { x, z } in world metres, or null
+
+// Cursor position while the sight-line probe is active, in world metres.
+let losCursor = null;
 
 // The exact inverse of toScreen: undo the view, then undo the fit. Every
 // interaction that starts with a click - placing a bullseye, dropping a target,

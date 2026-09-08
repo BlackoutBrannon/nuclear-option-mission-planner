@@ -64,6 +64,7 @@ const stPos  = document.getElementById('stPos');
 const stBull = document.getElementById('stBull');
 const stMeas = document.getElementById('stMeas');
 const stElev = document.getElementById('stElev');
+const stLine = document.getElementById('stLine');
 
 function updateStatus(sx, sy) {
     if (!currentMap) return;
@@ -83,6 +84,10 @@ function updateStatus(sx, sy) {
     } else {
         stElev.textContent = '';
     }
+
+    // The pending leg while routing, or the sight line while probing. Both
+    // describe the segment the pointer is currently defining.
+    stLine.textContent = pendingLegText() || sightLineText();
 
     // While a measurement is open the total includes the leg to the cursor, so
     // the number moves with the mouse and you can stop at a distance.
@@ -112,6 +117,8 @@ document.getElementById('unitToggle').addEventListener('click', (e) => {
 });
 
 canvas.addEventListener('mousemove', (e) => {
+    if (losFrom && !dragging) losCursor = toWorld(e.offsetX, e.offsetY);
+
     // The cursor is stored before updateStatus runs, because updateStatus adds
     // the open leg into the running total and must read the current position.
     if (measure && !measure.done && !dragging) {
@@ -573,6 +580,22 @@ canvas.addEventListener('contextmenu', (e) => {
             }}] : []),
             '-',
             { label: 'Measure from here', run: () => startMeasure(at) },
+            { label: losFrom ? 'Sight line from here instead' : 'Sight line from here',
+              run: () => {
+                  // The origin sits ON the ground at a mast height, the same
+                  // observer height the threat masking uses. Taking the bar
+                  // altitude would put the origin inside the hill whenever the
+                  // bar is set lower than the terrain, and the line would then
+                  // report itself blocked from zero.
+                  losFrom = { x: at.x, z: at.z,
+                              alt: terrainAt(at.x, at.z) + MAST_HEIGHT };
+                  losCursor = at;
+                  if (currentMission) draw(currentMission);
+              }},
+            ...(losFrom ? [{ label: 'Clear sight line', run: () => {
+                losFrom = null; losCursor = null;
+                if (currentMission) draw(currentMission);
+            }}] : []),
             { label: 'Range ring from here', run: () => startMeasure(at, 'circle') },
             ...(hitRing >= 0 ? [{ label: 'Remove this ring', run: () => {
                 rings.splice(hitRing, 1);
@@ -610,6 +633,10 @@ window.addEventListener('keydown', (e) => {
     // progress, then the finished measurement still on screen.
     if (menu.style.display === 'block')   { hideMenu(); }
     else if (routeMode)                   { endRouteMode(); }
+    else if (losFrom)                     {
+        losFrom = null; losCursor = null;
+        if (currentMission) draw(currentMission);
+    }
     // A half-dragged ring is abandoned, not committed - Escape means "forget
     // this", and endMeasure would keep it.
     else if (measure && !measure.done)    {

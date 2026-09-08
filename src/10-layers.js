@@ -321,6 +321,7 @@ function draw(mission) {
     }
 
     drawBullseyeCentre(ctx);
+    drawSightLine(ctx);
     drawMeasure(ctx);
 
     // Ring the hovered marker last, so it sits on top of its neighbours. Drawn

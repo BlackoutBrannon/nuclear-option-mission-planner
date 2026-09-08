@@ -94,6 +94,7 @@ function drawFlights(ctx) {
         const scr = pts.map(w => toScreen(w.x, w.z));
 
         drawExposure(ctx, f);
+        if (fi === activeFlight) drawPendingLeg(ctx);
 
         ctx.save();
 
@@ -244,6 +245,30 @@ function exposureAt(x, z, alt) {
     return engaged ? 'engaged' : (detected ? 'detected' : 'clear');
 }
 
+// One segment between two points that carry altitudes. Used for stored legs and
+// for the leg being dragged out, which does not exist as a waypoint yet.
+function segmentExposure(a, b, step) {
+    const dist  = bearingRange(a, b).range;
+    const steps = Math.max(2, Math.ceil(dist / (step || EXPOSURE_STEP)));
+    const states = [];
+
+    for (let k = 0; k <= steps; k++) {
+        const t = k / steps;
+        states.push(exposureAt(a.x + (b.x - a.x) * t,
+                               a.z + (b.z - a.z) * t,
+                               a.alt + (b.alt - a.alt) * t));
+    }
+
+    // Distance in each state. A sample stands for the span around it, so each
+    // interior sample counts a full step and the two ends count half.
+    const span = dist / steps;
+    const tally = { clear: 0, detected: 0, engaged: 0, terrain: 0 };
+    for (let k = 0; k <= steps; k++) {
+        tally[states[k]] += (k === 0 || k === steps) ? span / 2 : span;
+    }
+    return { states: states, dist: dist, tally: tally };
+}
+
 // Per-leg samples for one flight, cached against the threat picture and the
 // route itself so panning and zooming never trigger a recompute.
 function flightExposure(f) {
@@ -254,27 +279,7 @@ function flightExposure(f) {
 
     const legs = [];
     for (let i = 1; i < f.waypoints.length; i++) {
-        const a = f.waypoints[i - 1], b = f.waypoints[i];
-        const dist  = bearingRange(a, b).range;
-        const steps = Math.max(2, Math.ceil(dist / EXPOSURE_STEP));
-        const states = [];
-
-        for (let k = 0; k <= steps; k++) {
-            const t = k / steps;
-            states.push(exposureAt(a.x + (b.x - a.x) * t,
-                                   a.z + (b.z - a.z) * t,
-                                   a.alt + (b.alt - a.alt) * t));
-        }
-
-        // Distance in each state, for the panel. A sample stands for the span
-        // around it, so each interior sample counts a full step and the two
-        // ends count half.
-        const span = dist / steps;
-        const tally = { clear: 0, detected: 0, engaged: 0, terrain: 0 };
-        for (let k = 0; k <= steps; k++) {
-            tally[states[k]] += (k === 0 || k === steps) ? span / 2 : span;
-        }
-        legs.push({ states: states, dist: dist, tally: tally });
+        legs.push(segmentExposure(f.waypoints[i - 1], f.waypoints[i]));
     }
 
     f._expSig = sig;
@@ -335,4 +340,92 @@ function drawExposure(ctx, f) {
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
     ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// The pending leg
+//
+// The leg being dragged out is classified the same way a placed one is, so the
+// terrain and the threats it would cross are visible BEFORE the click rather
+// than after it. That was the gap: a waypoint could be dropped into a hillside
+// with nothing on screen to say so until it had already been placed.
+//
+// Its altitude runs from the last waypoint's to whatever the bar reads, which
+// is exactly the altitude the new waypoint would be created with.
+//
+// Sampled coarsely and recomputed at most every PREVIEW_MS, because this runs
+// against pointer movement rather than against an edit.
+// ---------------------------------------------------------------------------
+const PREVIEW_STEP = 1000;   // metres between samples on the pending leg
+const PREVIEW_MS   = 90;     // shortest gap between recomputations
+
+let previewLeg = null;       // { from, to, seg }
+let previewAt  = 0;
+
+function pendingLeg() {
+    if (!routeMode || activeFlight < 0 || !routeCursor) return null;
+    const f = flights[activeFlight];
+    if (!f || !f.waypoints.length) return null;
+
+    const from = f.waypoints[f.waypoints.length - 1];
+    const to   = { x: routeCursor.x, z: routeCursor.z, alt: ownAltM };
+
+    const stale = !previewLeg ||
+                  previewLeg.to.x !== to.x || previewLeg.to.z !== to.z ||
+                  previewLeg.from !== from;
+
+    if (stale && performance.now() - previewAt > PREVIEW_MS) {
+        previewAt = performance.now();
+        previewLeg = { from: from, to: to,
+                       seg: segmentExposure(from, to, PREVIEW_STEP) };
+    }
+    return previewLeg;
+}
+
+function drawPendingLeg(ctx) {
+    const p = pendingLeg();
+    if (!p) return;
+
+    const a = p.from, b = p.to, states = p.seg.states, steps = states.length - 1;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let k = 0; k < steps; k++) {
+        const s = (states[k] === 'terrain' || states[k + 1] === 'terrain')
+                ? 'terrain'
+                : (states[k] === 'engaged' || states[k + 1] === 'engaged')
+                ? 'engaged'
+                : (states[k] === 'detected' || states[k + 1] === 'detected')
+                ? 'detected' : 'clear';
+        if (s === 'clear') continue;
+
+        const t0 = k / steps, t1 = (k + 1) / steps;
+        const p0 = toScreen(a.x + (b.x - a.x) * t0, a.z + (b.z - a.z) * t0);
+        const p1 = toScreen(a.x + (b.x - a.x) * t1, a.z + (b.z - a.z) * t1);
+
+        const st = EXPOSURE_STYLE[s];
+        ctx.setLineDash(st.dash);
+        ctx.globalAlpha = 0.8;
+        ctx.strokeStyle = st.colour;
+        ctx.lineWidth   = st.width;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+}
+
+// One line summarising the pending leg, for the status bar.
+function pendingLegText() {
+    const p = pendingLeg();
+    if (!p) return '';
+    const t = p.seg.tally;
+    const bits = ['LEG ' + fmtRange(p.seg.dist)];
+    if (t.terrain  > 1) bits.push(fmtRange(t.terrain) + ' BELOW GROUND');
+    if (t.engaged  > 1) bits.push(fmtRange(t.engaged) + ' engaged');
+    if (t.detected > 1) bits.push(fmtRange(t.detected) + ' seen');
+    return bits.join('  ');
 }
