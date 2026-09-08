@@ -79,10 +79,20 @@ function updateStatus(sx, sy) {
     // what the ground is doing underneath.
     if (terrain) {
         const gnd = terrainAt(w.x, w.z);
+        const agl = ownAltM - gnd;
+
+        // Negative AGL is the single most confusing state the planner can be
+        // in: every threat ring collapses to nothing, correctly, because an
+        // aircraft inside a hill cannot be seen. A minus sign in front of a
+        // number is far too quiet a way to say that, so it is spelled out.
         stElev.textContent = 'GND ' + fmtAlt(gnd) +
-                             '   AGL ' + fmtAlt(ownAltM - gnd);
+            (agl < 0 ? '   BELOW GROUND by ' + fmtAlt(-agl)
+                     : '   AGL ' + fmtAlt(agl));
+        stElev.style.color = agl < 0 ? '#ff5c52' : '';
+        stElev.style.fontWeight = agl < 0 ? '600' : '';
     } else {
         stElev.textContent = '';
+        stElev.style.color = '';
     }
 
     // The pending leg while routing, or the sight line while probing. Both
