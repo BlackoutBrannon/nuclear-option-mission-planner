@@ -78,10 +78,10 @@ setRingColour(ringColour);
 // flags could both be set, leaving the meaning of a click undefined.
 let measure = null;   // { kind, points: [{x,z}], cursor: {x,z}|null, done }
 
-function startMeasure(at, kind, label) {
+function startMeasure(at, kind, label, coverage) {
     if (routeMode) endRouteMode();
     measure = { kind: kind || 'path', points: [at], cursor: at,
-                done: false, label: label || null };
+                done: false, label: label || null, coverage: !!coverage };
     canvas.style.cursor = 'crosshair';
     if (currentMission) draw(currentMission);
 }
@@ -107,30 +107,38 @@ function ringAt(sx, sy) {
 
 // Drawn UNDER the units, like the bullseye rose - a kept ring is context, and
 // must not sit on top of the symbols you are reading it against.
+// Profile for a hand-placed coverage ring, identified by where it sits.
+function ringProfile(ring) {
+    if (!ring.masked || !terrain || !showRings.mask) return null;
+    return maskProfileAt(ring.x, ring.z, ring.r, ownAltM,
+                         'ring:' + Math.round(ring.x) + ',' + Math.round(ring.z));
+}
+
 function drawRings(ctx) {
     if (!rings.length) return;
+
+    const mPerPx = fit.scale * view.scale;
 
     ctx.save();
     for (const ring of rings) {
         const p   = toScreen(ring.x, ring.z);
-        const rpx = ring.r * fit.scale * view.scale;
+        const rpx = ring.r * mPerPx;
 
-        const col = ring.colour || ringColour;
+        const col  = ring.colour || ringColour;
+        const prof = ringProfile(ring);
 
         // Dark halo underneath, then the ring. The halo supplies the contrast
         // that keeps a pale ring legible over snow or a bright coastline.
         ctx.strokeStyle = 'rgba(11,16,20,0.7)';
         ctx.lineWidth   = 4;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+        ringPath(ctx, p, ring.r, mPerPx, prof);
         ctx.stroke();
 
         ctx.save();
         ctx.globalAlpha = 0.85;
         ctx.strokeStyle = col;
-        ctx.lineWidth   = 1.5;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+        ctx.lineWidth   = prof ? 2 : 1.5;
+        ringPath(ctx, p, ring.r, mPerPx, prof);
         ctx.stroke();
         ctx.restore();
 
@@ -145,7 +153,8 @@ function drawRings(ctx) {
         // Labelled at twelve o'clock, so stacked rings stay tellable apart.
         const ly = p.y - rpx;
         if (ly > 10 && ly < canvas.height - 10 && p.x > 0 && p.x < canvas.width) {
-            plate(ctx, (ring.label ? ring.label + '  ' : '') + fmtRange(ring.r),
+            plate(ctx, (ring.label ? ring.label + '  ' : '') + fmtRange(ring.r) +
+                       (ring.masked ? '  LOS' : ''),
                   p.x, ly, col);
         }
     }
@@ -171,7 +180,8 @@ function endMeasure() {
         const r = measureRadius();
         if (r > 0) {
             rings.push({ x: measure.points[0].x, z: measure.points[0].z,
-                         r: r, label: measure.label, colour: ringColour });
+                         r: r, label: measure.label, colour: ringColour,
+                         masked: !!measure.coverage });
         }
         clearMeasure();
         return;
@@ -230,7 +240,8 @@ function drawMeasureCircle(ctx) {
     const br  = bearingRange(c, edge);
     // Metres to screen pixels, the same product the bullseye rose uses. The
     // ring is a real distance on the ground, so it has to scale with the map.
-    const rpx = br.range * fit.scale * view.scale;
+    const mPerPx = fit.scale * view.scale;
+    const rpx = br.range * mPerPx;
 
     ctx.save();
 
@@ -240,10 +251,13 @@ function drawMeasureCircle(ctx) {
     ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
     ctx.stroke();
 
+    const prof = (measure.coverage && terrain && showRings.mask)
+        ? maskProfileAt(c.x, c.z, br.range, ownAltM, 'draft')
+        : null;
+
     ctx.strokeStyle = ringColour;
     ctx.lineWidth   = 2;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, rpx, 0, Math.PI * 2);
+    ringPath(ctx, p, br.range, mPerPx, prof);
     ctx.stroke();
 
     // The radius, dashed - a different shape from the solid path tool, so the

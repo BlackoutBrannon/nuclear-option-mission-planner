@@ -597,6 +597,8 @@ canvas.addEventListener('contextmenu', (e) => {
                 if (currentMission) draw(currentMission);
             }}] : []),
             { label: 'Range ring from here', run: () => startMeasure(at, 'circle') },
+            ...(terrain ? [{ label: 'Coverage ring from here (terrain clipped)',
+              run: () => startMeasure(at, 'circle', null, true) }] : []),
             ...(hitRing >= 0 ? [{ label: 'Remove this ring', run: () => {
                 rings.splice(hitRing, 1);
                 if (currentMission) draw(currentMission);

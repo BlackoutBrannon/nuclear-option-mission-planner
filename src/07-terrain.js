@@ -111,23 +111,30 @@ const maskCache = new Map();
 // fresh profile - some milliseconds of ray walking - for every sample along it.
 const MASK_ALT_BUCKET = 250;   // metres
 
-function maskProfileFor(unit, maxR, alt) {
+// Coverage from any point on the ground. Units are the common caller, but a
+// hand-placed coverage ring uses the same walk - the terrain does not care what
+// is standing on it.
+function maskProfileAt(x, z, maxR, alt, id) {
     const a = Math.round((alt === undefined ? ownAltM : alt) / MASK_ALT_BUCKET)
               * MASK_ALT_BUCKET;
-    const key = unitPath(unit) + '|' + a + '|' + Math.round(maxR / 500);
+    const key = id + '|' + a + '|' + Math.round(maxR / 500);
     let profile = maskCache.get(key);
     if (profile) return profile;
 
-    const obsH = terrainAt(unit.x, unit.z) + MAST_HEIGHT;
+    const obsH = terrainAt(x, z) + MAST_HEIGHT;
     profile = new Float32Array(MASK_RADIALS);
     for (let i = 0; i < MASK_RADIALS; i++) {
-        profile[i] = maskedDistance(unit.x, unit.z, obsH,
+        profile[i] = maskedDistance(x, z, obsH,
                                     i * 2 * Math.PI / MASK_RADIALS, maxR, a);
     }
 
     if (maskCache.size > 4000) maskCache.clear();
     maskCache.set(key, profile);
     return profile;
+}
+
+function maskProfileFor(unit, maxR, alt) {
+    return maskProfileAt(unit.x, unit.z, maxR, alt, unitPath(unit));
 }
 
 // Masking is skipped while the altitude is being dragged. A full pass is tens

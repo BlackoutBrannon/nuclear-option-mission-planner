@@ -94,7 +94,6 @@ function drawFlights(ctx) {
         const scr = pts.map(w => toScreen(w.x, w.z));
 
         drawExposure(ctx, f);
-        if (fi === activeFlight) drawPendingLeg(ctx);
 
         ctx.save();
 
@@ -142,6 +141,11 @@ function drawFlights(ctx) {
 
         plate(ctx, f.name, scr[0].x, scr[0].y - 16, f.colour);
         ctx.restore();
+
+        // ON TOP of the route line, unlike the exposure on placed legs. This is
+        // a warning about the click you are about to make, so it has to win
+        // against the line it is warning about.
+        if (fi === activeFlight) drawPendingLeg(ctx);
     }
 }
 
@@ -299,6 +303,17 @@ const EXPOSURE_STYLE = {
     detected: { colour: '#ffd166', width: 4, dash: [7, 5] },
 };
 
+// The pending leg is louder than a placed one: heavier, fully opaque, and for
+// terrain a hazard stripe - a solid red bar with white dashes laid over it.
+// Two passes rather than one colour, so it reads as a warning by pattern as
+// well as by hue.
+const PENDING_STYLE = {
+    terrain:  { colour: '#ff3b30', width: 9, dash: [],
+                over: '#ffffff', overWidth: 9, overDash: [6, 6] },
+    engaged:  { colour: '#ff6b5e', width: 7, dash: [] },
+    detected: { colour: '#ffd166', width: 5, dash: [9, 6] },
+};
+
 function drawExposure(ctx, f) {
     if (!showExposure || f.waypoints.length < 2) return;
     if (!ringUnits.size || maskSuspended) return;
@@ -403,15 +418,28 @@ function drawPendingLeg(ctx) {
         const p0 = toScreen(a.x + (b.x - a.x) * t0, a.z + (b.z - a.z) * t0);
         const p1 = toScreen(a.x + (b.x - a.x) * t1, a.z + (b.z - a.z) * t1);
 
-        const st = EXPOSURE_STYLE[s];
+        const st = PENDING_STYLE[s];
+
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(11,16,20,0.9)';
+        ctx.lineWidth   = st.width + 3;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+
         ctx.setLineDash(st.dash);
-        ctx.globalAlpha = 0.8;
         ctx.strokeStyle = st.colour;
         ctx.lineWidth   = st.width;
         ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
+        ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+
+        if (st.over) {
+            ctx.setLineDash(st.overDash);
+            ctx.strokeStyle = st.over;
+            ctx.lineWidth   = st.overWidth;
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        }
     }
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
