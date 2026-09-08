@@ -250,6 +250,13 @@ function fmtRange(metres) {
         : (metres / 1000).toFixed(1) + ' km';
 }
 
+// Altitudes are feet or metres, not the nautical miles fmtRange deals in.
+function fmtAlt(metres) {
+    return unitSystem === 'aviation'
+        ? Math.round(metres * FT_PER_M) + ' ft'
+        : Math.round(metres) + ' m';
+}
+
 function fmtBearing(deg) {
     return String(Math.round(deg) % 360).padStart(3, '0') + '°';
 }

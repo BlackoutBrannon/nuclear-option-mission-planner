@@ -63,6 +63,7 @@ function showTip(unit, clientX, clientY) {
 const stPos  = document.getElementById('stPos');
 const stBull = document.getElementById('stBull');
 const stMeas = document.getElementById('stMeas');
+const stElev = document.getElementById('stElev');
 
 function updateStatus(sx, sy) {
     if (!currentMap) return;
@@ -70,6 +71,18 @@ function updateStatus(sx, sy) {
 
     stPos.textContent  = Math.round(w.x) + ', ' + Math.round(w.z);
     stBull.textContent = bullseye ? 'BE ' + fmtBullseye(w) : '';
+
+    // Ground elevation sampled from the captured terrain, and the height the
+    // selected altitude would put you above it. AGL is what matters flying low,
+    // and it is not derivable from the MSL figure in the bar without knowing
+    // what the ground is doing underneath.
+    if (terrain) {
+        const gnd = terrainAt(w.x, w.z);
+        stElev.textContent = 'GND ' + fmtAlt(gnd) +
+                             '   AGL ' + fmtAlt(ownAltM - gnd);
+    } else {
+        stElev.textContent = '';
+    }
 
     // While a measurement is open the total includes the leg to the cursor, so
     // the number moves with the mouse and you can stop at a distance.
