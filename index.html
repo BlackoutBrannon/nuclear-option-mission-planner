@@ -185,6 +185,17 @@
        someone else's server changes. Exposes the global `ms`. -->
   <script src="vendor/milsymbol.js"></script>
 
-  <script src="app.js"></script>
+  <!-- Loaded in order; see the header of any part for why order matters. -->
+  <script src="src/01-boot.js"></script>
+  <script src="src/02-windows.js"></script>
+  <script src="src/03-view.js"></script>
+  <script src="src/04-units.js"></script>
+  <script src="src/05-symbols.js"></script>
+  <script src="src/06-threat.js"></script>
+  <script src="src/07-terrain.js"></script>
+  <script src="src/08-flights.js"></script>
+  <script src="src/09-tools.js"></script>
+  <script src="src/10-layers.js"></script>
+  <script src="src/11-input.js"></script>
 </body>
 </html>

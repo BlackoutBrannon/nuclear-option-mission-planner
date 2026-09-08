@@ -33,15 +33,39 @@ symptom is every unit showing its raw key — `SPAAG1` rather than
 |---|---|
 | `index.html` | Page structure only — the elements the app looks up by id. |
 | `style.css` | All layout and appearance. |
-| `app.js` | The application. No framework, no build step. |
+| `src/*.js` | The application, in numbered parts. No framework, no build step. |
+| `terrain/` | Elevation for line-of-sight masking. Generated. |
+| `ranges.json` | Radar, optical and weapon envelopes per unit type. Generated. |
 | `units.json` | Display names and descriptions per unit type. Generated. |
 | `*_overview.png` | Basemaps, produced by the terrain capture tool. |
 | `tools/extract_units.py` | Regenerates `units.json` from the game's own files. |
 | `tools/make_symbol_sheet.py` | Builds `symbols.html` by parsing the tables out of `app.js`. |
 
-`app.js` is loaded at the end of `<body>`, so every element it looks up already
-exists and it needs no `DOMContentLoaded` wrapper. `vendor/milsymbol.js` loads
-before it and provides the global `ms`.
+The parts under `src/` are **plain scripts sharing one global scope**, not ES
+modules, listed in `index.html` in the order they must load. A name declared in
+an earlier part is visible in every later one, so order is significant: top-level
+code can only use what the parts above it have already declared. That is also
+why the two start-up fetches are kicked off at the end of the last part rather
+than beside the functions that define them — an async continuation must not run
+before the parts it calls into exist.
+
+They load at the end of `<body>`, so every element they look up already exists
+and no `DOMContentLoaded` wrapper is needed. `vendor/milsymbol.js` loads first
+and provides the global `ms`.
+
+| part | |
+|---|---|
+| `01-boot.js` | Unit catalogue and threat data, map registry, canvas. |
+| `02-windows.js` | The floating window factory and the three windows. |
+| `03-view.js` | Map transforms, own-ship state, formatters. |
+| `04-units.js` | Reading units out of a mission and classifying them. |
+| `05-symbols.js` | MIL-STD-2525 symbology and the bullseye rose. |
+| `06-threat.js` | Threat rings: what each unit projects, and drawing them. |
+| `07-terrain.js` | Elevation, line-of-sight masking, ring labels and hit tests. |
+| `08-flights.js` | Flights, routes and waypoints. |
+| `09-tools.js` | Manual range rings and the measuring tool. |
+| `10-layers.js` | Factions, the layer tree, tree rendering, and `draw()`. |
+| `11-input.js` | Hover, status bar, menus, panel rendering, pointer input, start-up. |
 
 ## Regenerating the unit catalogue
 
