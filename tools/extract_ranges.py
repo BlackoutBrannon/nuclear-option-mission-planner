@@ -194,12 +194,11 @@ def main():
             out[key]["optical"].append(entry)
 
     # Weapon stations are serialised INLINE on the turret. Their `WeaponInfo`
-    # field looks like the obvious link but is EMPTY on disk - WeaponStation
-    # assigns it at runtime from `Weapons[0].info` (WeaponStation.cs:419). So
-    # the real path is station -> Weapon component -> its `info` asset.
-    # Reading the serialised WeaponInfo instead silently yields whatever
-    # happened to be there, which is how every SAM first came out carrying an
-    # anti-tank missile.
+    # field is EMPTY on disk: WeaponStation assigns it at runtime from
+    # `Weapons[0].info` (WeaponStation.cs:419). The envelope is therefore
+    # reached through station -> Weapon component -> its `info` asset. The
+    # serialised WeaponInfo field must not be used; it resolves to unrelated
+    # weapons without raising an error.
     for d in mono.values():
         stations = d.get("weaponStations")
         if not stations:
@@ -253,9 +252,9 @@ def main():
         }
         for d in unitdefs.values()
         # AircraftDefinition subclasses UnitDefinition and adds
-        # `aircraftParameters`. Filtering on RCS instead would fill the picker
-        # with bombs and missiles - they are tracked units too and every one of
-        # them carries a radarSize.
+        # `aircraftParameters`, which identifies an aircraft. RCS is not a valid
+        # discriminator: bombs and missiles are tracked units and each carries a
+        # radarSize of its own.
         if "aircraftParameters" in d
     }
 
