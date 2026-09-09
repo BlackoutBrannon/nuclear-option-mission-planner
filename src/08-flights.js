@@ -226,7 +226,11 @@ const EXPOSURE_STEP = 500;      // metres between samples along a leg
 let showExposure = true;
 
 // Threat state at one point in space, at one altitude.
-function exposureAt(x, z, alt) {
+// `hostileOnly` is opt-in and off by default: the map colours the route
+// against everything that is ringed, which is what someone ticking a friendly
+// unit is asking to see. The briefing sheet passes it, because a friendly
+// emitter is not a threat to brief.
+function exposureAt(x, z, alt, hostileOnly) {
     // Altitudes are MSL, so a low figure over high ground puts the aircraft
     // inside the hill rather than over it.
     if (terrain && alt < terrainAt(x, z)) return 'terrain';
@@ -238,6 +242,7 @@ function exposureAt(x, z, alt) {
 
     for (const u of unitsOf(currentMission)) {
         if (!ringUnits.has(unitPath(u))) continue;
+        if (hostileOnly && affiliationOf(u) !== 'hostile') continue;
 
         const rings = threatRingsFor(u, alt, undefined, true);
         if (!rings.length) continue;
@@ -270,7 +275,7 @@ function exposureAt(x, z, alt) {
 
 // One segment between two points that carry altitudes. Used for stored legs and
 // for the leg being dragged out, which does not exist as a waypoint yet.
-function segmentExposure(a, b, step) {
+function segmentExposure(a, b, step, hostileOnly) {
     const dist  = bearingRange(a, b).range;
     const steps = Math.max(2, Math.ceil(dist / (step || EXPOSURE_STEP)));
     const states = [];
@@ -279,7 +284,8 @@ function segmentExposure(a, b, step) {
         const t = k / steps;
         states.push(exposureAt(a.x + (b.x - a.x) * t,
                                a.z + (b.z - a.z) * t,
-                               a.alt + (b.alt - a.alt) * t));
+                               a.alt + (b.alt - a.alt) * t,
+                               hostileOnly));
     }
 
     // Distance in each state. A sample stands for the span around it, so each
@@ -936,7 +942,9 @@ function drawReleasePoints(ctx, f) {
 // Reports what CAN engage, not what will. Whether the defending AI chooses the
 // munition over the aircraft is its own decision and not modelled.
 // ---------------------------------------------------------------------------
-function munitionExposure(f, i, targetId) {
+// `hostileOnly` matches exposureAt: off for the panel, which reports against
+// everything ringed, on for the briefing sheet.
+function munitionExposure(f, i, targetId, hostileOnly) {
     const w = f.waypoints[i];
     const munition = (ranges.arsenal || {})[w && w.munition];
     const t = targetById(targetId);
@@ -971,7 +979,7 @@ function munitionExposure(f, i, targetId) {
         const z = w.z + (pos.z - w.z) * frac;
         const alt = w.alt + (groundAlt - w.alt) * frac;
 
-        const state = munitionStateAt(x, z, alt, rcs, p.v);
+        const state = munitionStateAt(x, z, alt, rcs, p.v, hostileOnly);
         if (!seen && state.seen) seen = { d: br.range - p.d, t: p.t, by: state.seenBy };
         if (state.shot) {
             if (!shot) shot = { d: br.range - p.d, t: p.t, by: state.shotBy };
@@ -988,11 +996,12 @@ function munitionExposure(f, i, targetId) {
 
 // Can anything see, and can anything shoot, an object of this signature moving
 // at this speed at this point?
-function munitionStateAt(x, z, alt, rcs, speed) {
+function munitionStateAt(x, z, alt, rcs, speed, hostileOnly) {
     const seenBy = new Set(), shotBy = new Map();
 
     for (const u of unitsOf(currentMission)) {
         if (!ringUnits.has(unitPath(u))) continue;
+        if (hostileOnly && affiliationOf(u) !== 'hostile') continue;
 
         const rings = threatRingsFor(u, alt, rcs, true);
         if (!rings.length) continue;

@@ -15,6 +15,10 @@
 // Threat states are named in words and carry their own glyph. Colour is a
 // third cue here, never the only one, and it disappears entirely on a mono
 // printer - which is most of them.
+//
+// Everything on the sheet is measured against HOSTILE units only. A friendly
+// emitter is not something you brief against, even when it is ringed on the
+// map for other reasons.
 // ---------------------------------------------------------------------------
 
 // Names come from the user - a flight called "A & B", or a unit type with an
@@ -40,12 +44,16 @@ const BRIEF_STATE = {
     detected: { glyph: '▧', word: 'SEEN',         cls: 'st-detected' },
 };
 
-// The threat on one leg, as text. Mirrors the leg labels in the flight panel,
-// so the sheet and the screen never read differently.
+// The threat on one leg, as text.
+//
+// Walked here rather than read from flightExposure: that result is cached for
+// the map, which counts every ringed unit, and the sheet counts only hostiles.
+// Sharing the cache would mean one of the two silently getting the other's
+// answer.
 function briefLegThreat(f, i) {
     if (!ringUnits.size) return '<span class="quiet">no rings set</span>';
-    const legs = flightExposure(f);
-    const t = legs[i - 1] && legs[i - 1].tally;
+    const t = segmentExposure(f.waypoints[i - 1], f.waypoints[i],
+                              undefined, true).tally;
     if (!t) return '<span class="quiet">&mdash;</span>';
 
     const bits = [];
@@ -124,7 +132,7 @@ function briefRelease(f, i, w) {
 
     let rows = '';
     for (const s of sols) {
-        const exp = munitionExposure(f, i, s.id);
+        const exp = munitionExposure(f, i, s.id, true);
 
         let tot = '<span class="warn">' +
                   esc(s.error || (s.sol ? s.sol.reason : 'no solution')) + '</span>';
@@ -362,8 +370,8 @@ function briefBasis() {
         ' types, against RCS ' + ownRCS + ' at ' + esc(fmtAlt(ownAltM)) +
         '. Terrain masking ' +
         (showRings.mask && terrain ? 'applied' : '<strong>not applied</strong>') +
-        '. Friendly emitters are excluded; the threat column in the route ' +
-        'table matches the map and counts every ringed unit.</p></section>';
+        '. Friendly emitters are excluded throughout; the map itself still ' +
+        'colours the route against every ringed unit.</p></section>';
 }
 
 const BRIEF_CSS = [
