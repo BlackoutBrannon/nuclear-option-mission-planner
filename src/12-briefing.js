@@ -101,6 +101,7 @@ function briefFlight(f) {
         '<th class="num">Leg</th><th class="num">Cum</th><th class="num">ETE</th>' +
         '<th>Threat on leg in</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table>' +
+        briefDetection(f) +
         blocks +
         '</section>';
 }
@@ -195,53 +196,174 @@ function briefTargets() {
         '</tbody></table></section>';
 }
 
-// What the plan was measured against. Without this the exposure numbers above
-// have no stated basis, and a sheet that does not say which threats were
-// considered invites the reader to assume all of them were.
-function briefThreats() {
-    if (!ringUnits.size) {
-        return '<section><h2>Threat picture</h2>' +
-               '<p class="warn">No threats ringed. The exposure above is not ' +
-               'measured against anything.</p></section>';
-    }
+// ---------------------------------------------------------------------------
+// Hostile detection along a route
+//
+// The question a briefing has to answer is not which radars exist, it is when
+// they know you are there. So the route is walked end to end and only the
+// TRANSITIONS are reported: the point where detection starts, and the point
+// where it lapses. Losing detection and regaining it is two events, because
+// each pickup is a fresh problem to solve.
+//
+// Hostile sensors only, and only whether they see. Friendly emitters are not a
+// threat, and a full list of everything with line of sight is the inventory
+// this replaced.
+// ---------------------------------------------------------------------------
+const DETECT_STEP = 500;      // metres between samples along the route
 
-    const byType = new Map();
+// Which hostile unit sees this point, if any. Kept separate from exposureAt
+// rather than folded into it: that function runs thousands of times per frame
+// and returns a bare string on purpose, while this one runs a handful of times
+// per sheet and needs to name a unit.
+function hostileDetectorAt(x, z, alt) {
+    let best = null, count = 0;
+
     for (const u of unitsOf(currentMission)) {
         if (!ringUnits.has(unitPath(u))) continue;
-        const key = unitName(u.type);
-        let e = byType.get(key);
-        if (!e) byType.set(key, e = { n: 0, weapon: 0, sensor: 0, side: affiliationOf(u) });
-        e.n++;
-        // Unmasked radii: the sheet states the envelope, and terrain shortens
-        // it by a different amount on every bearing.
-        for (const r of threatRingsFor(u, ownAltM, ownRCS, true)) {
-            if (r.kind === 'weapon') e.weapon = Math.max(e.weapon, r.r);
-            else                     e.sensor = Math.max(e.sensor, r.r);
+        if (affiliationOf(u) !== 'hostile') continue;
+
+        // Sensor rings only. A weapon envelope you have not been detected in
+        // is not a detection.
+        const rings = threatRingsFor(u, alt, undefined, true)
+                          .filter(r => r.kind !== 'weapon');
+        if (!rings.length) continue;
+
+        const br = bearingRange({ x: u.x, z: u.z }, { x: x, z: z });
+        const widest = rings.reduce((m, r) => Math.max(m, r.r), 0);
+        if (br.range > widest) continue;
+
+        let profile = null;
+        if (showRings.mask && terrain) profile = maskProfileFor(u, widest, alt);
+
+        for (const ring of rings) {
+            const reach = (ring.los && profile)
+                ? ringRadiusAt(ring, profile, br.bearing * Math.PI / 180)
+                : ring.r;
+            if (br.range > reach) continue;
+
+            count++;
+            // Of everything that can see this point, the one with the most
+            // reach to spare is the one that got there first and the one you
+            // would have to fly furthest to escape.
+            const slack = reach - br.range;
+            if (!best || slack > best.slack) {
+                best = { slack: slack, name: unitName(u.type) };
+            }
+            break;                      // count units, not rings
         }
     }
 
-    const list = [...byType.entries()]
-        .sort((a, b) => Math.max(b[1].weapon, b[1].sensor) -
-                        Math.max(a[1].weapon, a[1].sensor));
+    return best ? { name: best.name, others: count - 1 } : null;
+}
 
-    let rows = '';
-    for (const [name, e] of list) {
-        rows += '<tr>' +
-            '<td>' + esc(name) + '</td>' +
-            '<td>' + esc(e.side) + '</td>' +
-            '<td class="num">' + e.n + '</td>' +
-            '<td class="num">' + (e.weapon ? esc(fmtRange(e.weapon)) : '&mdash;') + '</td>' +
-            '<td class="num">' + (e.sensor ? esc(fmtRange(e.sensor)) : '&mdash;') + '</td>' +
-            '</tr>';
+// The whole route as one continuous line, so a detection that happens to span
+// a waypoint is one event rather than two.
+function detectionRuns(f) {
+    if (f.waypoints.length < 2) return [];
+
+    const runs = [];
+    let cum = 0, open = null;
+
+    for (let i = 1; i < f.waypoints.length; i++) {
+        const a = f.waypoints[i - 1], b = f.waypoints[i];
+        const dist  = bearingRange(a, b).range;
+        const steps = Math.max(2, Math.ceil(dist / DETECT_STEP));
+
+        // Legs after the first skip k=0: it is the previous leg's last sample.
+        for (let k = (i === 1 ? 0 : 1); k <= steps; k++) {
+            const t   = k / steps;
+            const x   = a.x + (b.x - a.x) * t;
+            const z   = a.z + (b.z - a.z) * t;
+            const alt = a.alt + (b.alt - a.alt) * t;
+            const at  = cum + dist * t;
+
+            const who = hostileDetectorAt(x, z, alt);
+            if (who && !open) {
+                open = { at: at, x: x, z: z, by: who };
+            } else if (!who && open) {
+                open.until = at;
+                runs.push(open);
+                open = null;
+            }
+        }
+        cum += dist;
     }
 
-    return '<section><h2>Threat picture</h2>' +
-        '<p class="sub">' + ringUnits.size + ' units ringed, ' + list.length +
-        ' types. Envelopes shown flat, against RCS ' + ownRCS + ' at ' +
-        esc(fmtAlt(ownAltM)) + '; terrain shortens them per bearing.</p>' +
-        '<table><thead><tr><th>Type</th><th>Side</th><th class="num">Qty</th>' +
-        '<th class="num">Max weapon</th><th class="num">Max sensor</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody></table></section>';
+    if (open) { open.until = null; runs.push(open); }   // still held at the end
+    return runs;
+}
+
+function briefDetection(f) {
+    if (f.waypoints.length < 2) return '';      // no route, nothing to walk
+    if (!ringUnits.size) {
+        return '<h3>Hostile detection</h3>' +
+               '<p class="warn">No threats ringed, so nothing was measured.</p>';
+    }
+
+    const runs  = detectionRuns(f);
+    const speed = f.speed || 250;
+
+    if (!runs.length) {
+        return '<h3>Hostile detection</h3>' +
+               '<p class="clear">Not detected at any point on this route.</p>';
+    }
+
+    let rows = '';
+    runs.forEach((r, i) => {
+        const held = (r.until === null ? flightTotal(f) : r.until) - r.at;
+        rows += '<tr>' +
+            '<td class="num">' + (i + 1) + '</td>' +
+            '<td class="num">' + esc(fmtRange(r.at)) + '</td>' +
+            '<td class="num">' + esc(fmtTime(r.at / speed)) + '</td>' +
+            '<td>' + esc(briefPos({ x: r.x, z: r.z })) + '</td>' +
+            '<td><span class="st-detected">' + BRIEF_STATE.detected.glyph + ' ' +
+                esc(r.by.name) + '</span>' +
+                (r.by.others > 0
+                    ? ' <span class="quiet">+' + r.by.others + ' more</span>'
+                    : '') + '</td>' +
+            '<td class="num">' + (r.until === null
+                    ? '<span class="warn">to end</span>'
+                    : esc(fmtRange(r.until))) + '</td>' +
+            '<td class="num">' + esc(fmtRange(held)) + '</td>' +
+            '</tr>';
+    });
+
+    return '<h3>Hostile detection</h3>' +
+        '<p class="sub">Each row is a fresh pickup. Detection lapsing and ' +
+        'resuming counts twice, because each one is a separate problem.</p>' +
+        '<table><thead><tr><th>#</th><th class="num">At</th>' +
+        '<th class="num">ETE</th>' +
+        '<th>' + (bullseye ? 'Bullseye' : 'Position') + '</th>' +
+        '<th>First detected by</th><th class="num">Until</th>' +
+        '<th class="num">Held for</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>';
+}
+
+// What the detection above was measured against. A sheet that does not say
+// which threats were considered invites the reader to assume all of them were.
+function briefBasis() {
+    let hostile = 0;
+    const types = new Set();
+    for (const u of unitsOf(currentMission)) {
+        if (!ringUnits.has(unitPath(u))) continue;
+        if (affiliationOf(u) !== 'hostile') continue;
+        hostile++;
+        types.add(unitName(u.type));
+    }
+
+    if (!hostile) {
+        return '<section><h2>Threat basis</h2>' +
+               '<p class="warn">No hostile units are ringed. The detection ' +
+               'above is not measured against anything.</p></section>';
+    }
+
+    return '<section><h2>Threat basis</h2><p class="sub">' +
+        hostile + ' hostile units ringed across ' + types.size +
+        ' types, against RCS ' + ownRCS + ' at ' + esc(fmtAlt(ownAltM)) +
+        '. Terrain masking ' +
+        (showRings.mask && terrain ? 'applied' : '<strong>not applied</strong>') +
+        '. Friendly emitters are excluded; the threat column in the route ' +
+        'table matches the map and counts every ringed unit.</p></section>';
 }
 
 const BRIEF_CSS = [
@@ -312,7 +434,7 @@ function briefingHTML() {
                         Math.round(bullseye.z)
                       : ' &middot; no bullseye set') +
         '</p>' +
-        flightHTML + briefTargets() + briefThreats() +
+        flightHTML + briefTargets() + briefBasis() +
         '</body></html>';
 }
 
