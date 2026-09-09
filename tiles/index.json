@@ -1,0 +1,18 @@
+{
+  "Heartland": {
+    "width": 8192,
+    "height": 8192,
+    "tile": 1024,
+    "cols": 8,
+    "rows": 8,
+    "bytes": 9391218
+  },
+  "Ignus": {
+    "width": 8192,
+    "height": 4096,
+    "tile": 1024,
+    "cols": 8,
+    "rows": 4,
+    "bytes": 608094
+  }
+}

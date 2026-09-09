@@ -1052,7 +1052,12 @@ canvas.addEventListener('wheel', (e) => {
     // A floor of 0.5 allows zooming out past the initial fit, leaving context
     // visible around the map's edges. The map occupies part of a larger canvas,
     // so a floor of 1 would clamp at the fitted size.
-    const clamped = Math.min(25, Math.max(0.5, desired));
+    //
+    // The ceiling used to be 25, set when the overview was all there was and
+    // going further only magnified 34 m pixels. The detail tiles are 10 m, so
+    // the picture holds up far longer, and placing a waypoint on a taxiway
+    // wants the room.
+    const clamped = Math.min(MAX_ZOOM, Math.max(0.5, desired));
     const actual  = clamped / view.scale;
 
     view.panX = mx - (mx - view.panX) * actual;

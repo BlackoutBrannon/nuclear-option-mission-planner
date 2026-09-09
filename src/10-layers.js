@@ -285,19 +285,129 @@ function unitName(type) {
     return entry ? entry.name : type;
 }
 
+// ---------------------------------------------------------------------------
+// Detail tiles
+//
+// The 2400 px overview is 34 m per pixel on Heartland. That is enough until the
+// zoom passes the point where it is being magnified rather than sampled, after
+// which it just gets softer. Past that point the planner swaps in 1024 px tiles
+// cut from the 8192 px capture - 10 m per pixel - and fetches only the ones
+// actually on screen.
+//
+// The overview is ALWAYS drawn first, with tiles laid on top. A tile that has
+// not arrived yet leaves the softer picture showing rather than a hole, so
+// there is no loading state to design and nothing to go wrong if tiles are
+// missing entirely.
+// ---------------------------------------------------------------------------
+
+// How far the overview may be magnified before tiles are worth fetching. At 1.0
+// they would load the moment it stopped being pixel-exact, which is sooner than
+// the eye notices and pulls in most of the grid at once.
+const TILE_TRIGGER   = 1.3;
+const TILE_CACHE_MAX = 32;           // roughly 4 MB decoded each
+
+let tileIndex = null;                // tiles/index.json, or false if not built
+let tileIndexPending = false;
+const tileCache = new Map();         // 'Map/cx_cy' -> Image; insertion order is the LRU
+
+function loadTileIndex() {
+    if (tileIndex !== null || tileIndexPending) return;
+    tileIndexPending = true;
+    fetch('tiles/index.json')
+        .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then(j => { tileIndex = j; tileArrived(); })
+        // No tiles built is a normal state, not an error: the app runs on the
+        // overviews alone. Run tools/make_tiles.py to add them.
+        .catch(() => { tileIndex = false; });
+}
+
+// Tiles land one at a time, and a redraw per tile would run the whole threat
+// picture a dozen times in a row. Coalesced into one repaint per frame instead.
+let tileRedraw = 0;
+function tileArrived() {
+    if (tileRedraw) return;
+    tileRedraw = requestAnimationFrame(() => {
+        tileRedraw = 0;
+        if (currentMission) draw(currentMission);
+    });
+}
+
+function tileFor(mapName, cx, cy) {
+    const key = mapName + '/' + cx + '_' + cy;
+
+    const held = tileCache.get(key);
+    if (held) {
+        tileCache.delete(key);       // reinserting moves it to the newest end
+        tileCache.set(key, held);
+        return held;
+    }
+
+    const img = new Image();
+    img.decoding = 'async';
+    img._ready = false;
+    img.onload  = () => { img._ready = true; tileArrived(); };
+    img.onerror = () => { img._failed = true; };
+    img.src = 'tiles/' + mapName + '/' + cx + '_' + cy + '.webp';
+
+    tileCache.set(key, img);
+    while (tileCache.size > TILE_CACHE_MAX) {
+        tileCache.delete(tileCache.keys().next().value);
+    }
+    return img;
+}
+
+// The basemap goes through the same fit-then-view transform as every unit, so
+// it can never drift out of register with the markers on top of it.
+function drawBasemap(ctx) {
+    const m  = currentMap;
+    const mw = m.maxX - m.minX;
+    const mh = m.maxZ - m.minZ;
+
+    const x0 = fit.offsetX * view.scale + view.panX;
+    const y0 = fit.offsetY * view.scale + view.panY;
+    const w  = mw * fit.scale * view.scale;
+    const h  = mh * fit.scale * view.scale;
+
+    ctx.drawImage(basemap, x0, y0, w, h);
+
+    // Compare what a screen pixel is worth against what the overview holds.
+    // Derived rather than a fixed zoom number, so it stays right on both maps
+    // and at any window size.
+    if (!basemap.naturalWidth) return;
+    const screenMPerPx   = mw / w;
+    const overviewMPerPx = mw / basemap.naturalWidth;
+    if (screenMPerPx > overviewMPerPx / TILE_TRIGGER) return;
+
+    loadTileIndex();
+    const info = tileIndex && tileIndex[m.terrain];
+    if (!info) return;
+
+    const sx = w / info.width;       // screen pixels per full-image pixel
+    const sy = h / info.height;
+    const tw = info.tile * sx;
+    const th = info.tile * sy;
+
+    const c0 = Math.max(0, Math.floor(-x0 / tw));
+    const c1 = Math.min(info.cols - 1, Math.floor((canvas.width  - x0) / tw));
+    const r0 = Math.max(0, Math.floor(-y0 / th));
+    const r1 = Math.min(info.rows - 1, Math.floor((canvas.height - y0) / th));
+
+    for (let cy = r0; cy <= r1; cy++) {
+        for (let cx = c0; cx <= c1; cx++) {
+            const img = tileFor(m.terrain, cx, cy);
+            if (!img._ready) continue;
+            // The extra pixel closes the hairline seam that fractional tile
+            // edges leave between neighbours.
+            ctx.drawImage(img, x0 + cx * tw, y0 + cy * th, tw + 1, th + 1);
+        }
+    }
+}
+
 function draw(mission) {
     autosave();          // debounced, so a pan collapses into one write
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // The basemap goes through the same fit-then-view transform as every unit,
-    // so it can never drift out of register with the markers on top of it.
-    const mw = currentMap.maxX - currentMap.minX;
-    const mh = currentMap.maxZ - currentMap.minZ;
-    ctx.drawImage(basemap,
-        fit.offsetX * view.scale + view.panX,
-        fit.offsetY * view.scale + view.panY,
-        mw * fit.scale * view.scale,
-        mh * fit.scale * view.scale);
+    drawBasemap(ctx);
     ctx.strokeStyle = '#101418';
     ctx.lineWidth   = 1.5;
 

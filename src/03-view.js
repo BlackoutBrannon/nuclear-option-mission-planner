@@ -58,6 +58,11 @@ window.addEventListener('resize', () => {
 });
 let view = { scale: 1, panX: 0, panY: 0 };
 
+// Zoom ceiling. Detail tiles are 10 m per pixel, which is pixel-exact at about
+// 12x on a typical window; the rest is headroom for placing points precisely on
+// a picture that has stopped gaining detail.
+const MAX_ZOOM = 60;
+
 // A single named reference point. Positions are then expressed as a bearing
 // and range from it - the standard radio format, "bandits bullseye 270 for 45"
 // - rather than as raw coordinates.
