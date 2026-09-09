@@ -27,6 +27,37 @@ symptom is every unit showing its raw key — `SPAAG1` rather than
 
 `Ctrl+C` stops the server.
 
+## The desktop app
+
+`shell/` is a WinForms window hosting WebView2. It exists for two reasons: the
+planner needs no server under it, and a browser cannot open or save a file where
+you tell it to.
+
+The planner's files are mapped to a virtual host rather than loaded over
+`file://`, which is what removes the server. Under the shell the app is an
+ordinary https origin, so `fetch` works and there is no port to collide with.
+
+```
+cd shell
+dotnet run                     # runs against the working tree, no copy needed
+dotnet publish -c Release -o ./publish
+```
+
+`publish/` holds `NOMissionPlanner.exe` and an `app/` folder beside it. That is
+the whole distributable - about 127 MB, most of it map imagery. The build is
+self-contained, so it runs on a machine with no .NET installed; add
+`-p:SelfContained=false` for a much smaller build that needs the .NET 8 Desktop
+Runtime.
+
+`--debug` opens the DevTools protocol on port 9222 for troubleshooting. It is
+off otherwise.
+
+The same source still runs in a browser. It feature-detects the host and falls
+back to downloads, so nothing here is desktop-only.
+
+`tools/make_icon.py` draws `shell/app.ico`. Editing the numbers at the top of
+that script and re-running it is the way to change the icon.
+
 ## Files
 
 | | |

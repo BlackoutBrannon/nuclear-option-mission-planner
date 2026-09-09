@@ -17,3 +17,4 @@ desktop.ini
 # hundreds of megabytes once the planner's assets are copied in beside it.
 shell/bin/
 shell/obj/
+shell/publish/

@@ -20,10 +20,77 @@
     <RootNamespace>NOMissionPlanner</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!--
+    What Explorer, the taskbar and the file properties dialog show. Without
+    these the executable identifies itself as "NOMissionPlanner 1.0.0" with no
+    description, which reads like a debug build.
+  -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Product>Nuclear Option Mission Planner</Product>
+    <AssemblyTitle>Nuclear Option Mission Planner</AssemblyTitle>
+    <Description>Mission planning for Nuclear Option: threat rings from the game's own detection model, terrain masking, routes, release points and printable briefings.</Description>
+    <Authors>BlackoutBrannon</Authors>
+    <Company>BlackoutBrannon</Company>
+    <Copyright>Copyright (c) 2026 BlackoutBrannon</Copyright>
+    <RepositoryUrl>https://github.com/BlackoutBrannon/nuclear-option-mission-planner</RepositoryUrl>
+  </PropertyGroup>
+
+  <!--
+    Self-contained by default so the download runs on a machine with no .NET
+    installed, which is most of them. Publishing with
+    -p:SelfContained=false produces a much smaller build that needs the .NET 8
+    Desktop Runtime present.
+  -->
+  <PropertyGroup>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- WinForms is not trim-safe; trimming it produces an app that starts and
+         then fails at the first dialog. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- The WebView2 package ships nearly a megabyte of IntelliSense XML that
+         has no business in a release folder. -->
+    <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
   </ItemGroup>
+
+  <!--
+    Stage the planner beside the executable on publish.
+
+    Only on publish: the asset trees are around 60 MB and copying them on every
+    build would make a one-line change to Program.cs take a minute. Running from
+    bin/ needs no copy at all, because the shell falls back to serving the
+    working tree.
+
+    Each tree is copied separately so its folder name survives - a single glob
+    would flatten src/, vendor/, terrain/ and tiles/ into one directory, because
+    RecursiveDir is relative to the wildcard root rather than to the project.
+  -->
+  <Target Name="StagePlannerAssets" AfterTargets="Publish">
+    <ItemGroup>
+      <PlannerRoot Include="..\index.html;..\style.css;..\symbols.html;..\units.json;..\ranges.json;..\*_overview.webp" />
+      <PlannerSrc Include="..\src\**\*.*" />
+      <PlannerVendor Include="..\vendor\**\*.*" />
+      <PlannerTerrain Include="..\terrain\**\*.*" />
+      <PlannerTiles Include="..\tiles\**\*.*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(PlannerRoot)" DestinationFolder="$(PublishDir)app" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlannerSrc)" DestinationFiles="@(PlannerSrc->'$(PublishDir)app\src\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlannerVendor)" DestinationFiles="@(PlannerVendor->'$(PublishDir)app\vendor\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlannerTerrain)" DestinationFiles="@(PlannerTerrain->'$(PublishDir)app\terrain\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlannerTiles)" DestinationFiles="@(PlannerTiles->'$(PublishDir)app\tiles\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+
+    <Message Importance="high" Text="Staged the planner into $(PublishDir)app" />
+  </Target>
 
 </Project>
