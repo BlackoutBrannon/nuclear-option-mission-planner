@@ -80,6 +80,214 @@ Right-click a unit for its details and to place the bullseye. Hover anything to
 identify it. The status bar shows your position, the ground elevation under the
 cursor and your height above it.
 
+## Reading the threat picture
+
+Everything on the map is drawn against **one aircraft at one altitude** — the RCS
+and ALT set in the bar along the bottom. Change either and every ring on screen
+changes with it. If a ring looks wrong, check those two first.
+
+The RCS list is the game's own airframes with their real values, stealthiest
+first, so picking your aircraft is usually enough. *Custom…* takes a number if
+you want to see what a different signature would do.
+
+### The three ring types
+
+Toggle these in the **Rings** panel. They answer different questions and it is
+worth knowing which is which.
+
+| Ring | What it means | Moves with RCS? |
+|---|---|---|
+| **Radar detection** | The range a radar starts seeing *you* | **Yes** |
+| **Optical / IR** | Eyeballs and infrared | No |
+| **Weapon envelope** | Where a launcher can actually shoot | No |
+
+Only radar responds to your radar cross-section, because in the game only radar
+uses it. Flying something stealthy shrinks the radar rings and leaves the
+infrared and optical ones exactly where they were — which is the whole reason
+they are drawn separately.
+
+Weapon rings are drawn from the launcher's own engagement limits, not from a
+description. If a weapon cannot reach your altitude, its ring closes up and
+vanishes rather than lying to you.
+
+### Why rings are not circles
+
+**Clip to terrain** cuts each ring down to what the ground actually allows. A
+radar behind a ridge gets a bite taken out of its envelope on that bearing, and
+that gap is a real route through.
+
+Two other things shorten a ring without any terrain involved:
+
+- **Radar horizon.** Both ends contribute, so climbing extends the horizon and
+  reveals you sooner. This is the one range that is measured along the ground.
+- **Altitude difference.** Every range check in the game is slant range — a
+  sphere, not a disc. What the map can draw is the ground projection of that
+  sphere, so an envelope shrinks as you climb away from it and closes entirely
+  once the height difference exceeds the weapon's reach.
+
+That last one surprises people: **a SAM ring shrinking as you climb does not
+mean you are safe**, it means fewer of its metres are usable horizontally. Climb
+far enough and it cannot reach you at all, which is when the ring disappears.
+
+### What "engaged" actually requires
+
+A weapon envelope on its own is not a threat. The planner only calls a point
+*engaged* when **something on that side can see you and something on that same
+side can shoot you**. Ringing a launcher with no sensor of its own produces
+nothing until you also ring a radar that can feed it.
+
+That is why ringing a whole air-defence network behaves differently from ringing
+one battery: the sensors and the shooters have to be in the picture together.
+
+### Labels
+
+Ring labels declutter automatically. On a busy map set **Labels → Hovered unit
+only** and point at what you care about; **Auto** thins overlapping labels and
+places what fits.
+
+---
+
+## Planning a route that survives
+
+Draw a route in **Flights**: *New flight*, then click along the map,
+double-click or Escape to finish. Drag any waypoint to move it. Each waypoint
+carries its own altitude, and the legs between them are what get judged.
+
+### Reading the leg colours
+
+Every leg is drawn over with what happens along it. The distinction is carried
+by **weight and pattern**, not colour alone:
+
+| Look | Meaning |
+|---|---|
+| Thick red, **white dashes over it** | **Below ground** — the leg is inside a hill |
+| Thick solid red | **Engaged** — seen and shootable |
+| Medium dashed amber | **Seen** — detected but nothing can shoot you there |
+| Nothing | Clear |
+
+The leg label repeats it in words and distance: `043°  25.3 NM   12.1 NM engaged,
+5.0 NM seen`. Read the threatened distance against the leg's own length — a leg
+that is 12 NM engaged out of 40 is a different problem from one that is engaged
+end to end.
+
+### Below ground is not a warning about terrain nearby
+
+It means the waypoint altitude is **lower than the ground beneath it**. The
+status bar says `BELOW GROUND by 1004 ft` in red when your cursor is over such a
+spot. This is easy to do accidentally on a low-level route through hills, and
+until you fix it the exposure figures for that leg are meaningless — an
+underground aircraft is not detectable, so the leg reports as clear.
+
+### The altitude trade
+
+There is no single right answer, which is why the tool exists:
+
+- **Low** puts terrain between you and the radars, and the masking will show it.
+  It also costs fuel and time, and risks flying into the ground.
+- **High** extends your own radar horizon in both directions and puts you inside
+  more long-range envelopes, but it shrinks the short-range ones and is where
+  most munitions actually reach their published range.
+
+The productive way to use it: set the altitude you intend to fly, ring the
+threats, then move waypoints until the amber and red go away. The gaps you are
+looking for are usually behind terrain, not around the edge of a ring.
+
+---
+
+## Release points and time of flight
+
+A release point is a waypoint you have marked **RP**. It carries a munition and
+the list of targets it services — not every target gets shot at from every
+release point, so you choose per point.
+
+For each target you get a **time of flight**, computed with the flight model
+that matches the weapon: rocket motors, glide, ballistic or gun. Speed and
+altitude at release both feed into it, which is why the same weapon shows a very
+different number from 500 ft than from 30,000 ft.
+
+### Why time of flight is the number that matters
+
+Time of flight is measured **from release**, not from your take-off. It is how
+long the weapon is in the air and the defence has time to react to it. Two
+weapons that both "reach" a target are not equivalent if one takes 40 seconds
+and the other takes three minutes.
+
+If a weapon cannot make it, you get the reason rather than a blank — out of
+energy before arrival, or below its minimum speed.
+
+### Weapon exposure on the run-in
+
+Under each target the planner reports what happens to the **weapon** on its way
+in, at the weapon's own signature and speed:
+
+> ■ engageable 19.9 NM out by T9K41 Boltstrike · ▧ seen 23.1 NM out
+
+Those distances are **how far the weapon still has to run** when the event
+happens, which is what decides whether it survives to impact — not how far it
+has already flown.
+
+This is frequently the opposite of the answer for the aircraft. Munitions carry
+much smaller signatures than the thing that launched them, and many defences
+refuse targets above a speed limit, so a fast small missile is often untouchable
+on a run-in that would have been fatal for you. That is the case the tool is
+built to find.
+
+---
+
+## Bullseye, measuring and manual rings
+
+Everything here hangs off the **right-click menu**, which is worth exploring —
+it changes depending on whether you right-clicked a unit, empty map, or an
+existing ring.
+
+**Bullseye** — right-click empty map, *Place bullseye here*. Every position in
+the panels and in every export then reads as a `bearing / range` call instead of
+raw coordinates, which is what makes a plan speakable over the radio. The rose
+around it is marked every 5 NM with radials every 45 degrees. *Move bullseye
+here* and *Clear bullseye* appear once one is placed.
+
+**Measuring** — right-click, *Measure from here*, then move and click to finish.
+Right-clicking a unit measures from that unit rather than from where you
+clicked, which is the easy way to get a range between two things.
+
+**Manual rings** — right-click, *Range ring from here*, then drag out to the
+radius you want. Use them for anything the planner does not know about: a fuel
+radius, a deconfliction line, a place you have agreed not to cross. They stack,
+so you can lay several down. *Clear all rings* removes them.
+
+Pick the colour **before** you draw — the selector in the main panel applies to
+rings you draw next, not to ones already on the map. To change one that is
+already there, right-click it and use *Recolour this ring*. *Remove this ring*
+appears the same way.
+
+**Coverage ring from here (terrain clipped)** is the interesting one. It draws a
+ring cut to what the terrain actually allows from that spot, at your current
+altitude — the same masking the threat rings use, but centred anywhere you like.
+Use it to ask "if I put something here, what would it see", or to sanity-check a
+gap before you commit a route to it.
+
+---
+
+## Choosing an export
+
+Four buttons under **Export**, for four different jobs:
+
+| Export | Use it for |
+|---|---|
+| **Plan** | Sharing the plan, or reloading it later. Needs the same mission file at the other end. |
+| **Sheet** | The full briefing, printable. Route table, detection events, times of flight, targets. |
+| **Image** | A picture of the map as framed, at 3×. Pan and zoom to the shot you want *first*. |
+| **Card** | A 52-column text block, copied to the clipboard, sized to paste into chat. |
+
+**Sheet and Card count hostile units only.** The map still colours your route
+against everything you have ringed, so if you ring friendly radars the map and
+the exports will disagree — deliberately, because a friendly emitter is not
+something you brief against.
+
+The **Image** caption records the mission, your RCS and altitude, how many
+hostiles were ringed, and whether terrain masking was on. A picture without that
+context is not evidence of anything, which is why it is burned in.
+
 ## Running an executable you did not build
 
 Downloading a 60 MB binary from a stranger and running it is a reasonable thing
