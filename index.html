@@ -41,9 +41,14 @@
           <div class="ringActions">
             <button id="planSnap" type="button"
                     title="Keep the current plan under a name">Snapshot</button>
+            <button id="planExport" type="button"
+                    title="Save this plan to a file you can share">Export</button>
+            <button id="planImport" type="button"
+                    title="Load a plan file">Import</button>
             <button id="planClear" type="button"
                     title="Clear flights, targets and rings">Clear</button>
           </div>
+          <input type="file" id="planFile" accept=".json" hidden>
           <div id="snapList"></div>
         </div>
 

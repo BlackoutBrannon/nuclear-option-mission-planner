@@ -1153,3 +1153,84 @@ function storeSnapshots(list) {
     try { localStorage.setItem(SNAPS_KEY, JSON.stringify(list)); }
     catch (e) { console.error('could not store snapshots:', e); }
 }
+
+// ---------------------------------------------------------------------------
+// Plan files
+//
+// One file, two readers.
+//
+//   plan   everything the planner needs to restore its own state exactly.
+//          Internal shape, free to change with PLAN_VERSION.
+//
+//   nav    a flat view for anything outside the planner - a cockpit mod, a
+//          briefing generator, a spreadsheet. Positions are {x, y, z} with y as
+//          altitude, which is the game's own GlobalPosition layout, so a reader
+//          needs no conversion and no knowledge of how the planner stores
+//          things. This half is a promise; keep it stable.
+//
+// The mission is not embedded. It is usually far larger than the plan, everyone
+// sharing a plan already has the mission, and a plan that carried a stale copy
+// of one would be worse than a plan that names the file it belongs to.
+// ---------------------------------------------------------------------------
+function navView() {
+    const round1 = n => Math.round(n * 10) / 10;
+    const pos = t => {
+        const p = targetPos(t);
+        return p ? { x: round1(p.x), y: round1(terrain ? terrainAt(p.x, p.z) : 0),
+                     z: round1(p.z) } : null;
+    };
+
+    return {
+        bullseye: bullseye ? { x: round1(bullseye.x), y: 0, z: round1(bullseye.z) } : null,
+
+        flights: flights.map(f => ({
+            name: f.name,
+            speedMs: Math.round(f.speed || 250),
+            waypoints: f.waypoints.map((w, i) => ({
+                number: i + 1,
+                x: round1(w.x), y: round1(w.alt), z: round1(w.z),
+                releasePoint: !!w.rp,
+                munition: w.munition || null,
+                targets: (w.targetIds || [])
+                    .map(id => (targetById(id) || {}).name)
+                    .filter(Boolean),
+            })),
+        })),
+
+        targets: targets.map((t, i) => ({
+            number: i + 1, name: t.name, kind: t.kind, position: pos(t),
+        })),
+    };
+}
+
+function planFile() {
+    return {
+        format: 'nuclear-option-mission-plan',
+        version: PLAN_VERSION,
+        exported: new Date().toISOString(),
+        mission: currentMission ? (currentMission._name || '') : '',
+        nav: navView(),
+        plan: planState(),
+    };
+}
+
+// The browser cannot write to disk on its own, so the file is offered as a
+// download. The object URL is released once the click has been taken, or the
+// blob stays in memory for the life of the page.
+function downloadPlan() {
+    const data = JSON.stringify(planFile(), null, 1);
+    const base = (currentMission && currentMission._name || 'plan')
+        .replace(/\.json$/i, '')
+        .replace(/[^A-Za-z0-9 _-]/g, '')
+        .trim() || 'plan';
+
+    const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = base + '.plan.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return data.length;
+}

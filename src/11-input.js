@@ -329,6 +329,40 @@ document.getElementById('planSnap').addEventListener('click', () => {
     renderSnapshots();
 });
 
+document.getElementById('planExport').addEventListener('click', () => {
+    if (!currentMission) return;
+    downloadPlan();
+});
+
+const planFileEl = document.getElementById('planFile');
+document.getElementById('planImport').addEventListener('click', () => {
+    planFileEl.value = '';        // or choosing the same file twice fires nothing
+    planFileEl.click();
+});
+
+planFileEl.addEventListener('change', async () => {
+    const file = planFileEl.files[0];
+    if (!file) return;
+    try {
+        const data = JSON.parse(await file.text());
+        if (data.format !== 'nuclear-option-mission-plan' || !data.plan) {
+            alert('That does not look like a plan file.');
+            return;
+        }
+        if (data.mission && currentMission &&
+            data.mission !== (currentMission._name || '')) {
+            if (!confirm('That plan was made against "' + data.mission +
+                         '". Loading it here may attach targets and rings ' +
+                         'to the wrong units. Load anyway?')) return;
+        }
+        if (applyPlan(data.plan)) refreshAll();
+        else alert('That plan was written by a different version of the planner.');
+    } catch (err) {
+        console.error('plan import failed:', err);
+        alert('Could not read that plan file: ' + err.message);
+    }
+});
+
 document.getElementById('planClear').addEventListener('click', () => {
     if (!confirm('Clear all flights, targets and rings from this plan?')) return;
     flights.length = 0;

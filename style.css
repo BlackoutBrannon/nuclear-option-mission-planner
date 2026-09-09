@@ -157,7 +157,10 @@ body.resizing { user-select: none; cursor: col-resize; }
               repeat-x 0 100% / 6px 4px;
 }
 
-.ringActions { display: flex; gap: 6px; margin-bottom: 8px; }
+/* Wraps rather than overflowing: a flex item cannot shrink below its
+   label's own width, so a row of four buttons runs past a narrow panel
+   unless it is allowed a second line. */
+.ringActions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .ringActions button {
   flex: 1;
   background: #223039; color: #cdd9e3;
