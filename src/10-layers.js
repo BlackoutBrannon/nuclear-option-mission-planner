@@ -291,8 +291,15 @@ function unitName(type) {
 // The 2400 px overview is 34 m per pixel on Heartland. That is enough until the
 // zoom passes the point where it is being magnified rather than sampled, after
 // which it just gets softer. Past that point the planner swaps in 1024 px tiles
-// cut from the 8192 px capture - 10 m per pixel - and fetches only the ones
-// actually on screen.
+// and fetches only the ones actually on screen.
+//
+// The tiles come as a pyramid - Heartland currently holds 20 m and 10 m levels -
+// and the coarsest level that still beats the screen's pixel density wins. That
+// matters because the levels quadruple in size as they get finer: zooming
+// part-way in must not drag in imagery meant for the last few steps of zoom.
+//
+// Levels are whatever tools/make_tiles.py found in the capture. Re-capture at a
+// higher TilesPerSide and a finer level appears with no change here.
 //
 // The overview is ALWAYS drawn first, with tiles laid on top. A tile that has
 // not arrived yet leaves the softer picture showing rather than a hole, so
@@ -332,8 +339,8 @@ function tileArrived() {
     });
 }
 
-function tileFor(mapName, cx, cy) {
-    const key = mapName + '/' + cx + '_' + cy;
+function tileFor(mapName, dir, cx, cy) {
+    const key = mapName + '/' + dir + '/' + cx + '_' + cy;
 
     const held = tileCache.get(key);
     if (held) {
@@ -347,13 +354,23 @@ function tileFor(mapName, cx, cy) {
     img._ready = false;
     img.onload  = () => { img._ready = true; tileArrived(); };
     img.onerror = () => { img._failed = true; };
-    img.src = 'tiles/' + mapName + '/' + cx + '_' + cy + '.webp';
+    img.src = 'tiles/' + mapName + '/' + dir + '/' + cx + '_' + cy + '.webp';
 
     tileCache.set(key, img);
     while (tileCache.size > TILE_CACHE_MAX) {
         tileCache.delete(tileCache.keys().next().value);
     }
     return img;
+}
+
+// The coarsest level that is still sharp enough, which is the least data that
+// does the job. Levels arrive coarsest first, so the first acceptable one wins;
+// if the screen has outrun even the finest, that is all there is.
+function pickTileLevel(info, screenMPerPx, spanX) {
+    for (const lv of info.levels) {
+        if (spanX / lv.width <= screenMPerPx * TILE_TRIGGER) return lv;
+    }
+    return info.levels[info.levels.length - 1];
 }
 
 // The basemap goes through the same fit-then-view transform as every unit, so
@@ -376,25 +393,30 @@ function drawBasemap(ctx) {
     if (!basemap.naturalWidth) return;
     const screenMPerPx   = mw / w;
     const overviewMPerPx = mw / basemap.naturalWidth;
-    if (screenMPerPx > overviewMPerPx / TILE_TRIGGER) return;
+
+    // The overview is simply the coarsest candidate of all, tested the same way
+    // as every tile level below.
+    if (overviewMPerPx <= screenMPerPx * TILE_TRIGGER) return;
 
     loadTileIndex();
     const info = tileIndex && tileIndex[m.terrain];
-    if (!info) return;
+    if (!info || !info.levels || !info.levels.length) return;
 
-    const sx = w / info.width;       // screen pixels per full-image pixel
-    const sy = h / info.height;
+    const lv = pickTileLevel(info, screenMPerPx, mw);
+
+    const sx = w / lv.width;         // screen pixels per source pixel
+    const sy = h / lv.height;
     const tw = info.tile * sx;
     const th = info.tile * sy;
 
     const c0 = Math.max(0, Math.floor(-x0 / tw));
-    const c1 = Math.min(info.cols - 1, Math.floor((canvas.width  - x0) / tw));
+    const c1 = Math.min(lv.cols - 1, Math.floor((canvas.width  - x0) / tw));
     const r0 = Math.max(0, Math.floor(-y0 / th));
-    const r1 = Math.min(info.rows - 1, Math.floor((canvas.height - y0) / th));
+    const r1 = Math.min(lv.rows - 1, Math.floor((canvas.height - y0) / th));
 
     for (let cy = r0; cy <= r1; cy++) {
         for (let cx = c0; cx <= c1; cx++) {
-            const img = tileFor(m.terrain, cx, cy);
+            const img = tileFor(m.terrain, lv.dir, cx, cy);
             if (!img._ready) continue;
             // The extra pixel closes the hairline seam that fractional tile
             // edges leave between neighbours.

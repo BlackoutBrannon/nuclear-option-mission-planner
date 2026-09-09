@@ -1,18 +1,44 @@
 {
   "Heartland": {
-    "width": 8192,
-    "height": 8192,
     "tile": 1024,
-    "cols": 8,
-    "rows": 8,
-    "bytes": 9391218
+    "levels": [
+      {
+        "dir": "z4096",
+        "width": 4096,
+        "height": 4096,
+        "cols": 4,
+        "rows": 4,
+        "bytes": 2697030
+      },
+      {
+        "dir": "z8192",
+        "width": 8192,
+        "height": 8192,
+        "cols": 8,
+        "rows": 8,
+        "bytes": 9391218
+      }
+    ]
   },
   "Ignus": {
-    "width": 8192,
-    "height": 4096,
     "tile": 1024,
-    "cols": 8,
-    "rows": 4,
-    "bytes": 608094
+    "levels": [
+      {
+        "dir": "z4096",
+        "width": 4096,
+        "height": 2048,
+        "cols": 4,
+        "rows": 2,
+        "bytes": 208480
+      },
+      {
+        "dir": "z8192",
+        "width": 8192,
+        "height": 4096,
+        "cols": 8,
+        "rows": 4,
+        "bytes": 608094
+      }
+    ]
   }
 }
