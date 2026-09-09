@@ -530,6 +530,16 @@ select {
   padding: 1px 4px; font: inherit; font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
+/* The message itself carries the meaning; the colour and the heavier border
+   only reinforce it. */
+#drop.dropError {
+  color: #f0857a;
+  border-color: #a04a44;
+  border-style: solid;
+  text-align: left;
+  line-height: 1.4;
+}
+
 #planSaved { color: #6f7d88; font-family: ui-monospace, Consolas, monospace;
              text-transform: none; letter-spacing: 0; font-size: 10px; }
 

@@ -1164,14 +1164,41 @@ window.addEventListener('mouseup', () => {
         if (currentMission) draw(currentMission);
     }
 });
+// The drop zone doubles as the place a failure is reported. An uncaught error
+// here used to leave a blank map and nothing else - the app looked broken
+// rather than the file.
+const DROP_PROMPT = 'Drop a mission .json here';
+
+function setDropMessage(msg) {
+    drop.textContent = msg || DROP_PROMPT;
+    drop.classList.toggle('dropError', !!msg);
+}
+
 drop.addEventListener('drop', async (e) => {
   e.preventDefault();
   drop.style.borderColor = '#3d4a55';
 
   const file = e.dataTransfer.files[0];
-  const text = await file.text();
+  if (!file) return;
 
-  const mission = JSON.parse(text);
+  try {
+      await loadMissionFile(file);
+      setDropMessage(null);
+  } catch (err) {
+      console.error('could not load mission:', err);
+      setDropMessage(err instanceof SyntaxError
+          ? 'That file is not valid JSON. If it came from the scanner, the ' +
+            'capture may have been interrupted.'
+          : err.message);
+  }
+});
+
+async function loadMissionFile(file) {
+  const mission = JSON.parse(await file.text());
+
+  const problem = missionProblem(mission);
+  if (problem) throw new Error(problem);
+  repairMission(mission);
 
   // Order matters here. Affiliation depends on myFaction, and the tree is built
   // from affiliations - so the faction has to be settled before anything is
@@ -1220,15 +1247,16 @@ drop.addEventListener('drop', async (e) => {
   renderTargets();
   renderSnapshots();
 
+  const count = k => (mission[k] || []).length;
   out.textContent = `${file.name}
 
 map:       ${mapName(mission.MapKey.Path)}
-aircraft:  ${mission.aircraft.length}
-vehicles:  ${mission.vehicles.length}
-ships:     ${mission.ships.length}
-buildings: ${mission.buildings.length}`;
+aircraft:  ${count('aircraft')}
+vehicles:  ${count('vehicles')}
+ships:     ${count('ships')}
+buildings: ${count('buildings')}`;
 
   renderTree(unitsOf(mission));
   draw(mission);
-});
+}
 

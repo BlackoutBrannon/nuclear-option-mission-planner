@@ -87,9 +87,58 @@ async function loadRanges() {
 // every part is loaded removes the race rather than making it rarer.
 
 
+// Terrain prefab name -> key in MAPS, or null for anything unrecognised.
+//
+// Returning null rather than defaulting to Heartland is the point. A map the
+// planner has no imagery or extents for would otherwise draw every unit at a
+// confidently wrong position on the wrong terrain - which reads as working, and
+// is worse than refusing.
 function mapName(path) {
-    if (path ==='Terrain_naval') return 'Ignus Archipelago';
-    return 'Heartland';
+    if (path === 'Terrain_naval') return 'Ignus Archipelago';
+    if (path === 'Terrain1')      return 'Heartland';
+    return null;
+}
+
+// What a mission has to have before anything else can run. Returns a message to
+// put in front of whoever dropped the file, or null when it is usable.
+//
+// The checks are separate rather than one catch-all because the responses
+// differ: "this is not a mission file" and "this mission is on a map the
+// planner does not have" are different problems for the person holding it.
+function missionProblem(m) {
+    if (!m || typeof m !== 'object' || Array.isArray(m)) {
+        return 'That file is not a mission - the JSON is not an object.';
+    }
+    if (!m.MapKey || !m.MapKey.Path) {
+        return 'That file has no MapKey, so it is not a Nuclear Option ' +
+               'mission save.';
+    }
+    if (!mapName(m.MapKey.Path)) {
+        return 'This mission is on "' + m.MapKey.Path + '". The planner only ' +
+               'has terrain and imagery for Heartland and Ignus.';
+    }
+    const populated = ['aircraft', 'vehicles', 'ships', 'buildings']
+        .some(k => Array.isArray(m[k]) && m[k].length);
+    if (!populated) {
+        return 'That mission has no aircraft, vehicles, ships or buildings ' +
+               'in it.';
+    }
+    return null;
+}
+
+// Some scanner builds write a faction on every unit but no factions list.
+// That is recoverable rather than fatal: the list is the distinct factions in
+// first-seen order, which is the order they are written in anyway.
+function repairMission(m) {
+    if (Array.isArray(m.factions) && m.factions.length) return;
+
+    const seen = [];
+    for (const key of ['buildings', 'vehicles', 'ships', 'aircraft']) {
+        for (const u of m[key] || []) {
+            if (u.faction && seen.indexOf(u.faction) === -1) seen.push(u.faction);
+        }
+    }
+    m.factions = seen.map(name => ({ factionName: name }));
 }
 
 const canvas = document.getElementById('map');
