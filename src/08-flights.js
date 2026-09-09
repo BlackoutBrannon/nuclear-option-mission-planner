@@ -751,9 +751,29 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt, track) {
     let v = vPeak, dt = 0.1;
     const k = 0.5 * cd * rho * area / dry;
     const minSpeed = f.minSpeed || 0;
+
+    // Height traded for speed, as CalcRange does it. A missile fired down at a
+    // target converts the altitude it gives up into kinetic energy, so a shot
+    // from height arrives faster and further than the same shot fired level.
+    // The slope is how much height is lost per unit travelled, clamped the way
+    // the game clamps it, and the height available is spent as it is used.
+    const slope = dist > 0
+        ? Math.max(-0.5, Math.min(0.5, (targetAlt - launchAlt) / dist))
+        : -0.1;
+    let budget = Math.abs(launchAlt - targetAlt);
+
     for (let i = 0; i < 120 && d < dist; i++) {
         d += dt * v;
         t += dt;
+
+        // Energy exchange before drag, matching the order in CalcRange.
+        if (budget > 0) {
+            const ke = 0.5 * dry * v * v;
+            const dh = dt * slope * v;    // negative while descending
+            budget -= Math.abs(dh);
+            v = Math.sqrt(Math.max(0, 2 * (ke + dry * -G * dh) / dry));
+        }
+
         v -= dt * v * v * k;
         dt += 0.05;                       // the game grows its step the same way
         log(d, t, v);
