@@ -18,3 +18,8 @@ desktop.ini
 shell/bin/
 shell/obj/
 shell/publish/
+
+# Release archives. Built from shell/publish and uploaded to a GitHub release,
+# which is where a 100 MB+ binary belongs - git rejects files over 100 MB and
+# would carry every past build forever even if it did not.
+shell/*.zip

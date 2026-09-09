@@ -80,6 +80,57 @@ Right-click a unit for its details and to place the bullseye. Hover anything to
 identify it. The status bar shows your position, the ground elevation under the
 cursor and your height above it.
 
+## Running an executable you did not build
+
+Downloading a 60 MB binary from a stranger and running it is a reasonable thing
+to be uneasy about. So:
+
+**Everything here is the source it was built from.** No build step, no bundler,
+no minification. The planner is plain HTML, CSS and JavaScript you can read in
+`src/`, and the desktop shell is two C# files in `shell/`. The only third-party
+code is `vendor/milsymbol.js` (MIT), vendored rather than pulled from a CDN so
+it cannot change under you.
+
+**What the shell actually does:** opens a window, points WebView2 at the files
+in `app/`, and opens or saves a file when you use a dialog.
+
+The planner makes no requests off the machine. Every `fetch` in the source is a
+relative path to a file in `app/` - `units.json`, `ranges.json`, `terrain/` and
+`tiles/`, and that is the complete list. There is no telemetry, no analytics and
+no auto-update. WebView2 itself is Microsoft's component and behaves as it does
+anywhere else on Windows; it keeps its profile in
+`%LOCALAPPDATA%\NOMissionPlanner`.
+
+**Build it yourself** and compare, if you would rather:
+
+```
+git clone https://github.com/BlackoutBrannon/nuclear-option-mission-planner
+cd nuclear-option-mission-planner/shell
+dotnet publish -c Release -o ./publish
+```
+
+That produces the same thing the release contains. It needs the .NET 8 SDK and
+nothing else.
+
+**Or skip the executable entirely.** The planner runs in a browser - see
+*Running from source* below. The desktop app exists to remove the server and to
+open and save files, not because anything needs to be compiled.
+
+**Windows will warn you.** The executable is not code-signed, because a
+certificate costs several hundred a year. SmartScreen will say "Windows
+protected your PC" - *More info* then *Run anyway*. If that is not a trade you
+want to make, run it in a browser instead.
+
+**Checksums** for `v0.1.0`, so you can confirm the download is the file that was
+published:
+
+```
+zip  992a0a8ffecdb03bedcaf404453039465f17f9a0ff36535eed0c3293c12fd0cc
+exe  dcb23b0e975ce8ea6ad449c94064dc7e7b86ae700e0d451d41cd3e600ccae9a1
+```
+
+Check yours with `Get-FileHash <file>` in PowerShell.
+
 ## Reporting a bug
 
 Open an issue:
