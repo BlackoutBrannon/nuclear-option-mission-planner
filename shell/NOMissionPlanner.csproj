@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Desktop shell for the mission planner.
+
+    The planner is plain HTML, CSS and JavaScript and stays that way. This
+    project only supplies a window, a WebView2 to draw it in, and the things a
+    browser will not do: open a file from disk and save one back to a chosen
+    path.
+
+    WinExe rather than Exe so no console window appears behind the app.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>NOMissionPlanner</AssemblyName>
+    <RootNamespace>NOMissionPlanner</RootNamespace>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+  </ItemGroup>
+
+</Project>

@@ -12,3 +12,8 @@
 *.user
 Thumbs.db
 desktop.ini
+
+# Desktop shell build output. The shell is a few files of C#; the outputs are
+# hundreds of megabytes once the planner's assets are copied in beside it.
+shell/bin/
+shell/obj/
