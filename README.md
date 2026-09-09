@@ -38,7 +38,7 @@ symptom is every unit showing its raw key — `SPAAG1` rather than
 | `tiles/` | Detail imagery as a resolution pyramid. Generated. |
 | `ranges.json` | Radar, optical and weapon envelopes per unit type. Generated. |
 | `units.json` | Display names and descriptions per unit type. Generated. |
-| `*_overview.png` | Basemaps, produced by the terrain capture tool. |
+| `*_overview.webp` | Basemap shown when the whole map is in view. Generated. |
 | `start.bat` | Starts the local server and opens the planner. |
 | `tools/serve.py` | That server. Nothing else opens a browser. |
 | `tools/extract_units.py` | Regenerates `units.json` from the game's own files. |
@@ -95,10 +95,19 @@ structured source.
 
 ## Basemaps
 
-`Heartland_overview.png` and `Ignus_overview.png` come from the terrain capture
-plugin in the sibling `Terrain capture` project, which extracts georeferenced
-elevation and imagery from the running game. The map bounds hardcoded in `MAPS`
-are the measured extents from that work.
+The imagery comes from the terrain capture plugin in the sibling
+`Terrain capture` project, which extracts georeferenced elevation and imagery
+from the running game. The map bounds hardcoded in `MAPS` are the measured
+extents from that work.
+
+`tools/make_tiles.py` turns one capture into everything the planner draws: the
+`*_overview.webp` basemap and the `tiles/` pyramid under it. Both come from the
+same mosaic, so they cannot end up generated from different captures.
+
+To re-capture at a higher resolution, raise `TilesPerSide` in the plugin's
+config, press F10 on each map, then run `stitch_imagery.py` followed by
+`make_tiles.py`. A finer tile level appears on its own; nothing here needs
+changing.
 
 ## Coordinates
 

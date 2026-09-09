@@ -29,6 +29,14 @@ function esc(s) {
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// The map's name for a heading. Derived from the basemap filename, so the
+// pattern has to survive the file's format changing - it has already gone from
+// PNG to WebP once.
+function mapLabel() {
+    if (!currentMap) return '';
+    return currentMap.image.replace(/_overview\.[a-z0-9]+$/i, '');
+}
+
 // A bullseye call where there is a bullseye, otherwise the raw grid position.
 // A blank position column would make the sheet useless.
 function briefPos(p) {
@@ -434,7 +442,7 @@ function briefingHTML() {
         '<h1>Mission briefing</h1>' +
         '<p class="sub">' + esc(currentMission._name || '') +
             ' &middot; ' +
-            esc(currentMap ? currentMap.image.replace(/_overview\.png$/, '') : '') +
+            esc(mapLabel()) +
             ' &middot; generated ' +
             esc(when.toISOString().slice(0, 16).replace('T', ' ')) + 'Z' +
             ' &middot; ' + (unitSystem === 'aviation' ? 'NM / ft / kt' : 'km / m / km/h') +
@@ -541,7 +549,7 @@ function stampImage(octx, off, mult) {
     }
 
     const left = (currentMission._name || 'mission') +
-        '   ' + (currentMap ? currentMap.image.replace(/_overview\.png$/, '') : '') +
+        '   ' + mapLabel() +
         '   RCS ' + ownRCS + ' at ' + fmtAlt(ownAltM) +
         '   ' + hostile + ' hostile ringed' +
         (showRings.mask && terrain ? '   terrain masked' : '   NO TERRAIN MASK');
@@ -623,7 +631,7 @@ function kneeboardText() {
 
     L.push(rule('='));
     L.push('MISSION  ' + (currentMission._name || ''));
-    L.push('MAP      ' + (currentMap ? currentMap.image.replace(/_overview\.png$/, '') : ''));
+    L.push('MAP      ' + mapLabel());
     L.push('OWNSHIP  RCS ' + ownRCS + '   ' + cardAlt(ownAltM) + ' ' + alt);
     L.push('BULLS    ' + (bullseye ? Math.round(bullseye.x) + ', ' + Math.round(bullseye.z)
                                    : 'not set'));

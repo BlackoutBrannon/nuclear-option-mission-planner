@@ -149,13 +149,13 @@ let ctx = canvas.getContext('2d')
 
 const MAPS = {
     'Heartland': {
-        image: 'Heartland_overview.png',
+        image: 'Heartland_overview.webp',
         terrain: 'Heartland',
         minX: -40960,   maxX: 40960,
         minZ: -40960,   maxZ: 40960
     },
     'Ignus Archipelago': {
-        image: 'Ignus_overview.png',
+        image: 'Ignus_overview.webp',
         terrain: 'Ignus',
         minX: -78072.9, maxX: 79573.5,
         minZ: -39419.9, maxZ: 37316.3

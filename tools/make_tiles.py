@@ -21,8 +21,13 @@ appears here on the next run with no code change.
 
     python tools/make_tiles.py
 
+It also writes the overview the planner falls back to when the whole map is in
+view. That comes from the same mosaic, so the basemap and the tiles can never be
+generated from different captures - which they were when the overview was copied
+across by hand.
+
 Reads ../Terrain capture/tools/<Map>_full.png, writes
-tiles/<Map>/z<width>/<col>_<row>.webp and tiles/index.json.
+tiles/<Map>/z<width>/<col>_<row>.webp, tiles/index.json and <Map>_overview.webp.
 """
 
 import io
@@ -41,6 +46,12 @@ QUALITY = 82
 # Below it the overview is already doing the job and the level is dead weight.
 OVERVIEW_PX = 2400
 FLOOR = int(OVERVIEW_PX * 1.5)
+
+# The overview is the one image loaded on every start, and as PNG it was 9.1 MB
+# of the download for a 2400 px picture. It is photographic terrain, so PNG
+# stores it badly; WebP is 1.4 MB for the same thing. Slightly above the tile
+# quality because this is what you look at before zooming into anything.
+OVERVIEW_QUALITY = 88
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -120,6 +131,15 @@ def build_map(name, span_m):
                        "cols": cols, "rows": rows, "bytes": total})
         print("    z%-6d %2d x %-2d tiles  %6.1f m/px  %5.1f MB"
               % (lw, cols, rows, span_m / lw, total / 1e6))
+
+    # The overview, from the same mosaic as the tiles above it.
+    ow = OVERVIEW_PX if w >= h else int(round(OVERVIEW_PX * w / h))
+    oh = OVERVIEW_PX if h >= w else int(round(OVERVIEW_PX * h / w))
+    over = full.resize((ow, oh), Image.LANCZOS)
+    over_path = os.path.join(ROOT, name + "_overview.webp")
+    over.save(over_path, "WEBP", quality=OVERVIEW_QUALITY, method=6)
+    over.close()
+    print("    overview %d x %-4d %26.1f MB" % (ow, oh, os.path.getsize(over_path) / 1e6))
 
     full.close()
     return {"tile": TILE, "levels": levels}
