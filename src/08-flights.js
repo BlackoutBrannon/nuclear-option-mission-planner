@@ -831,10 +831,6 @@ function fmtTime(seconds) {
 // air defence: it is how long the munition is in the air and the defence has to
 // react, not how long the aircraft has been flying.
 // ---------------------------------------------------------------------------
-function isReleasePoint(w) {
-    return !!w.rp;
-}
-
 // Time of flight from one release point to each of its targets.
 function releaseSolutions(f, i) {
     const w = f.waypoints[i];

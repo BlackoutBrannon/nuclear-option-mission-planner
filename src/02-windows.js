@@ -139,4 +139,3 @@ const ringWin = makeWindow('ringPanel', 'ringPanel',
 const flightWin = makeWindow('flightPanel', 'flightPanel',
                              { x: 670, y: 12, w: 330, h: 430, open: false });
 
-function setPanelOpen(open) { mainWin.setOpen(open); }

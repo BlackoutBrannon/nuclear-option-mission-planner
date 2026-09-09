@@ -1053,10 +1053,8 @@ canvas.addEventListener('wheel', (e) => {
     // visible around the map's edges. The map occupies part of a larger canvas,
     // so a floor of 1 would clamp at the fitted size.
     //
-    // The ceiling used to be 25, set when the overview was all there was and
-    // going further only magnified 34 m pixels. The detail tiles are 10 m, so
-    // the picture holds up far longer, and placing a waypoint on a taxiway
-    // wants the room.
+    // The ceiling is MAX_ZOOM in 03-view.js, set against the resolution of the
+    // finest tile level rather than against anything here.
     const clamped = Math.min(MAX_ZOOM, Math.max(0.5, desired));
     const actual  = clamped / view.scale;
 
@@ -1164,9 +1162,9 @@ window.addEventListener('mouseup', () => {
         if (currentMission) draw(currentMission);
     }
 });
-// The drop zone doubles as the place a failure is reported. An uncaught error
-// here used to leave a blank map and nothing else - the app looked broken
-// rather than the file.
+// The drop zone is also where a rejected file reports itself. Every failure
+// path below ends here rather than in the console, because a blank map with a
+// console error reads as a broken app rather than a bad file.
 const DROP_PROMPT = 'Drop a mission .json here';
 
 function setDropMessage(msg) {

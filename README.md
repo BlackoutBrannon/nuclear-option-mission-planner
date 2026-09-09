@@ -35,11 +35,17 @@ symptom is every unit showing its raw key — `SPAAG1` rather than
 | `style.css` | All layout and appearance. |
 | `src/*.js` | The application, in numbered parts. No framework, no build step. |
 | `terrain/` | Elevation for line-of-sight masking. Generated. |
+| `tiles/` | Detail imagery as a resolution pyramid. Generated. |
 | `ranges.json` | Radar, optical and weapon envelopes per unit type. Generated. |
 | `units.json` | Display names and descriptions per unit type. Generated. |
 | `*_overview.png` | Basemaps, produced by the terrain capture tool. |
+| `start.bat` | Starts the local server and opens the planner. |
+| `tools/serve.py` | That server. Nothing else opens a browser. |
 | `tools/extract_units.py` | Regenerates `units.json` from the game's own files. |
-| `tools/make_symbol_sheet.py` | Builds `symbols.html` by parsing the tables out of `app.js`. |
+| `tools/extract_ranges.py` | Regenerates `ranges.json` from the decompiled assembly. |
+| `tools/make_terrain.py` | Regenerates `terrain/` from a capture's elevation raster. |
+| `tools/make_tiles.py` | Cuts `tiles/` from the capture's imagery. |
+| `tools/make_symbol_sheet.py` | Builds `symbols.html` from the tables in `src/`. |
 
 The parts under `src/` are **plain scripts sharing one global scope**, not ES
 modules, listed in `index.html` in the order they must load. A name declared in
@@ -62,10 +68,11 @@ and provides the global `ms`.
 | `05-symbols.js` | MIL-STD-2525 symbology and the bullseye rose. |
 | `06-threat.js` | Threat rings: what each unit projects, and drawing them. |
 | `07-terrain.js` | Elevation, line-of-sight masking, ring labels and hit tests. |
-| `08-flights.js` | Flights, routes and waypoints. |
+| `08-flights.js` | Flights, routes, targets, release points and the plan file. |
 | `09-tools.js` | Manual range rings and the measuring tool. |
-| `10-layers.js` | Factions, the layer tree, tree rendering, and `draw()`. |
-| `11-input.js` | Hover, status bar, menus, panel rendering, pointer input, start-up. |
+| `10-layers.js` | Factions, the layer tree, detail tiles, and `draw()`. |
+| `11-input.js` | Hover, status bar, menus, panel rendering, pointer input. |
+| `12-briefing.js` | Briefing sheet, image and kneeboard exports, and start-up. |
 
 ## Regenerating the unit catalogue
 
