@@ -1227,11 +1227,3 @@ buildings: ${mission.buildings.length}`;
   draw(mission);
 });
 
-// ---------------------------------------------------------------------------
-// Start-up
-//
-// Last, deliberately: these fetches call back into code declared across every
-// part above, and a continuation must never run before those parts exist.
-// ---------------------------------------------------------------------------
-loadCatalogue();
-loadRanges();
