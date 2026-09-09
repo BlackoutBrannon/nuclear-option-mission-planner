@@ -67,8 +67,8 @@ that is the work still to do.
    decided from this.
 4. **Set your aircraft** at the bottom: RCS preset and altitude. Every threat
    ring is drawn against these two numbers.
-5. **Ring the threats** in the *Rings* panel. *Long range* is a good start; it
-   rings everything reaching past 15 km.
+5. **Ring the threats** in the *Rings* panel. *ADEF* is a good start; it
+   rings all air defense.
 6. **Draw a route** in *Flights* - New flight, then click along the map.
    Double-click or Escape to finish. Drag a waypoint to move it.
 7. **Mark targets** by right-clicking a unit, or the map for a point target.
