@@ -527,6 +527,26 @@ select {
   padding: 1px 4px; font: inherit; font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
+#planSaved { color: #6f7d88; font-family: ui-monospace, Consolas, monospace;
+             text-transform: none; letter-spacing: 0; font-size: 10px; }
+
+.snapRow {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 0; font-size: 12px;
+  border-bottom: 1px solid #1a232a;
+}
+.snapRow .nm {
+  flex: 1 1 0; width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+}
+.snapRow .nm:hover { color: #ffffff; }
+.snapRow .when { color: #6f7d88; font-size: 10px; white-space: nowrap; }
+.snapRow .del {
+  background: transparent; border: 0; color: #6f7d88;
+  cursor: pointer; font-size: 14px; line-height: 1; padding: 0 3px;
+}
+.snapRow .del:hover { color: #f3b3b3; }
+
 .tgtRow {
   display: flex; align-items: center; gap: 7px;
   padding: 3px 0; font-size: 12px;

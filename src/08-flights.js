@@ -1032,3 +1032,124 @@ function munitionStateAt(x, z, alt, rcs, speed) {
     }
     return { seen: seenBy.size > 0, shot: false, seenBy: [...seenBy][0] };
 }
+
+// ---------------------------------------------------------------------------
+// Saving the plan
+//
+// Everything the planner ADDS to a mission - flights, targets, rings, bullseye,
+// own-ship settings - as one plain object. The mission itself is not included:
+// it is the thing being planned against, not part of the plan, and the planner
+// already reads it from the file you drop.
+//
+// A plan refers to units by their unitPath, which is stable for a given mission
+// because collectUnits always walks it in the same order. Restoring against a
+// DIFFERENT mission would silently attach targets and rings to whatever unit
+// now occupies that path, so the mission name is stored and checked.
+// ---------------------------------------------------------------------------
+const PLAN_VERSION = 1;
+
+function planState() {
+    return {
+        version: PLAN_VERSION,
+        mission: currentMission ? (currentMission._name || '') : '',
+        map:     currentMap ? currentMap.image : '',
+        saved:   new Date().toISOString(),
+
+        flights: flights.map(f => ({
+            name: f.name, colour: f.colour, visible: f.visible, speed: f.speed,
+            waypoints: f.waypoints.map(w => ({
+                x: w.x, z: w.z, alt: w.alt,
+                rp: !!w.rp, munition: w.munition || null,
+                targetIds: (w.targetIds || []).slice(),
+            })),
+        })),
+        activeFlight: activeFlight,
+
+        targets: targets.map(t => ({ id: t.id, kind: t.kind, path: t.path,
+                                     x: t.x, z: t.z, name: t.name })),
+        nextTargetId: nextTargetId,
+
+        rings: rings.map(r => ({ x: r.x, z: r.z, r: r.r, label: r.label,
+                                 colour: r.colour, masked: !!r.masked })),
+        bullseye: bullseye ? { x: bullseye.x, z: bullseye.z } : null,
+
+        ringUnits: [...ringUnits],
+        showRings: Object.assign({}, showRings),
+        labelMode: labelMode,
+        showExposure: showExposure,
+
+        ownRCS: ownRCS, ownAltM: ownAltM, unitSystem: unitSystem,
+        rcsPreset: rcsPreset ? rcsPreset.value : '',
+        ringColour: ringColour,
+    };
+}
+
+function applyPlan(p) {
+    if (!p || p.version !== PLAN_VERSION) return false;
+
+    flights.length = 0;
+    for (const f of p.flights || []) flights.push({
+        name: f.name, colour: f.colour, visible: f.visible !== false,
+        speed: f.speed || 250,
+        waypoints: (f.waypoints || []).map(w => ({
+            x: w.x, z: w.z, alt: w.alt,
+            rp: !!w.rp, munition: w.munition || null,
+            targetIds: (w.targetIds || []).slice(),
+        })),
+    });
+    activeFlight = Math.min(p.activeFlight ?? -1, flights.length - 1);
+
+    targets.length = 0;
+    for (const t of p.targets || []) targets.push(Object.assign({}, t));
+    nextTargetId = p.nextTargetId || (targets.length + 1);
+
+    rings.length = 0;
+    for (const r of p.rings || []) rings.push(Object.assign({}, r));
+    bullseye = p.bullseye ? { x: p.bullseye.x, z: p.bullseye.z } : null;
+
+    ringUnits.clear();
+    for (const path of p.ringUnits || []) ringUnits.add(path);
+    bumpRingEpoch();
+
+    Object.assign(showRings, p.showRings || {});
+    labelMode = p.labelMode || 'auto';
+    showExposure = p.showExposure !== false;
+
+    if (typeof p.ownRCS === 'number')  ownRCS = p.ownRCS;
+    if (typeof p.ownAltM === 'number') ownAltM = p.ownAltM;
+    if (p.unitSystem) unitSystem = p.unitSystem;
+    if (p.ringColour) ringColour = p.ringColour;
+    return true;
+}
+
+// --- storage ---------------------------------------------------------------
+const PLAN_KEY  = 'plan';
+const SNAPS_KEY = 'snapshots';
+
+// Written on a timer rather than on every change. draw() runs on every frame of
+// a pan, and a plan is a few tens of kilobytes; the delay collapses a drag into
+// one write.
+let planTimer = null;
+
+function autosave() {
+    clearTimeout(planTimer);
+    planTimer = setTimeout(() => {
+        if (!currentMission) return;
+        try {
+            localStorage.setItem(PLAN_KEY, JSON.stringify(planState()));
+            markSaved();
+        } catch (e) {
+            console.error('autosave failed:', e);   // quota, or private mode
+        }
+    }, 500);
+}
+
+function loadSnapshots() {
+    try { return JSON.parse(localStorage.getItem(SNAPS_KEY)) || []; }
+    catch (e) { return []; }
+}
+
+function storeSnapshots(list) {
+    try { localStorage.setItem(SNAPS_KEY, JSON.stringify(list)); }
+    catch (e) { console.error('could not store snapshots:', e); }
+}

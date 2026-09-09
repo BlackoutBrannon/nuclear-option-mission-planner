@@ -245,6 +245,104 @@ function showRingTip(hit, clientX, clientY) {
 // ---------------------------------------------------------------------------
 // The flights panel
 // ---------------------------------------------------------------------------
+// --- plan: autosave indicator, snapshots ----------------------------------
+const planSavedEl = document.getElementById('planSaved');
+const snapListEl  = document.getElementById('snapList');
+
+function markSaved() {
+    const d = new Date();
+    planSavedEl.textContent = 'saved ' +
+        String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0');
+}
+
+function renderSnapshots() {
+    const list = loadSnapshots();
+    snapListEl.innerHTML = '';
+
+    if (!list.length) {
+        snapListEl.innerHTML =
+            '<div class="hint">Autosaved continuously. Snapshot keeps a named copy.</div>';
+        return;
+    }
+
+    list.forEach((snap, i) => {
+        const row = document.createElement('div');
+        row.className = 'snapRow';
+
+        const nm = document.createElement('span');
+        nm.className = 'nm';
+        nm.textContent = snap.name;
+        nm.title = 'Restore this snapshot';
+        nm.addEventListener('click', () => {
+            // A plan addresses units by path, which only means the same thing
+            // in the mission it was built against.
+            if (snap.plan.mission && currentMission &&
+                snap.plan.mission !== (currentMission._name || '')) {
+                if (!confirm('That snapshot was made against "' + snap.plan.mission +
+                             '". Restoring it here may attach targets and rings ' +
+                             'to the wrong units. Restore anyway?')) return;
+            }
+            if (applyPlan(snap.plan)) refreshAll();
+        });
+
+        const when = document.createElement('span');
+        when.className = 'when';
+        when.textContent = (snap.plan.saved || '').slice(5, 16).replace('T', ' ');
+
+        const del = document.createElement('button');
+        del.className = 'del';
+        del.type = 'button';
+        del.textContent = '\u00d7';
+        del.title = 'Delete this snapshot';
+        del.addEventListener('click', () => {
+            const l = loadSnapshots();
+            l.splice(i, 1);
+            storeSnapshots(l);
+            renderSnapshots();
+        });
+
+        row.append(nm, when, del);
+        snapListEl.appendChild(row);
+    });
+}
+
+// Everything that has to be rebuilt after a plan is swapped underneath.
+function refreshAll() {
+    refreshAltField();
+    renderTargets();
+    renderFlights();
+    renderRingTree();
+    renderTree(unitsOf(currentMission));
+    updateOwnship();
+    if (currentMission) draw(currentMission);
+}
+
+document.getElementById('planSnap').addEventListener('click', () => {
+    if (!currentMission) return;
+    const name = prompt('Name for this snapshot:',
+                        'Plan ' + (loadSnapshots().length + 1));
+    if (!name) return;
+    const list = loadSnapshots();
+    list.unshift({ name: name, plan: planState() });
+    storeSnapshots(list.slice(0, 20));      // keep the last twenty
+    renderSnapshots();
+});
+
+document.getElementById('planClear').addEventListener('click', () => {
+    if (!confirm('Clear all flights, targets and rings from this plan?')) return;
+    flights.length = 0;
+    activeFlight = -1;
+    targets.length = 0;
+    rings.length = 0;
+    bullseye = null;
+    ringUnits.clear();
+    bumpRingEpoch();
+    refreshAll();
+});
+
+renderSnapshots();
+
 const targetListEl  = document.getElementById('targetList');
 const targetCountEl = document.getElementById('targetCount');
 
@@ -1040,6 +1138,8 @@ drop.addEventListener('drop', async (e) => {
   // from affiliations - so the faction has to be settled before anything is
   // counted or drawn.
   myFaction      = mission.factions[0].factionName;
+  // The file's own name identifies which mission a saved plan belongs to.
+  mission._name  = file.name;
   currentMission = mission;
   populateFactions(mission);
 
@@ -1066,8 +1166,20 @@ drop.addEventListener('drop', async (e) => {
   targets.length = 0;
 
   setMap(mapName(mission.MapKey.Path));
+
+  // Pick the autosave back up, but only for the mission it was made against -
+  // a plan addresses units by path, and the same path means a different unit
+  // in a different mission.
+  try {
+      const saved = JSON.parse(localStorage.getItem(PLAN_KEY));
+      if (saved && saved.mission && saved.mission === (mission._name || '')) {
+          applyPlan(saved);
+      }
+  } catch (e) { /* absent or corrupt - start clean */ }
+
   renderRingTree();
   renderTargets();
+  renderSnapshots();
 
   out.textContent = `${file.name}
 

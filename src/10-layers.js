@@ -286,6 +286,8 @@ function unitName(type) {
 }
 
 function draw(mission) {
+    autosave();          // debounced, so a pan collapses into one write
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // The basemap goes through the same fit-then-view transform as every unit,
     // so it can never drift out of register with the markers on top of it.
