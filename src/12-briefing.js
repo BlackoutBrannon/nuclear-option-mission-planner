@@ -461,8 +461,20 @@ function briefingHTML() {
 // The URL is deliberately not revoked. Revoking frees a few kilobytes but
 // breaks the tab as soon as anyone reloads it, and a briefing sheet is exactly
 // the kind of page that stays open and gets reloaded.
-function openBriefing() {
+async function openBriefing() {
     const html = briefingHTML();
+
+    // In the shell the sheet is written to a real file and opened in the
+    // default browser, which is where printing works properly. A blob URL
+    // cannot be handed to another application, so it has to touch disk.
+    if (onDesktop) {
+        await hostCall('openTemp', {
+            name: (currentMission._name || 'briefing').replace(/\.json$/i, ''),
+            text: html,
+        });
+        return html.length;
+    }
+
     const url  = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
 
     // A pop-up blocker returns null. Rather than telling someone to go and
@@ -580,6 +592,21 @@ function downloadBriefingImage() {
 
     const off = renderBriefingImage(IMAGE_SCALE);
     const base = (currentMission._name || 'plan').replace(/\.json$/i, '');
+
+    if (onDesktop) {
+        // The dialog wants bytes, and the only route out of a canvas that the
+        // host can rebuild is base64. The data URL prefix is stripped so the
+        // host receives the payload alone.
+        const url = off.toDataURL('image/png');
+        hostCall('saveFile', {
+            kind: 'image',
+            title: 'Save briefing image',
+            suggested: base + '.briefing.png',
+            filter: FILTER_PNG,
+            base64: url.slice(url.indexOf(',') + 1),
+        }).catch(err => alert('Could not save the image: ' + err.message));
+        return { w: off.width, h: off.height };
+    }
 
     // toBlob is async: a 4500 x 2400 PNG is worth not encoding on the main
     // thread as a data URL.
@@ -737,6 +764,20 @@ async function copyKneeboard() {
         // a button that appears to do nothing is the worst outcome here.
         console.warn('clipboard refused, writing a file instead:', err);
         const base = (currentMission._name || 'plan').replace(/\.json$/i, '');
+
+        if (onDesktop) {
+            const saved = await hostCall('saveFile', {
+                kind: 'card',
+                title: 'Save kneeboard card',
+                suggested: base + '.card.txt',
+                filter: FILTER_TEXT,
+                text: text,
+            }).catch(e => { alert('Could not save the card: ' + e.message);
+                            return null; });
+            if (saved) flashSaved('card saved');
+            return text.length;
+        }
+
         const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
         const a = document.createElement('a');
         a.href = url;

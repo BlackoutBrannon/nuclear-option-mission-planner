@@ -1219,15 +1219,26 @@ function planFile() {
     };
 }
 
-// The browser cannot write to disk on its own, so the file is offered as a
-// download. The object URL is released once the click has been taken, or the
-// blob stays in memory for the life of the page.
-function downloadPlan() {
+// In the desktop shell this is a Save dialog and the plan lands where it was
+// asked to. A browser cannot write to disk, so there it stays a download and
+// the destination is whatever the browser decides.
+async function downloadPlan() {
     const data = JSON.stringify(planFile(), null, 1);
     const base = (currentMission && currentMission._name || 'plan')
         .replace(/\.json$/i, '')
         .replace(/[^A-Za-z0-9 _-]/g, '')
         .trim() || 'plan';
+
+    if (onDesktop) {
+        const saved = await hostCall('saveFile', {
+            kind: 'plan',
+            title: 'Save mission plan',
+            suggested: base + '.plan.json',
+            filter: FILTER_PLAN,
+            text: data,
+        });
+        return saved ? data.length : 0;      // null means the dialog was cancelled
+    }
 
     const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
     const a = document.createElement('a');

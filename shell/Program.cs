@@ -24,6 +24,7 @@ internal sealed class PlannerWindow : Form
     private const string VirtualHost = "planner.assets";
 
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
+    private HostBridge? _bridge;
 
     public PlannerWindow()
     {
@@ -85,6 +86,10 @@ internal sealed class PlannerWindow : Form
 
         core.SetVirtualHostNameToFolderMapping(
             VirtualHost, content, CoreWebView2HostResourceAccessKind.Allow);
+
+        // Opening and saving files. Held in a field so it lives as long as the
+        // window rather than being collected with its event handler attached.
+        _bridge = new HostBridge(core, this);
 
         // The status bar is a browser affordance that would sit over the map's
         // own readouts. Dev tools stay available: this is a tool for people who

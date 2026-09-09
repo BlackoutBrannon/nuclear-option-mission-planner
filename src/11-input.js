@@ -335,16 +335,27 @@ document.getElementById('planExport').addEventListener('click', () => {
 });
 
 const planFileEl = document.getElementById('planFile');
-document.getElementById('planImport').addEventListener('click', () => {
+document.getElementById('planImport').addEventListener('click', async () => {
+    if (onDesktop) {
+        const picked = await hostCall('openFile', {
+            kind: 'plan', title: 'Open a mission plan', filter: FILTER_PLAN,
+        }).catch(err => { alert('Could not open that plan: ' + err.message);
+                          return null; });
+        if (picked) acceptPlanText(picked.text, picked.name);
+        return;
+    }
     planFileEl.value = '';        // or choosing the same file twice fires nothing
     planFileEl.click();
 });
 
 planFileEl.addEventListener('change', async () => {
     const file = planFileEl.files[0];
-    if (!file) return;
+    if (file) acceptPlanText(await file.text(), file.name);
+});
+
+function acceptPlanText(text, name) {
     try {
-        const data = JSON.parse(await file.text());
+        const data = JSON.parse(text);
         if (data.format !== 'nuclear-option-mission-plan' || !data.plan) {
             alert('That does not look like a plan file.');
             return;
@@ -361,7 +372,7 @@ planFileEl.addEventListener('change', async () => {
         console.error('plan import failed:', err);
         alert('Could not read that plan file: ' + err.message);
     }
-});
+}
 
 document.getElementById('planClear').addEventListener('click', () => {
     if (!confirm('Clear all flights, targets and rings from this plan?')) return;
@@ -1165,7 +1176,9 @@ window.addEventListener('mouseup', () => {
 // The drop zone is also where a rejected file reports itself. Every failure
 // path below ends here rather than in the console, because a blank map with a
 // console error reads as a broken app rather than a bad file.
-const DROP_PROMPT = 'Drop a mission .json here';
+const DROP_PROMPT = onDesktop
+    ? 'Click to open a mission, or drop one here'
+    : 'Drop a mission .json here';
 
 function setDropMessage(msg) {
     drop.textContent = msg || DROP_PROMPT;
@@ -1177,10 +1190,30 @@ drop.addEventListener('drop', async (e) => {
   drop.style.borderColor = '#3d4a55';
 
   const file = e.dataTransfer.files[0];
-  if (!file) return;
+  if (file) await acceptMission(file.name, await file.text());
+});
 
+// In the desktop shell the drop zone is also a button, because a file dialog is
+// the way most people expect to open something and dragging is not discoverable.
+if (onDesktop) {
+    drop.style.cursor = 'pointer';
+    drop.title = 'Click to choose a mission file';
+    drop.addEventListener('click', async () => {
+        const picked = await hostCall('openFile', {
+            kind: 'mission',
+            title: 'Open a Nuclear Option mission',
+            filter: FILTER_MISSION,
+        }).catch(err => { setDropMessage(err.message); return null; });
+
+        if (picked) await acceptMission(picked.name, picked.text);
+    });
+}
+
+// Both routes end here, so a bad file reports itself the same way however it
+// arrived.
+async function acceptMission(name, text) {
   try {
-      await loadMissionFile(file);
+      await loadMissionText(name, text);
       setDropMessage(null);
   } catch (err) {
       console.error('could not load mission:', err);
@@ -1189,10 +1222,10 @@ drop.addEventListener('drop', async (e) => {
             'capture may have been interrupted.'
           : err.message);
   }
-});
+}
 
-async function loadMissionFile(file) {
-  const mission = JSON.parse(await file.text());
+async function loadMissionText(name, text) {
+  const mission = JSON.parse(text);
 
   const problem = missionProblem(mission);
   if (problem) throw new Error(problem);
@@ -1203,7 +1236,7 @@ async function loadMissionFile(file) {
   // counted or drawn.
   myFaction      = mission.factions[0].factionName;
   // The file's own name identifies which mission a saved plan belongs to.
-  mission._name  = file.name;
+  mission._name  = name;
   currentMission = mission;
   populateFactions(mission);
 
@@ -1246,7 +1279,7 @@ async function loadMissionFile(file) {
   renderSnapshots();
 
   const count = k => (mission[k] || []).length;
-  out.textContent = `${file.name}
+  out.textContent = `${name}
 
 map:       ${mapName(mission.MapKey.Path)}
 aircraft:  ${count('aircraft')}

@@ -179,3 +179,51 @@ basemap.onload = () => {
 };
 
 const mapArea = document.getElementById('mapArea');
+
+// ---------------------------------------------------------------------------
+// Desktop host
+//
+// When the planner runs inside the desktop shell it can open and save real
+// files. In a browser it cannot, and everything below reports that so callers
+// fall back to downloads rather than failing.
+//
+// Feature-detected rather than configured: the same source has to run both
+// ways, and a build flag would inevitably be wrong in one of them.
+//
+// Requests carry an id and get exactly one reply with that id, so a dialog can
+// be awaited like any other promise. A cancelled dialog resolves to null - it
+// is a choice, not a failure.
+// ---------------------------------------------------------------------------
+const onDesktop = !!(window.chrome && window.chrome.webview);
+
+const hostPending = new Map();
+let hostNextId = 1;
+
+if (onDesktop) {
+    window.chrome.webview.addEventListener('message', (e) => {
+        const msg = e.data;
+        const waiting = msg && hostPending.get(msg.id);
+        if (!waiting) return;
+        hostPending.delete(msg.id);
+        if (msg.ok) waiting.resolve(msg.result);
+        else waiting.reject(new Error(msg.error || 'the host reported no reason'));
+    });
+}
+
+function hostCall(action, payload) {
+    if (!onDesktop) return Promise.reject(new Error('not running in the desktop shell'));
+
+    const id = hostNextId++;
+    return new Promise((resolve, reject) => {
+        hostPending.set(id, { resolve: resolve, reject: reject });
+        window.chrome.webview.postMessage({ id: id, action: action,
+                                            payload: payload || {} });
+    });
+}
+
+// File type filters, in the format the Windows dialogs expect.
+const FILTER_MISSION  = 'Nuclear Option mission (*.json)|*.json|All files (*.*)|*.*';
+const FILTER_PLAN     = 'Mission plan (*.json)|*.json|All files (*.*)|*.*';
+const FILTER_HTML     = 'Web page (*.html)|*.html';
+const FILTER_PNG      = 'PNG image (*.png)|*.png';
+const FILTER_TEXT     = 'Text file (*.txt)|*.txt';
