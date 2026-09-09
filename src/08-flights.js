@@ -196,11 +196,21 @@ function drawBullseyeCentre(ctx) {
 // their own altitude: a leg that descends into a valley leaves envelopes a
 // level leg would sit inside.
 //
-// Two states are distinguished, because they mean different things:
+// Four states are distinguished, because they mean different things:
 //
 //   TERRAIN   below the ground: the altitude is not flyable here at all
-//   ENGAGED   inside a weapon envelope whose altitude band includes you
-//   DETECTED  inside a radar or optical envelope but nothing can shoot
+//   ENGAGED   inside a weapon envelope AND seen by that side
+//   DETECTED  seen, but nothing that can see you can also reach you
+//
+// Engagement requires detection. A launcher cannot shoot what nothing has
+// found, and several of them carry no sensor at all - the StratoLance R9 site
+// has none, and is fed by the radars around it. Detection is matched by
+// affiliation, so a friendly radar does not cue a hostile launcher.
+//
+// One consequence worth knowing: this is measured against the units ticked in
+// the ring panel, so unticking the radar that feeds a battery will take its
+// launchers dark. That is not an artefact - it is the same relationship that
+// makes killing a sensor worth doing.
 //
 // TERRAIN is checked first and reported separately because it would otherwise
 // come back CLEAR - nothing can see through a mountain - which is true and
@@ -221,7 +231,10 @@ function exposureAt(x, z, alt) {
     // inside the hill rather than over it.
     if (terrain && alt < terrainAt(x, z)) return 'terrain';
 
-    let engaged = null, detected = null;
+    // Collected per side, because a shot needs a sensor and a launcher on the
+    // same side, not merely both present somewhere.
+    const seenBy = new Set();
+    const canShoot = new Set();
 
     for (const u of unitsOf(currentMission)) {
         if (!ringUnits.has(unitPath(u))) continue;
@@ -233,6 +246,7 @@ function exposureAt(x, z, alt) {
         const widest = rings.reduce((m, r) => Math.max(m, r.r), 0);
         if (br.range > widest) continue;          // outside everything this unit has
 
+        const side = affiliationOf(u);
         let profile = null;
         if (showRings.mask && terrain) profile = maskProfileFor(u, widest, alt);
 
@@ -243,14 +257,15 @@ function exposureAt(x, z, alt) {
             if (br.range > reach) continue;
 
             if (ring.kind === 'weapon') {
-                if (ring.inBand !== false && !engaged) engaged = ring.label;
-            } else if (!detected) {
-                detected = unitName(u.type);
+                if (ring.inBand !== false) canShoot.add(side);
+            } else {
+                seenBy.add(side);
             }
         }
-        if (engaged) break;                       // engaged is the worst case
     }
-    return engaged ? 'engaged' : (detected ? 'detected' : 'clear');
+
+    for (const side of canShoot) if (seenBy.has(side)) return 'engaged';
+    return seenBy.size ? 'detected' : 'clear';
 }
 
 // One segment between two points that carry altitudes. Used for stored legs and
@@ -619,8 +634,15 @@ function airDensity(altM) {
 function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
     const f = w && w.flight;
     if (!f || !(dist > 0)) return null;
-    if (w.maxRange && dist > w.maxRange) return { reach: false, reason: 'beyond max range' };
-    if (w.minRange && dist < w.minRange) return { reach: false, reason: 'inside min range' };
+
+    // The envelope is REPORTED, not enforced. targetRequirements.maxRange is
+    // the range the game's AI checks before taking a shot; a pilot can release
+    // outside it, and whether the weapon then arrives is a question about its
+    // energy, which the models below answer. Refusing here hid a shot that is
+    // perfectly achievable from height, which is exactly the case worth
+    // planning.
+    const past = { beyondGate: !!(w.maxRange && dist > w.maxRange),
+                   insideMin:  !!(w.minRange && dist < w.minRange) };
 
     // Density is taken at the midpoint of the climb or dive, as the game does.
     const rho = airDensity((launchAlt + targetAlt) / 2);
@@ -639,7 +661,7 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
         while (d < dist && t < 300 && v > 40) {
             d += dt * v; t += dt; v -= dt * v * v * k;
         }
-        return d >= dist ? { reach: true, time: t, impact: v }
+        return d >= dist ? Object.assign({ reach: true, time: t, impact: v }, past)
                          : { reach: false, reason: 'out of energy' };
     }
 
@@ -665,7 +687,7 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
             if (d >= dist) break;
         }
         if (h > 0) return { reach: false, reason: 'falls short' };
-        return d >= dist ? { reach: true, time: t, impact: Math.hypot(vx, vy) }
+        return d >= dist ? Object.assign({ reach: true, time: t, impact: Math.hypot(vx, vy) }, past)
                          : { reach: false, reason: 'falls short' };
     }
 
@@ -692,7 +714,7 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
             v += (G * sinTheta - k * v * v) * dt;
             if (v < 30) break;
         }
-        return d >= dist ? { reach: true, time: t, impact: v }
+        return d >= dist ? Object.assign({ reach: true, time: t, impact: v }, past)
                          : { reach: false, reason: 'out of energy' };
     }
 
@@ -706,7 +728,7 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
     // burn for short burns, and uses the terminal speed for sustained ones.
     let d = (burn < 30) ? ((speed + vPeak) / 2) * burn : vTerm * burn;
     let t = burn;
-    if (d >= dist) return { reach: true, time: dist / Math.max(1, d / burn), impact: vPeak };
+    if (d >= dist) return Object.assign({ reach: true, time: dist / Math.max(1, d / burn), impact: vPeak }, past);
 
     let v = vPeak, dt = 0.1;
     const k = 0.5 * cd * rho * area / dry;
@@ -719,7 +741,7 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
         dt += 0.05;                       // the game grows its step the same way
         if (i > 10 && v < minSpeed) break;
     }
-    return d >= dist ? { reach: true, time: t, impact: v }
+    return d >= dist ? Object.assign({ reach: true, time: t, impact: v }, past)
                      : { reach: false, reason: 'out of energy' };
 }
 
@@ -829,9 +851,13 @@ function drawReleasePoints(ctx, f) {
 
             const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
             if (Math.hypot(q.x - p.x, q.y - p.y) > 70) {
-                plate(ctx, ok ? 'TOT ' + fmtTime(sol.sol.time)
-                              : (sol.sol ? sol.sol.reason : 'no munition'),
-                      mx, my, ok ? f.colour : 'rgba(240,133,122,0.8)');
+                const label = ok
+                    ? 'TOT ' + fmtTime(sol.sol.time) +
+                      (sol.sol.beyondGate ? ' (past gate)' : '')
+                    : (sol.sol ? sol.sol.reason : 'no munition');
+                plate(ctx, label, mx, my,
+                      !ok ? 'rgba(240,133,122,0.8)'
+                          : sol.sol.beyondGate ? '#ffd166' : f.colour);
             }
         }
 

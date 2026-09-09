@@ -540,7 +540,10 @@ function releaseBlock(f, i, w) {
             tot.textContent = s ? s.error : '';
             tot.classList.add('bad');
         } else if (s.sol && s.sol.reach) {
-            tot.textContent = fmtRange(s.range) + '  TOT ' + fmtTime(s.sol.time);
+            const flag = s.sol.beyondGate ? '  past gate'
+                       : s.sol.insideMin  ? '  inside min' : '';
+            tot.textContent = fmtRange(s.range) + '  TOT ' + fmtTime(s.sol.time) + flag;
+            if (flag) tot.style.color = '#ffd166';
         } else {
             tot.textContent = s.sol ? s.sol.reason : 'no solution';
             tot.classList.add('bad');
