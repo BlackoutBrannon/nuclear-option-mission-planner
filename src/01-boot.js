@@ -87,13 +87,19 @@ async function loadRanges() {
 // every part is loaded removes the race rather than making it rarer.
 
 
-// Terrain prefab name -> key in MAPS, or null for anything unrecognised.
+// Terrain prefab name -> key in MAPS.
 //
-// Returning null rather than defaulting to Heartland is the point. A map the
-// planner has no imagery or extents for would otherwise draw every unit at a
-// confidently wrong position on the wrong terrain - which reads as working, and
-// is worse than refusing.
+// An absent or empty Path means the mission never referenced a map asset. It
+// comes through as { Type: "None", Path: "" } and the game falls back to
+// Heartland. Most workshop missions are saved that way, so this is the common
+// case, not an edge one - seven of the eleven real missions checked here.
+//
+// A Path that is SET but unrecognised is a different thing: a map this planner
+// has no imagery or extents for. Guessing there would draw every unit at a
+// confidently wrong position on the wrong terrain, which reads as working, so
+// those return null and are refused.
 function mapName(path) {
+    if (!path) return 'Heartland';
     if (path === 'Terrain_naval') return 'Ignus Archipelago';
     if (path === 'Terrain1')      return 'Heartland';
     return null;
@@ -109,12 +115,9 @@ function missionProblem(m) {
     if (!m || typeof m !== 'object' || Array.isArray(m)) {
         return 'That file is not a mission - the JSON is not an object.';
     }
-    if (!m.MapKey || !m.MapKey.Path) {
-        return 'That file has no MapKey, so it is not a Nuclear Option ' +
-               'mission save.';
-    }
-    if (!mapName(m.MapKey.Path)) {
-        return 'This mission is on "' + m.MapKey.Path + '". The planner only ' +
+    const mapPath = (m.MapKey && m.MapKey.Path) || '';
+    if (!mapName(mapPath)) {
+        return 'This mission is on "' + mapPath + '". The planner only ' +
                'has terrain and imagery for Heartland and Ignus.';
     }
     const populated = ['aircraft', 'vehicles', 'ships', 'buildings']
@@ -130,6 +133,11 @@ function missionProblem(m) {
 // That is recoverable rather than fatal: the list is the distinct factions in
 // first-seen order, which is the order they are written in anyway.
 function repairMission(m) {
+    // Missions saved without a map reference have no MapKey at all in some
+    // builds. Normalising it here keeps every reader downstream from having to
+    // test for it.
+    if (!m.MapKey) m.MapKey = { Path: '' };
+
     if (Array.isArray(m.factions) && m.factions.length) return;
 
     const seen = [];
