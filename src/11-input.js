@@ -426,6 +426,41 @@ function releaseBlock(f, i, w) {
     const box = document.createElement('div');
     box.className = 'rpBlock';
 
+    // A release point with a dozen targets is taller than the rest of the route
+    // put together, so it folds. Open by default only while it has nothing set
+    // up, which is when it needs attention.
+    if (w.rpOpen === undefined) w.rpOpen = !w.munition;
+
+    const head = document.createElement('div');
+    head.className = 'rpHead';
+    const chosen = w.munition ? (ranges.arsenal || {})[w.munition] : null;
+    const engaged = (w.targetIds || []).length;
+    head.innerHTML =
+        '<span class="tw">' + (w.rpOpen ? '\u25bc' : '\u25b6') + '</span>' +
+        '<span class="nm">' + (w.munition || 'no munition') + '</span>' +
+        '<span class="ct">' + (engaged ? engaged + ' target' + (engaged === 1 ? '' : 's')
+                                       : 'no targets') + '</span>';
+    head.addEventListener('click', () => {
+        w.rpOpen = !w.rpOpen;
+        renderWaypoints();
+    });
+    box.appendChild(head);
+
+    if (!w.rpOpen) return box;
+
+    // What the weapon can physically reach from this release point, as opposed
+    // to the fixed gate quoted in the list.
+    if (chosen) {
+        const groundAlt = terrain ? terrainAt(w.x, w.z) : 0;
+        const reach = kinematicReach(chosen, f.speed || 250, w.alt, groundAlt);
+        const note = document.createElement('div');
+        note.className = 'hint';
+        note.textContent = 'Release gate ' + fmtRange(chosen.maxRange) +
+                           ' \u00b7 can reach ' + fmtRange(reach) +
+                           ' at ' + fmtSpeed(f.speed || 250) + ', ' + fmtAlt(w.alt);
+        box.appendChild(note);
+    }
+
     const pick = document.createElement('select');
     pick.title = 'Munition released here';
     pick.appendChild(new Option('Select a munition\u2026', ''));

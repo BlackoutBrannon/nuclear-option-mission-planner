@@ -426,12 +426,13 @@ function drawPendingLeg(ctx) {
     ctx.save();
     ctx.lineCap = 'round';
     for (let k = 0; k < steps; k++) {
+        // TERRAIN ONLY while placing. Threat exposure is worth studying once a
+        // leg exists, but painting it on the leg that follows the cursor puts a
+        // constantly changing warning over most of the map - and a route
+        // deliberately flown into a threat ring is not an error, whereas flying
+        // into a hill always is.
         const s = (states[k] === 'terrain' || states[k + 1] === 'terrain')
-                ? 'terrain'
-                : (states[k] === 'engaged' || states[k + 1] === 'engaged')
-                ? 'engaged'
-                : (states[k] === 'detected' || states[k + 1] === 'detected')
-                ? 'detected' : 'clear';
+                ? 'terrain' : 'clear';
         if (s === 'clear') continue;
 
         const t0 = k / steps, t1 = (k + 1) / steps;
@@ -472,9 +473,9 @@ function pendingLegText() {
     if (!p) return '';
     const t = p.seg.tally;
     const bits = ['LEG ' + fmtRange(p.seg.dist)];
-    if (t.terrain  > 1) bits.push(fmtRange(t.terrain) + ' BELOW GROUND');
-    if (t.engaged  > 1) bits.push(fmtRange(t.engaged) + ' engaged');
-    if (t.detected > 1) bits.push(fmtRange(t.detected) + ' seen');
+    // Matches what is drawn: terrain only. The full breakdown appears in the
+    // flights panel once the waypoint is placed.
+    if (t.terrain > 1) bits.push(fmtRange(t.terrain) + ' BELOW GROUND');
     return bits.join('  ');
 }
 
@@ -720,6 +721,31 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
     }
     return d >= dist ? { reach: true, time: t, impact: v }
                      : { reach: false, reason: 'out of energy' };
+}
+
+// The distance a munition can actually cover from these launch conditions,
+// ignoring the release gate.
+//
+// Two different numbers get called "range". targetRequirements.maxRange is the
+// gate the game tests before letting a launch happen, and it is a fixed number
+// - it does not move with speed or altitude. What does move is how far the
+// weapon can physically get, which is what this returns. For most shots the
+// gate is the binding one, which is why the picker quotes it; this says whether
+// that is still true at the speed and height being flown.
+//
+// Found by bisection rather than by integrating to exhaustion, so it uses the
+// same four flight models as everything else instead of a fifth copy.
+function kinematicReach(w, speed, launchAlt, targetAlt) {
+    if (!w || !w.flight) return 0;
+    const bare = { flight: w.flight, maxRange: 0, minRange: 0 };
+
+    let lo = 0, hi = Math.max((w.maxRange || 0) * 3, 200000);
+    for (let i = 0; i < 22; i++) {
+        const mid = (lo + hi) / 2;
+        const r = timeOfFlight(bare, mid, speed, launchAlt, targetAlt);
+        if (r && r.reach) lo = mid; else hi = mid;
+    }
+    return lo;
 }
 
 function fmtTime(seconds) {
