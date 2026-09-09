@@ -8,7 +8,7 @@
         "height": 4096,
         "cols": 4,
         "rows": 4,
-        "bytes": 2697030
+        "bytes": 2723620
       },
       {
         "dir": "z8192",
@@ -16,7 +16,15 @@
         "height": 8192,
         "cols": 8,
         "rows": 8,
-        "bytes": 9391218
+        "bytes": 9338702
+      },
+      {
+        "dir": "z16384",
+        "width": 16384,
+        "height": 16384,
+        "cols": 16,
+        "rows": 16,
+        "bytes": 32273734
       }
     ]
   },
@@ -29,7 +37,7 @@
         "height": 2048,
         "cols": 4,
         "rows": 2,
-        "bytes": 208480
+        "bytes": 206642
       },
       {
         "dir": "z8192",
@@ -37,7 +45,15 @@
         "height": 4096,
         "cols": 8,
         "rows": 4,
-        "bytes": 608094
+        "bytes": 590882
+      },
+      {
+        "dir": "z16384",
+        "width": 16384,
+        "height": 8192,
+        "cols": 16,
+        "rows": 8,
+        "bytes": 1843148
       }
     ]
   }
