@@ -478,6 +478,290 @@ document.getElementById('planBrief').addEventListener('click', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Briefing image
+//
+// The map as it is framed on screen, rendered larger. Only the context is
+// swapped, never the canvas: every label placer culls against canvas.width, so
+// leaving it alone means the export contains exactly the labels the screen
+// shows, in the same places. Scaling the CONTEXT rather than the fit is what
+// makes the enlargement uniform - line widths, fonts and symbols all grow with
+// the map, instead of a bigger map with the same tiny text on it.
+// ---------------------------------------------------------------------------
+const IMAGE_SCALE = 3;
+
+function renderBriefingImage(mult) {
+    const off = document.createElement('canvas');
+    off.width  = canvas.width  * mult;
+    off.height = canvas.height * mult;
+
+    const octx = off.getContext('2d');
+    octx.scale(mult, mult);
+
+    const realCtx = ctx;
+    const hover   = hoveredUnit;
+
+    ctx = octx;
+    hoveredUnit = null;              // a hover ring is a cursor, not a briefing
+
+    try {
+        draw(currentMission);
+    } finally {
+        ctx = realCtx;
+        hoveredUnit = hover;
+        draw(currentMission);        // repaint the real canvas, restoring drawnUnits
+    }
+
+    stampImage(octx, off, mult);
+    return off;
+}
+
+// A caption band, so a picture that gets pasted somewhere still says what it
+// is and what it was measured against. Drawn at device scale rather than the
+// map's, so the text stays crisp instead of being a magnified 11px font.
+function stampImage(octx, off, mult) {
+    octx.save();
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+
+    const pad = 10 * mult;
+    const h   = 26 * mult;
+    const y   = off.height - h;
+
+    octx.fillStyle = 'rgba(10,14,18,0.85)';
+    octx.fillRect(0, y, off.width, h);
+    octx.strokeStyle = 'rgba(200,210,220,0.35)';
+    octx.lineWidth = 1 * mult;
+    octx.beginPath();
+    octx.moveTo(0, y + 0.5 * mult);
+    octx.lineTo(off.width, y + 0.5 * mult);
+    octx.stroke();
+
+    let hostile = 0;
+    for (const u of unitsOf(currentMission)) {
+        if (ringUnits.has(unitPath(u)) && affiliationOf(u) === 'hostile') hostile++;
+    }
+
+    const left = (currentMission._name || 'mission') +
+        '   ' + (currentMap ? currentMap.image.replace(/_overview\.png$/, '') : '') +
+        '   RCS ' + ownRCS + ' at ' + fmtAlt(ownAltM) +
+        '   ' + hostile + ' hostile ringed' +
+        (showRings.mask && terrain ? '   terrain masked' : '   NO TERRAIN MASK');
+
+    const right = new Date().toISOString().slice(0, 16).replace('T', ' ') + 'Z';
+
+    octx.font = (12 * mult) + 'px ui-monospace, Consolas, monospace';
+    octx.textBaseline = 'middle';
+    octx.fillStyle = '#cdd9e3';
+    octx.fillText(left, pad, y + h / 2);
+
+    octx.textAlign = 'right';
+    octx.fillStyle = '#8a9aa6';
+    octx.fillText(right, off.width - pad, y + h / 2);
+
+    octx.restore();
+}
+
+function downloadBriefingImage() {
+    // A minimised or backgrounded window can collapse the layout to nothing,
+    // and the canvas with it. Without this the export succeeds and hands over
+    // an empty picture, which is worse than refusing.
+    if (canvas.width < 10 || canvas.height < 10) {
+        alert('The map has no size to capture right now. Make sure the ' +
+              'window is open and visible, then try again.');
+        return null;
+    }
+
+    const off = renderBriefingImage(IMAGE_SCALE);
+    const base = (currentMission._name || 'plan').replace(/\.json$/i, '');
+
+    // toBlob is async: a 4500 x 2400 PNG is worth not encoding on the main
+    // thread as a data URL.
+    off.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = base + '.briefing.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }, 'image/png');
+
+    return { w: off.width, h: off.height };
+}
+
+// ---------------------------------------------------------------------------
+// Kneeboard card
+//
+// Fixed-width plain text, narrow enough to print on a card or paste into chat
+// without wrapping. Units are stated once in a header rather than repeated on
+// every number, which is what buys the width.
+// ---------------------------------------------------------------------------
+const CARD_WIDTH = 52;
+
+function padR(s, n) { s = String(s); return s.length >= n ? s : s + ' '.repeat(n - s.length); }
+function padL(s, n) { s = String(s); return s.length >= n ? s : ' '.repeat(n - s.length) + s; }
+
+// Bare numbers, because the card states its units in the header.
+function cardRange(m) {
+    return unitSystem === 'aviation' ? (m / 1852).toFixed(1) : (m / 1000).toFixed(1);
+}
+function cardAlt(m) {
+    return unitSystem === 'aviation' ? String(Math.round(m * FT_PER_M)) : String(Math.round(m));
+}
+function cardBulls(p) {
+    if (!bullseye) return padL(Math.round(p.x) + ',' + Math.round(p.z), 13);
+    const br = bearingRange(bullseye, p);
+    return padL(String(Math.round(br.bearing) % 360).padStart(3, '0') + '/' +
+                cardRange(br.range), 13);
+}
+
+function kneeboardText() {
+    const L = [];
+    const rule = (ch) => ch.repeat(CARD_WIDTH);
+    const dist = unitSystem === 'aviation' ? 'NM' : 'km';
+    const alt  = unitSystem === 'aviation' ? 'ft' : 'm';
+
+    L.push(rule('='));
+    L.push('MISSION  ' + (currentMission._name || ''));
+    L.push('MAP      ' + (currentMap ? currentMap.image.replace(/_overview\.png$/, '') : ''));
+    L.push('OWNSHIP  RCS ' + ownRCS + '   ' + cardAlt(ownAltM) + ' ' + alt);
+    L.push('BULLS    ' + (bullseye ? Math.round(bullseye.x) + ', ' + Math.round(bullseye.z)
+                                   : 'not set'));
+    L.push('UNITS    ' + dist + ' / ' + alt + ' / bearing/range from bullseye');
+    L.push(rule('='));
+
+    for (const f of flights) {
+        const speed = f.speed || 250;
+        L.push('');
+        L.push(f.name.toUpperCase() + '   ' + fmtSpeed(speed) + '   ' +
+               cardRange(flightTotal(f)) + ' ' + dist + '   ' +
+               fmtTime(flightTotal(f) / speed));
+        L.push(rule('-'));
+        // Heading and rows go through one builder, so a column label can
+        // never drift away from the numbers underneath it.
+        const wpRow = (n, flag, bulls, alt, brg, dist, ete) =>
+            padL(n, 2) + flag + ' ' + padL(bulls, 13) + ' ' + padL(alt, 6) +
+            ' ' + padL(brg, 5) + ' ' + padL(dist, 6) + ' ' + padL(ete, 6);
+
+        L.push(wpRow('WP', ' ', 'BULLSEYE', 'ALT', 'BRG', 'DIST', 'ETE'));
+
+        let cum = 0;
+        f.waypoints.forEach((w, i) => {
+            const prev = i > 0 ? f.waypoints[i - 1] : null;
+            const br   = prev ? bearingRange(prev, w) : null;
+            if (br) cum += br.range;
+            L.push(wpRow(
+                i + 1,
+                w.rp ? 'R' : ' ',
+                cardBulls(w),
+                cardAlt(w.alt),
+                br ? String(Math.round(br.bearing) % 360).padStart(3, '0') : '---',
+                br ? cardRange(br.range) : '---',
+                fmtTime(cum / speed)));
+        });
+
+        // Release points
+        f.waypoints.forEach((w, i) => {
+            if (!w.rp) return;
+            L.push('');
+            L.push('RP ' + (i + 1) + '  ' + (w.munition || 'NO MUNITION'));
+            const sols = releaseSolutions(f, i);
+            if (!sols.length) { L.push('      no targets assigned'); return; }
+            for (const s of sols) {
+                const ok = s.sol && s.sol.reach;
+                L.push('      ' + padR(s.name, 20) +
+                       padL(s.bearing !== undefined
+                            ? String(Math.round(s.bearing) % 360).padStart(3, '0') + '/' +
+                              cardRange(s.range)
+                            : '---', 12) +
+                       '  TOT ' + (ok ? fmtTime(s.sol.time)
+                                      : (s.error || (s.sol ? s.sol.reason : '?'))));
+            }
+        });
+
+        // Detection, hostile only - the same events as the sheet.
+        const runs = ringUnits.size ? detectionRuns(f) : [];
+        L.push('');
+        if (!ringUnits.size) {
+            L.push('DETECTION  no threats ringed');
+        } else if (!runs.length) {
+            L.push('DETECTION  none on this route');
+        } else {
+            L.push('DETECTION (hostile)');
+            runs.forEach((r, i) => {
+                L.push('  ' + (i + 1) + '  ' + padL(cardRange(r.at), 6) + ' ' + dist +
+                       '  ' + padL(fmtTime(r.at / speed), 5) + '  ' +
+                       padR(r.by.name, 22) +
+                       (r.until === null ? 'to end'
+                                         : 'to ' + cardRange(r.until)));
+            });
+        }
+    }
+
+    if (targets.length) {
+        L.push('');
+        L.push(rule('-'));
+        L.push('TARGETS');
+        targets.forEach((t, i) => {
+            const p = targetPos(t);
+            L.push('  ' + padL(i + 1, 2) + '  ' + padR(t.name, 22) +
+                   (p ? cardBulls(p) + '  ' +
+                        padL(terrain ? cardAlt(terrainAt(p.x, p.z)) : '-', 6) + ' ' + alt
+                      : 'not in this mission'));
+        });
+    }
+
+    L.push('');
+    L.push(rule('='));
+    return L.join('\n');
+}
+
+// Copied rather than downloaded: a kneeboard card is pasted into chat far more
+// often than it is saved. A refused clipboard falls back to a file.
+async function copyKneeboard() {
+    const text = kneeboardText();
+    try {
+        await navigator.clipboard.writeText(text);
+        flashSaved('card copied');
+    } catch (err) {
+        // Clipboard access is refused when the page is not focused, and in
+        // some browsers without a permission. Fall back to a file, and say so:
+        // a button that appears to do nothing is the worst outcome here.
+        console.warn('clipboard refused, writing a file instead:', err);
+        const base = (currentMission._name || 'plan').replace(/\.json$/i, '');
+        const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = base + '.card.txt';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        flashSaved('card saved as file');
+    }
+    return text.length;
+}
+
+// The autosave indicator doubles as the place a one-off message lands, so an
+// export says something without a dialog to dismiss.
+function flashSaved(msg) {
+    const el = document.getElementById('planSaved');
+    if (!el) return;
+    el.textContent = msg;
+    setTimeout(markSaved, 2500);
+}
+
+document.getElementById('planImage').addEventListener('click', () => {
+    if (!currentMission) return;
+    downloadBriefingImage();
+});
+
+document.getElementById('planCard').addEventListener('click', () => {
+    if (!currentMission) return;
+    copyKneeboard();
+});
+
+// ---------------------------------------------------------------------------
 // Start-up
 //
 // Last, deliberately: these fetches call back into code declared across every

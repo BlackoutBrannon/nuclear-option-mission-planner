@@ -41,14 +41,21 @@
           <div class="ringActions">
             <button id="planSnap" type="button"
                     title="Keep the current plan under a name">Snapshot</button>
-            <button id="planExport" type="button"
-                    title="Save this plan to a file you can share">Export</button>
             <button id="planImport" type="button"
                     title="Load a plan file">Import</button>
-            <button id="planBrief" type="button"
-                    title="Open a printable briefing sheet">Briefing</button>
             <button id="planClear" type="button"
                     title="Clear flights, targets and rings">Clear</button>
+          </div>
+          <div class="hint" style="margin:2px 0 4px;">Export</div>
+          <div class="ringActions">
+            <button id="planExport" type="button"
+                    title="Save this plan to a file you can share">Plan</button>
+            <button id="planBrief" type="button"
+                    title="Open a printable briefing sheet">Sheet</button>
+            <button id="planImage" type="button"
+                    title="Save the map as a high-resolution picture">Image</button>
+            <button id="planCard" type="button"
+                    title="Copy a plain-text kneeboard card">Card</button>
           </div>
           <input type="file" id="planFile" accept=".json" hidden>
           <div id="snapList"></div>

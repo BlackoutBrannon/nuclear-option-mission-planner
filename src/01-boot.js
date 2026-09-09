@@ -93,7 +93,10 @@ function mapName(path) {
 }
 
 const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d')
+// Not const: exporting an image points this at an offscreen context for one
+// draw and puts it back. canvas itself never moves - every label placer culls
+// against its size, and an export wants the same framing, only larger.
+let ctx = canvas.getContext('2d')
 
 const MAPS = {
     'Heartland': {
