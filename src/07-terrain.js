@@ -74,7 +74,22 @@ function terrainAt(x, z) {
 
 const MASK_STEP    = 100;    // metres between profile samples
 const MASK_RADIALS = 180;    // one every two degrees
-const MAST_HEIGHT  = 10;     // antenna above local ground
+
+// Fallback antenna height, used only when a unit has no extracted figure.
+// Real ones come from ranges.json: the scanner's position on the prefab, which
+// runs from about 4 m on a radar truck to 20 m on the radar station and 34 m up
+// a carrier's island. A sensor's height decides how far it sees over terrain,
+// so a single constant was wrong in both directions.
+const MAST_FALLBACK = 5;
+
+// Height of a unit's best sensor above sea level. The model origin already sits
+// a little above the ground, and the terrain is taken as a floor in case a
+// mission places a unit off the captured surface.
+function sensorHeight(unit) {
+    const entry = (ranges.units || {})[unit.type];
+    const mast = entry && entry.mast ? entry.mast : MAST_FALLBACK;
+    return Math.max(unit.y || 0, terrain ? terrainAt(unit.x, unit.z) : 0) + mast;
+}
 
 // Distance along one radial at which an aircraft at `alt` passes behind
 // terrain, or maxR if it never does.
@@ -114,14 +129,14 @@ const MASK_ALT_BUCKET = 250;   // metres
 // Coverage from any point on the ground. Units are the common caller, but a
 // hand-placed coverage ring uses the same walk - the terrain does not care what
 // is standing on it.
-function maskProfileAt(x, z, maxR, alt, id) {
+function maskProfileAt(x, z, maxR, alt, id, obsH) {
     const a = Math.round((alt === undefined ? ownAltM : alt) / MASK_ALT_BUCKET)
               * MASK_ALT_BUCKET;
     const key = id + '|' + a + '|' + Math.round(maxR / 500);
     let profile = maskCache.get(key);
     if (profile) return profile;
 
-    const obsH = terrainAt(x, z) + MAST_HEIGHT;
+    if (obsH === undefined) obsH = terrainAt(x, z) + MAST_FALLBACK;
     profile = new Float32Array(MASK_RADIALS);
     for (let i = 0; i < MASK_RADIALS; i++) {
         profile[i] = maskedDistance(x, z, obsH,
@@ -134,7 +149,8 @@ function maskProfileAt(x, z, maxR, alt, id) {
 }
 
 function maskProfileFor(unit, maxR, alt) {
-    return maskProfileAt(unit.x, unit.z, maxR, alt, unitPath(unit));
+    return maskProfileAt(unit.x, unit.z, maxR, alt, unitPath(unit),
+                         sensorHeight(unit));
 }
 
 // Masking is skipped while the altitude is being dragged. A full pass is tens

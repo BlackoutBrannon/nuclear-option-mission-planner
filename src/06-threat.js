@@ -181,7 +181,7 @@ function threatRingsFor(unit, alt) {
     // and rejects the contact if the sum falls short. A mast is a few metres
     // up even when the vehicle is at sea level. This one IS a ground distance -
     // DetectorManager tests it against the flattened vector.
-    const emitterAlt = Math.max(unit.y, 0) + 10;
+    const emitterAlt = sensorHeight(unit);
     const horizon = horizonM(ownAlt) + horizonM(emitterAlt);
 
     // Every range test in the game is SLANT range: Turret uses

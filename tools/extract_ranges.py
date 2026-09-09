@@ -124,6 +124,31 @@ def glide_ratio(body):
     return best
 
 
+def scanner_height(trans, tid):
+    """Height of a detector's scanner above its unit's origin, in metres.
+
+    A sensor is not at the vehicle's feet. The radar station carries its
+    antenna on a three storey building; a carrier carries it up the island.
+    That height sets how far the sensor can see over terrain, so it has to come
+    from the prefab rather than from a guess.
+
+    Walks up the Transform parents summing local Y, scaled by each parent's Y
+    scale. Rotation is ignored: these are upright mounts, and a scanner tilted
+    far enough for it to matter would be a different problem.
+    """
+    height, scale, guard = 0.0, 1.0, 0
+    while tid in trans and guard < 40:
+        guard += 1
+        t = trans[tid]
+        height += (t.get("m_LocalPosition") or {}).get("y", 0.0) * scale
+        scale *= (t.get("m_LocalScale") or {}).get("y", 1.0)
+        nxt = t.get("m_Father")
+        tid = nxt.get("m_PathID") if isinstance(nxt, dict) else None
+        if not tid:
+            break
+    return height
+
+
 def pptr(d, key):
     """Path id behind a PPtr field, or None when it is unset."""
     v = d.get(key)
@@ -221,11 +246,18 @@ def main():
 
     mono = {}                 # path_id -> parsed dict
     gobj = {}                 # path_id -> GameObject, for prefab components
+    trans = {}                # path_id -> Transform, for scanner heights
     failed = 0
     for o in env.objects:
         if o.type.name == "GameObject":
             try:
                 gobj[o.path_id] = o.read_typetree()
+            except Exception:
+                pass
+            continue
+        if o.type.name == "Transform":
+            try:
+                trans[o.path_id] = o.read_typetree()
             except Exception:
                 pass
             continue
@@ -296,6 +328,7 @@ def main():
             continue
         maxr, mins = rp.get("maxRange", 0.0), rp.get("minSignal", 0.0)
         out[key]["radars"].append({
+            "mast":          round(scanner_height(trans, pptr(d, "scanner")), 2),
             "maxRange":      maxr,
             "maxSignal":     rp.get("maxSignal", 0.0),
             "minSignal":     mins,
@@ -327,6 +360,7 @@ def main():
             continue
         entry = {"visualRange": vr,
                  "magnification": d.get("magnification", 1.0) or 1.0,
+                 "mast": round(scanner_height(trans, pptr(d, "scanner")), 2),
                  "maxSpeed": d.get("maxSpeed", 0.0)}
         if entry not in out[key]["optical"]:
             out[key]["optical"].append(entry)
@@ -376,6 +410,12 @@ def main():
 
     # Units with neither a radar nor a weapon carry no threat and no sensor;
     # keeping them would bloat the file the planner has to fetch.
+    # The tallest sensor on the unit. Line of sight is worked out once per
+    # unit, so it uses the best vantage point that unit has.
+    for v in out.values():
+        masts = [s.get("mast", 0.0) for s in v["radars"] + v["optical"]]
+        v["mast"] = round(max(masts), 2) if masts else 0.0
+
     armed = {k: v for k, v in out.items()
              if v["radars"] or v["weapons"] or v["optical"]}
 
@@ -461,6 +501,11 @@ def main():
     if failed:
         print(f"   {failed} MonoBehaviours could not be laid out (unrelated classes)")
 
+    tall = sorted(((v["mast"], k) for k, v in armed.items() if v["mast"] > 0),
+                  reverse=True)[:3]
+    if tall:
+        print("   tallest sensors: " +
+              ", ".join(f"{k} {m:.1f} m" for m, k in tall))
     print(f"   {len(airframes)} airframes for the RCS picker")
     kinds = {}
     for v in armed.values():
