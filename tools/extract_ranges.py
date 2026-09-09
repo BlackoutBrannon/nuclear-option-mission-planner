@@ -188,7 +188,19 @@ def flight_model(info, gobj, mono):
         elif "minSpeed" in comp:
             seeker = comp
 
+    # The munition's own radar signature, for working out when the WEAPON is
+    # seen rather than the aircraft. It lives on the projectile's UnitDefinition
+    # - a missile in flight is a unit like any other, which is also why air
+    # defences can shoot at one.
+    rcs = 0.0
+    for comp in components_of(gobj, mono, gid) if gid else []:
+        dref = pptr(comp, "definition")
+        if dref and dref in mono and "radarSize" in mono[dref]:
+            rcs = mono[dref]["radarSize"]
+            break
+
     common = {
+        "rcs":      round(rcs, 6),
         "muzzle":   info.get("muzzleVelocity", 0.0),
         "dragCoef": info.get("dragCoef", 0.0),
         "gravMult": info.get("gravMult", 1.0),

@@ -239,7 +239,7 @@ function exposureAt(x, z, alt) {
     for (const u of unitsOf(currentMission)) {
         if (!ringUnits.has(unitPath(u))) continue;
 
-        const rings = threatRingsFor(u, alt);
+        const rings = threatRingsFor(u, alt, undefined, true);
         if (!rings.length) continue;
 
         const br = bearingRange({ x: u.x, z: u.z }, { x: x, z: z });
@@ -631,18 +631,20 @@ function airDensity(altM) {
 // Time for one munition to cover `dist` on the ground, released at `speed` and
 // `launchAlt`, against a target at `targetAlt`. Returns null when it cannot
 // reach - out of envelope, or out of energy before it arrives.
-function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
+function timeOfFlight(w, dist, speed, launchAlt, targetAlt, track) {
     const f = w && w.flight;
     if (!f || !(dist > 0)) return null;
 
-    // The envelope is REPORTED, not enforced. targetRequirements.maxRange is
-    // the range the game's AI checks before taking a shot; a pilot can release
-    // outside it, and whether the weapon then arrives is a question about its
-    // energy, which the models below answer. Refusing here hid a shot that is
-    // perfectly achievable from height, which is exactly the case worth
-    // planning.
-    const past = { beyondGate: !!(w.maxRange && dist > w.maxRange),
-                   insideMin:  !!(w.minRange && dist < w.minRange) };
+    // targetRequirements.maxRange is the range the game's AI checks before
+    // taking a shot. It is not enforced here: a pilot can release outside it,
+    // and whether the weapon arrives is a question about its energy, which the
+    // models below answer.
+    //
+    // `track` is an optional array. When given, each model pushes
+    // { d, t, v } as it integrates, so the weapon's own position and speed
+    // along the way can be examined rather than only its arrival.
+    const past = {};
+    const log = (d, t, v) => { if (track) track.push({ d: d, t: t, v: v }); };
 
     // Density is taken at the midpoint of the climb or dive, as the game does.
     const rho = airDensity((launchAlt + targetAlt) / 2);
@@ -658,8 +660,10 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
         const k = (f.dragCoef || 0) / muzzle;
         let v = muzzle + speed, t = 0, d = 0;
         const dt = 0.05;
+        log(0, 0, v);
         while (d < dist && t < 300 && v > 40) {
             d += dt * v; t += dt; v -= dt * v * v * k;
+            log(d, t, v);
         }
         return d >= dist ? Object.assign({ reach: true, time: t, impact: v }, past)
                          : { reach: false, reason: 'out of energy' };
@@ -677,11 +681,13 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
         let vx = speed + (f.muzzle || 0), vy = 0, h = drop, d = 0, t = 0;
         const dt = 0.05;
 
+        log(0, 0, Math.hypot(vx, vy));
         while (h > 0 && t < 300) {
             const v = Math.hypot(vx, vy) || 1;
             d  += vx * dt;
             h  -= vy * dt;
             t  += dt;
+            log(d, t, v);
             vy += (G * (f.gravMult || 1) - (vy / v) * k * v * v) * dt;
             vx -= (vx / v) * k * v * v * dt;
             if (d >= dist) break;
@@ -708,10 +714,12 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
 
         let v = Math.max(40, speed), d = 0, t = 0;
         const dt = 0.1;
+        log(0, 0, v);
         while (d < dist && t < 600) {
             d += v * dt;
             t += dt;
             v += (G * sinTheta - k * v * v) * dt;
+            log(d, t, v);
             if (v < 30) break;
         }
         return d >= dist ? Object.assign({ reach: true, time: t, impact: v }, past)
@@ -728,17 +736,27 @@ function timeOfFlight(w, dist, speed, launchAlt, targetAlt) {
     // burn for short burns, and uses the terminal speed for sustained ones.
     let d = (burn < 30) ? ((speed + vPeak) / 2) * burn : vTerm * burn;
     let t = burn;
-    if (d >= dist) return Object.assign({ reach: true, time: dist / Math.max(1, d / burn), impact: vPeak }, past);
+
+    // Logged before the early return, or a weapon that covers the whole
+    // distance under thrust - any sustained cruise motor - arrives with an
+    // empty track and looks like it could not get there at all.
+    log(0, 0, speed);
+    if (d >= dist) {
+        const arrive = dist / Math.max(1, d / burn);
+        log(dist, arrive, vPeak);
+        return Object.assign({ reach: true, time: arrive, impact: vPeak }, past);
+    }
+    log(d, t, vPeak);                     // end of boost
 
     let v = vPeak, dt = 0.1;
     const k = 0.5 * cd * rho * area / dry;
     const minSpeed = f.minSpeed || 0;
-
     for (let i = 0; i < 120 && d < dist; i++) {
         d += dt * v;
         t += dt;
         v -= dt * v * v * k;
         dt += 0.05;                       // the game grows its step the same way
+        log(d, t, v);
         if (i > 10 && v < minSpeed) break;
     }
     return d >= dist ? Object.assign({ reach: true, time: t, impact: v }, past)
@@ -851,13 +869,9 @@ function drawReleasePoints(ctx, f) {
 
             const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2;
             if (Math.hypot(q.x - p.x, q.y - p.y) > 70) {
-                const label = ok
-                    ? 'TOT ' + fmtTime(sol.sol.time) +
-                      (sol.sol.beyondGate ? ' (past gate)' : '')
-                    : (sol.sol ? sol.sol.reason : 'no munition');
-                plate(ctx, label, mx, my,
-                      !ok ? 'rgba(240,133,122,0.8)'
-                          : sol.sol.beyondGate ? '#ffd166' : f.colour);
+                plate(ctx, ok ? 'TOT ' + fmtTime(sol.sol.time)
+                              : (sol.sol ? sol.sol.reason : 'no munition'),
+                      mx, my, ok ? f.colour : 'rgba(240,133,122,0.8)');
             }
         }
 
@@ -876,4 +890,125 @@ function drawReleasePoints(ctx, f) {
         ctx.fill();
     });
     ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// Munition exposure
+//
+// Walks the weapon's own flight from release to impact and asks, at each step,
+// whether anything can see it and whether anything can shoot it. The weapon is
+// a unit in its own right, with its own signature and its own speed, so the
+// answer is often nothing like the answer for the aircraft that launched it:
+//
+//   RCS       munitions run 0.001 to 0.1 against 0.001 to 3.0 for aircraft, so
+//             a weapon is frequently harder to see than its launch platform
+//   SPEED     targetRequirements.maxSpeed is a ceiling on how fast a target can
+//             be moving before a weapon refuses it. A missile at 1600 m/s is
+//             simply not engageable by short range air defence, whatever its
+//             signature - and it slows as it flies, so it can become engageable
+//             on the way in
+//
+// Altitude along the path is interpolated from release to target. For a glide
+// weapon that is exact, since a glide is a constant descent; for a motor it is
+// an approximation - a real missile lofts, which would put it higher and more
+// visible in the middle.
+//
+// Reports what CAN engage, not what will. Whether the defending AI chooses the
+// munition over the aircraft is its own decision and not modelled.
+// ---------------------------------------------------------------------------
+function munitionExposure(f, i, targetId) {
+    const w = f.waypoints[i];
+    const munition = (ranges.arsenal || {})[w && w.munition];
+    const t = targetById(targetId);
+    const pos = t && targetPos(t);
+    if (!munition || !pos) return null;
+
+    const br = bearingRange(w, pos);
+    const groundAlt = terrain ? terrainAt(pos.x, pos.z) : 0;
+
+    const track = [];
+    const sol = timeOfFlight(munition, br.range, f.speed || 250,
+                             w.alt, groundAlt, track);
+    if (!sol || !sol.reach || !track.length) return null;
+
+    const rcs = (munition.flight && munition.flight.rcs) || 0.01;
+    let seen = null, shot = null, shotFor = 0, lastT = 0;
+
+    // Sampled rather than stepped one for one: the integrators take hundreds of
+    // steps and each check walks every ringed unit.
+    //
+    // The whole run is walked rather than stopping at the first hit, because
+    // WHEN a weapon is engageable matters as much as WHETHER. A missile leaves
+    // the rail at the aircraft's speed and accelerates, so it is briefly slow
+    // enough for anything to shoot at; what protects it is outrunning the speed
+    // ceiling a few seconds later. Reporting only the first moment would call
+    // that missile as vulnerable as a glide bomb that stays slow the whole way.
+    const step = Math.max(1, Math.floor(track.length / 40));
+    for (let k = 0; k < track.length; k += step) {
+        const p = track[k];
+        const frac = Math.min(1, p.d / br.range);
+        const x = w.x + (pos.x - w.x) * frac;
+        const z = w.z + (pos.z - w.z) * frac;
+        const alt = w.alt + (groundAlt - w.alt) * frac;
+
+        const state = munitionStateAt(x, z, alt, rcs, p.v);
+        if (!seen && state.seen) seen = { d: br.range - p.d, t: p.t, by: state.seenBy };
+        if (state.shot) {
+            if (!shot) shot = { d: br.range - p.d, t: p.t, by: state.shotBy };
+            shotFor += p.t - lastT;
+        }
+        lastT = p.t;
+    }
+
+    return { range: br.range, flight: sol, rcs: rcs,
+             launchSpeed: track[0] ? track[0].v : 0,
+             impactSpeed: sol.impact, seen: seen, shot: shot,
+             shotFor: shotFor, flightTime: sol.time };
+}
+
+// Can anything see, and can anything shoot, an object of this signature moving
+// at this speed at this point?
+function munitionStateAt(x, z, alt, rcs, speed) {
+    const seenBy = new Set(), shotBy = new Map();
+
+    for (const u of unitsOf(currentMission)) {
+        if (!ringUnits.has(unitPath(u))) continue;
+
+        const rings = threatRingsFor(u, alt, rcs, true);
+        if (!rings.length) continue;
+
+        const br = bearingRange({ x: u.x, z: u.z }, { x: x, z: z });
+        const widest = rings.reduce((m, r) => Math.max(m, r.r), 0);
+        if (br.range > widest) continue;
+
+        const side = affiliationOf(u);
+        let profile = null;
+        if (showRings.mask && terrain) profile = maskProfileFor(u, widest, alt);
+
+        for (const ring of rings) {
+            const reach = (ring.los && profile)
+                ? ringRadiusAt(ring, profile, br.bearing * Math.PI / 180)
+                : ring.r;
+            if (br.range > reach) continue;
+
+            if (ring.kind === 'weapon') {
+                // The speed ceiling is what excludes a fast missile outright.
+                if (ring.inBand !== false &&
+                    (!ring.maxSpeed || speed <= ring.maxSpeed)) {
+                    // First qualifier wins the name. Overwriting would report
+                    // whichever unit happened to be examined last, which is not
+                    // necessarily one that can actually take the shot.
+                    if (!shotBy.has(side)) shotBy.set(side, unitName(u.type));
+                }
+            } else {
+                seenBy.add(side);
+            }
+        }
+    }
+
+    for (const [side, name] of shotBy) {
+        if (seenBy.has(side)) return { seen: true, shot: true, shotBy: name,
+                                       seenBy: side };
+    }
+    return { seen: seenBy.size > 0, shot: false, seenBy: [...seenBy][0] };
 }

@@ -168,12 +168,19 @@ function ownVisibleRange() {
 // `alt` defaults to the altitude on the bar. Route legs pass their own, so the
 // same envelope maths answers both "what reaches me where I am" and "what
 // reached me at that point on the route".
-function threatRingsFor(unit, alt) {
+// `all` ignores the ring-type switches. Those switches say what to DRAW, and
+// analysis must not change because a ring was hidden to reduce clutter: turning
+// off optical rings would otherwise take every eyeball-only site out of the
+// exposure answer while leaving it very much in the mission.
+function threatRingsFor(unit, alt, rcs, all) {
     if (!ringUnits.has(unitPath(unit))) return [];
     const entry = (ranges.units || {})[unit.type];
     if (!entry) return [];
 
     const ownAlt = (alt === undefined) ? ownAltM : alt;
+    // The signature being detected. Defaults to the aircraft on the bar, but a
+    // munition in flight is a much smaller target and asks the same question.
+    const sig = (rcs === undefined) ? ownRCS : rcs;
 
     const rings = [];
 
@@ -194,10 +201,10 @@ function threatRingsFor(unit, alt) {
     const groundFrom = slant =>
         slant > dh ? Math.sqrt(slant * slant - dh * dh) : 0;
 
-    if (showRings.radar) {
+    if (all || showRings.radar) {
         for (const r of entry.radars) {
             if (!r.minSignal) continue;
-            const slant  = r.maxRange / r.minSignal * Math.pow(ownRCS, 0.25);
+            const slant  = r.maxRange / r.minSignal * Math.pow(sig, 0.25);
             const ground = groundFrom(slant);
             if (ground <= 0) continue;
             rings.push({
@@ -212,7 +219,7 @@ function threatRingsFor(unit, alt) {
         }
     }
 
-    if (showRings.optical) {
+    if (all || showRings.optical) {
         for (const o of entry.optical) {
             const ground = groundFrom(
                 Math.min(o.visualRange, ownVisibleRange() * o.magnification));
@@ -222,7 +229,7 @@ function threatRingsFor(unit, alt) {
         }
     }
 
-    if (showRings.weapon) {
+    if (all || showRings.weapon) {
         for (const w of entry.weapons) {
             const ground = groundFrom(w.maxRange);
             if (ground <= 0) continue;          // you are above its reach entirely
@@ -232,6 +239,9 @@ function threatRingsFor(unit, alt) {
                 // are masked. Indirect fire - MLRS, ballistic missiles - has
                 // the flag clear and reaches over terrain.
                 los:    w.lineOfSight,
+                // A weapon refuses a target moving faster than this. It is what
+                // makes a fast missile untouchable by short range air defence.
+                maxSpeed: w.maxSpeed || 0,
                 r:      ground,
                 // The altitude band is a separate hard gate in
                 // TargetRequirements - a weapon can be in range and still not

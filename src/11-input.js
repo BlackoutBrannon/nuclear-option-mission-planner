@@ -540,10 +540,7 @@ function releaseBlock(f, i, w) {
             tot.textContent = s ? s.error : '';
             tot.classList.add('bad');
         } else if (s.sol && s.sol.reach) {
-            const flag = s.sol.beyondGate ? '  past gate'
-                       : s.sol.insideMin  ? '  inside min' : '';
-            tot.textContent = fmtRange(s.range) + '  TOT ' + fmtTime(s.sol.time) + flag;
-            if (flag) tot.style.color = '#ffd166';
+            tot.textContent = fmtRange(s.range) + '  TOT ' + fmtTime(s.sol.time);
         } else {
             tot.textContent = s.sol ? s.sol.reason : 'no solution';
             tot.classList.add('bad');
@@ -551,6 +548,35 @@ function releaseBlock(f, i, w) {
 
         line.append(on, nm, tot);
         box.appendChild(line);
+
+        // What happens to the WEAPON on the way in, which is a different
+        // question from what happens to the aircraft that released it.
+        if (on.checked && s && s.sol && s.sol.reach) {
+            const me = munitionExposure(f, i, t.id);
+            const sub = document.createElement('div');
+            sub.className = 'rpRun';
+            if (!me) {
+                sub.textContent = 'no run-in data';
+            } else if (!me.seen) {
+                sub.textContent = 'unseen the whole way · ' +
+                    Math.round(me.launchSpeed) + '→' +
+                    Math.round(me.impactSpeed) + ' m/s';
+            } else {
+                const bits = ['seen ' + fmtRange(me.seen.d) + ' out'];
+                if (!me.shot) {
+                    bits.push('never engageable');
+                } else {
+                    // How long it is shootable, against how long it flies. A
+                    // fast weapon is only vulnerable while it is still slow.
+                    bits.push('engageable ' + fmtTime(me.shotFor) +
+                              ' of ' + fmtTime(me.flightTime) +
+                              ' by ' + me.shot.by);
+                }
+                sub.textContent = bits.join(' · ');
+                sub.classList.add(me.shot ? 'bad' : 'ok');
+            }
+            box.appendChild(sub);
+        }
     });
 
     return box;
