@@ -1,31 +1,124 @@
 # Nuclear Option Mission Planner
 
-Loads a Nuclear Option mission file and draws it on the real game terrain, in
-APP-6 symbology, with filtering and hover identification.
+Plan a strike before you fly it.
 
-## Running it
+Drop a Nuclear Option mission file in and the planner draws every unit on the
+real game terrain in APP-6 symbology, then works out what can actually see and
+shoot you. The threat rings are not estimates: the detection maths, the weapon
+envelopes and the target-speed limits are read out of the game's own code, and
+every ring is cut back by line of sight against the real elevation data, so a
+SAM behind a ridge shows the gap instead of a circle.
+
+From there you can lay out a route, mark targets, place release points, and get
+times of flight for the munition you are actually carrying - then export a
+briefing your flight can read on a second monitor or on paper.
+
+## Planned: waypoints on the HUD
+
+The next piece is a BepInEx mod that reads a plan straight into the cockpit, so
+the steerpoints and targets you set here appear on the pilot's HUD in game
+instead of being memorised or kept on a kneeboard.
+
+The groundwork is already in place. Every exported plan carries a `nav` block
+using the game's own coordinate layout, so the mod needs no conversion, and the
+desktop app can write that file to a folder the mod watches. The game has no
+native pilot navigation system, so the mod has to draw the symbology itself -
+that is the work still to do.
+
+## What it does
+
+**Threats**
+- Radar, optical/IR and weapon envelopes per unit, taken from the game's own
+  detection model rather than from unit descriptions
+- Rings scale with your aircraft's radar cross-section and altitude, and only
+  radar rings respond to RCS - infrared and optical do not
+- Line-of-sight masking against real terrain, so rings are cut where the ground
+  blocks them
+- Radar horizon, and sensor mast height per unit
+- A layer tree to ring exactly what you care about on a 900-unit mission
+
+**Routes**
+- Multi-leg flights with a per-waypoint altitude
+- Every leg coloured by exposure: clear, seen, engaged, or below ground
+- A warning when a waypoint is inside a hill rather than over it
+- Bullseye with a range-and-bearing rose, plus a measuring tool
+
+**Weapons**
+- Release points with time of flight to each target, per munition
+- Flight models ported from the game: rocket motors, glide, ballistic and guns
+- Whether the weapon itself is seen or engageable on the way in, using its own
+  signature and speed - a fast, small missile is often untouchable where the
+  aircraft is not
+
+**Exports**
+- Plan file to share or reload, carrying a `nav` block for external tools
+- Printable briefing sheet: route table, detection events, times of flight,
+  targets and the threat basis
+- High-resolution map image with a caption recording what it was measured
+  against
+- Plain-text kneeboard card, sized to paste into chat
+
+## How to use it
+
+1. **Get a mission file.** Use the Mission Scanner, or take one from
+   `steamapps/workshop/content/2168680`.
+2. **Open it** - click the drop zone, or drag the file onto it.
+3. **Pick your side** in *Your faction*. Everything hostile and friendly is
+   decided from this.
+4. **Set your aircraft** at the bottom: RCS preset and altitude. Every threat
+   ring is drawn against these two numbers.
+5. **Ring the threats** in the *Rings* panel. *Long range* is a good start; it
+   rings everything reaching past 15 km.
+6. **Draw a route** in *Flights* - New flight, then click along the map.
+   Double-click or Escape to finish. Drag a waypoint to move it.
+7. **Mark targets** by right-clicking a unit, or the map for a point target.
+8. **Add a release point**: tick a waypoint as RP, choose the munition, and
+   pick which targets it services. You get a time of flight for each.
+9. **Export** from the Plan section: Plan, Sheet, Image or Card.
+
+Right-click a unit for its details and to place the bullseye. Hover anything to
+identify it. The status bar shows your position, the ground elevation under the
+cursor and your height above it.
+
+## Reporting a bug
+
+Open an issue:
+<https://github.com/BlackoutBrannon/nuclear-option-mission-planner/issues>
+
+What makes a report easy to act on:
+
+- **The mission file**, or its name if it came from the workshop. Most problems
+  are specific to one mission's contents.
+- **What you expected and what happened.** For a ring or a time of flight, the
+  unit or munition involved, and your RCS and altitude at the time - those two
+  change every envelope on screen.
+- **A screenshot**, or the exported briefing image, which records the RCS,
+  altitude and whether terrain masking was on.
+- **Which build**: right-click `NOMissionPlanner.exe` and read the version from
+  Properties, or say if you ran it in a browser instead.
+
+If the app fails to start, run it once from a terminal with `--debug` and say
+what appears.
+
+## Running from source
 
 **Double-click `start.bat`.** It serves this folder and opens the planner.
 Close that window to stop the server.
 
-Or do it by hand:
+Or by hand:
 
 ```
-cd "path\to\Mission planner"
+cd "path/to/Mission planner"
 python -m http.server 8000
 ```
 
 Then open <http://localhost:8000>.
 
-**Opening `index.html` directly will not work.**
-
-Browsers treat a file opened from disk as its own isolated origin and block
-`fetch` across that boundary, so `units.json` cannot load from a `file://` page.
-Images are exempt, which is why the basemap appears but the names do not. The
-symptom is every unit showing its raw key — `SPAAG1` rather than
-"AeroSentry SPAAG" — and a CORS error in the console.
-
-`Ctrl+C` stops the server.
+**Opening `index.html` directly will not work.** Browsers treat a file opened
+from disk as its own isolated origin and block `fetch` across that boundary, so
+`units.json` cannot load. Images are exempt, which is why the basemap appears
+but the names do not. The desktop app has no such problem - it maps the files to
+a virtual host instead.
 
 ## The desktop app
 
