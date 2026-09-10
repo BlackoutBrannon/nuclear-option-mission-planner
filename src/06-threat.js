@@ -43,10 +43,26 @@ const ringUnits = new Set();
 let ringEpoch = 0;
 function bumpRingEpoch() { ringEpoch++; }
 
+// Pattern says what a ring is; colour says whose it is.
+//
+// Splitting them that way keeps the distinction that decides whether you can be
+// shot - weapon envelope against mere detection - carried by line pattern,
+// which survives greyscale, a bad monitor and colourblindness alike. Side is
+// left to hue because it is also readable off the unit symbol underneath, so
+// colour is never the only thing saying it.
 const RING_STYLE = {
-    weapon:  { colour: '#f0857a', dash: [],      width: 1.8 },
-    radar:   { colour: '#8ecbff', dash: [9, 6],  width: 1.5 },
-    optical: { colour: '#ffd166', dash: [2, 4],  width: 1.5 },
+    weapon:  { dash: [],      width: 1.8 },
+    radar:   { dash: [9, 6],  width: 1.5 },
+    optical: { dash: [2, 4],  width: 1.5 },
+};
+
+// Defaults match the symbol fills in 04-units.js, so a blue ring belongs to a
+// blue diamond and a red ring to a red one. Both are user-settable, because
+// which side reads as "the threat" depends on who is flying.
+const sideColour = {
+    hostile: '#f0857a',
+    friend:  '#8ecbff',
+    unknown: '#ffd166',
 };
 
 // Ring toggles. These must be wired AFTER `showRings` exists: a top-level
@@ -68,6 +84,23 @@ for (const [id, key] of [['ringWeapon', 'weapon'], ['ringRadar', 'radar'],
         bumpRingEpoch();
         if (currentMission) draw(currentMission);
     });
+}
+
+// Ring colour per side. No epoch bump: this changes how rings look, not which
+// units are ringed or how far they reach, so the cached route exposure stays
+// valid and only the paint has to be redone.
+for (const [id, side] of [['ringHostile', 'hostile'], ['ringFriend', 'friend']]) {
+    const input = document.getElementById(id);
+    input.value = sideColour[side];
+    input.addEventListener('input', () => {
+        sideColour[side] = input.value;
+        if (currentMission) draw(currentMission);
+    });
+}
+
+function refreshSideColours() {
+    document.getElementById('ringHostile').value = sideColour.hostile;
+    document.getElementById('ringFriend').value  = sideColour.friend;
 }
 
 // ---------------------------------------------------------------------------
@@ -289,6 +322,7 @@ function drawThreatRings(ctx, units) {
             if (rpx < 3) continue;                   // too small to read
             const style = RING_STYLE[ring.kind];
             const inert = ring.inBand === false;
+            const paint = sideColour[affiliationOf(unit)] || sideColour.unknown;
 
             const prof = ring.los ? profile : null;
             const key  = ringKey(unit, ring);
@@ -308,7 +342,7 @@ function drawThreatRings(ctx, units) {
             // weight rather than a colour change, so it separates from its
             // neighbours without depending on hue.
             ctx.globalAlpha = hot ? 1 : (inert ? 0.3 : 0.85);
-            ctx.strokeStyle = hot ? '#ffffff' : style.colour;
+            ctx.strokeStyle = hot ? '#ffffff' : paint;
             ctx.lineWidth   = hot ? style.width + 1.6 : style.width;
             ringPath(ctx, p, ring.r, mPerPx, prof);
             ctx.stroke();
@@ -361,7 +395,7 @@ function drawThreatRings(ctx, units) {
                     labels.push({
                         text: ring.label + (ring.capped ? ' (horizon)' : ''),
                         x: lx, y: ly, kind: ring.kind, r: ring.r,
-                        colour: inert ? 'rgba(240,133,122,0.5)' : style.colour,
+                        colour: inert ? 'rgba(240,133,122,0.5)' : paint,
                         key: ringKey(unit, ring), unit: unit, ring: ring,
                     });
                 }

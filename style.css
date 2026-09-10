@@ -146,9 +146,21 @@ body.resizing { user-select: none; cursor: col-resize; }
 /* A sample of the line each ring actually draws. The pattern is what tells
    them apart, so the key shows the pattern rather than a colour chip. */
 .key { width: 26px; height: 0; border-top-width: 2px; flex: none; }
-.key-weapon  { border-top: 2px solid  #f0857a; }
-.key-radar   { border-top: 2px dashed #8ecbff; }
-.key-optical { border-top: 2px dotted #ffd166; }
+/* The swatches show the line PATTERN, which is what now distinguishes a
+   weapon envelope from detection. Colour is deliberately neutral here: on the
+   map it means side, and a coloured key would imply otherwise. */
+.key-weapon  { border-top: 2px solid  #cdd9e3; }
+.key-radar   { border-top: 2px dashed #cdd9e3; }
+.key-optical { border-top: 2px dotted #cdd9e3; }
+
+.sideSwatch {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #8a9aa6; white-space: nowrap;
+}
+.sideSwatch input[type="color"] {
+  width: 22px; height: 16px; padding: 0; border: 1px solid #55707f;
+  border-radius: 3px; background: none; cursor: pointer;
+}
 .key-engaged { border-top: 4px solid #f0857a; }
 /* Masking is not a ring type, so its key is a shape rather than a line. */
 .key-mask {

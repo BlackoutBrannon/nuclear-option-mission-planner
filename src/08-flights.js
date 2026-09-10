@@ -1094,6 +1094,7 @@ function planState() {
         labelMode: labelMode,
         showExposure: showExposure,
 
+        sideColour: Object.assign({}, sideColour),
         ownRCS: ownRCS, ownAltM: ownAltM, unitSystem: unitSystem,
         rcsPreset: rcsPreset ? rcsPreset.value : '',
         ringColour: ringColour,
@@ -1130,6 +1131,11 @@ function applyPlan(p) {
     Object.assign(showRings, p.showRings || {});
     labelMode = p.labelMode || 'auto';
     showExposure = p.showExposure !== false;
+
+    if (p.sideColour) {
+        Object.assign(sideColour, p.sideColour);
+        refreshSideColours();
+    }
 
     if (typeof p.ownRCS === 'number')  ownRCS = p.ownRCS;
     if (typeof p.ownAltM === 'number') ownAltM = p.ownAltM;

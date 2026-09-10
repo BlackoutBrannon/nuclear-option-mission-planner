@@ -117,8 +117,19 @@
               <option value="off">Off</option>
             </select>
           </div>
-          <div class="hint">Radar rings follow the RCS and altitude in the bar
-            below. Optical rings do not — RCS does not affect eyeballs.</div>
+          <div class="row" style="margin-top:8px;">
+            <label style="font-size:12px;color:#8a9aa6;">Ring colour</label>
+            <label class="sideSwatch" title="Rings on units hostile to you">
+              <input type="color" id="ringHostile" value="#f0857a"> Hostile</label>
+            <label class="sideSwatch" title="Rings on units on your side">
+              <input type="color" id="ringFriend" value="#8ecbff"> Friendly</label>
+          </div>
+          <div class="hint">Colour is the side; the line pattern is the ring
+            type, so weapon and detection stay apart in greyscale.</div>
+
+          <div class="hint" style="margin-top:6px;">Radar rings follow the RCS
+            and altitude in the bar below. Optical rings do not — RCS does not
+            affect eyeballs.</div>
         </div>
 
         <div class="group">
