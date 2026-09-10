@@ -350,12 +350,12 @@ certificate costs several hundred a year. SmartScreen will say "Windows
 protected your PC" - *More info* then *Run anyway*. If that is not a trade you
 want to make, run it in a browser instead.
 
-**Checksums** for `v0.1.0`, so you can confirm the download is the file that was
+**Checksums** for `v0.2.0`, so you can confirm the download is the file that was
 published:
 
 ```
-zip  992a0a8ffecdb03bedcaf404453039465f17f9a0ff36535eed0c3293c12fd0cc
-exe  dcb23b0e975ce8ea6ad449c94064dc7e7b86ae700e0d451d41cd3e600ccae9a1
+zip  6af152bbcabc24f03ed660521ffc44d44f0b47983999e369fc116d063cc2b0b5
+exe  746e3d9f1042818a8a913eeaccc2d000caa2d9a658b32ec45397ae1cd1b0399b
 ```
 
 Check yours with `Get-FileHash <file>` in PowerShell.
