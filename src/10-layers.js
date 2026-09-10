@@ -330,13 +330,8 @@ function loadTileIndex() {
 
 // Tiles land one at a time, and a redraw per tile would run the whole threat
 // picture a dozen times in a row. Coalesced into one repaint per frame instead.
-let tileRedraw = 0;
 function tileArrived() {
-    if (tileRedraw) return;
-    tileRedraw = requestAnimationFrame(() => {
-        tileRedraw = 0;
-        if (currentMission) draw(currentMission);
-    });
+    requestDraw();
 }
 
 function tileFor(mapName, dir, cx, cy) {
@@ -423,6 +418,39 @@ function drawBasemap(ctx) {
             ctx.drawImage(img, x0 + cx * tw, y0 + cy * th, tw + 1, th + 1);
         }
     }
+}
+
+// Pan, zoom and hover fire far more often than the screen refreshes - a
+// high-polling mouse delivers several mousemove events per displayed frame.
+// Drawing on each one is work thrown away before anything reaches the screen,
+// and once a draw takes longer than a frame the events queue faster than they
+// drain. That compounding backlog is what turns a heavy threat picture into
+// visible lag rather than merely a slow frame.
+//
+// Coalesced onto the next animation frame instead: at most one draw per frame,
+// always with the latest state. Only the high-frequency input paths use this -
+// everything else still draws immediately, because a redraw after a state
+// change should be on screen before the next line of code runs.
+// The frame is raced against a timer. requestAnimationFrame does not fire
+// while the window is hidden, minimised or occluded, and a frame that never
+// arrives would leave the guard below permanently armed - which stops pan,
+// zoom and hover redrawing at all, and only while the user is not looking, so
+// it would be reported as "it sometimes freezes" and never reproduced.
+let drawPending = 0;
+let drawFallback = 0;
+
+function requestDraw() {
+    if (!currentMission || drawPending) return;
+
+    const run = () => {
+        cancelAnimationFrame(drawPending);
+        clearTimeout(drawFallback);
+        drawPending = drawFallback = 0;
+        if (currentMission) draw(currentMission);
+    };
+
+    drawPending = requestAnimationFrame(run);
+    drawFallback = setTimeout(run, 100);
 }
 
 function draw(mission) {

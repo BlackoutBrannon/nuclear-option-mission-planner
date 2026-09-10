@@ -26,9 +26,20 @@ internal sealed class PlannerWindow : Form
     private readonly WebView2 _web = new() { Dock = DockStyle.Fill };
     private HostBridge? _bridge;
 
+    // Kept so a second window can share them rather than starting its own
+    // browser environment and re-mapping the content folder.
+    private CoreWebView2Environment? _env;
+    private string? _content;
+
     public PlannerWindow()
     {
         Text = "Nuclear Option Mission Planner";
+
+        // ApplicationIcon in the csproj is what Explorer reads off the file.
+        // The taskbar and the title bar read Form.Icon, which defaults to the
+        // stock WinForms icon - so without this the app ships a good icon and
+        // still shows a generic one everywhere you actually look at it.
+        Icon = LoadAppIcon();
         // Matches the app's own background, so a slow WebView2 start shows the
         // right colour rather than a white flash.
         BackColor = Color.FromArgb(11, 14, 18);
@@ -70,8 +81,9 @@ internal sealed class PlannerWindow : Form
                 options.AdditionalBrowserArguments = "--remote-debugging-port=9222";
             }
 
-            var env = await CoreWebView2Environment.CreateAsync(null, profile, options);
-            await _web.EnsureCoreWebView2Async(env);
+            _env = await CoreWebView2Environment.CreateAsync(null, profile, options);
+            _content = content;
+            await _web.EnsureCoreWebView2Async(_env);
         }
         catch (Exception ex)
         {
@@ -98,12 +110,18 @@ internal sealed class PlannerWindow : Form
         core.Settings.AreDefaultContextMenusEnabled = false;
         core.Settings.IsSwipeNavigationEnabled = false;
 
-        // A link to anything outside the app opens in the real browser instead
-        // of replacing the planner with a page it cannot navigate back from.
+        // target="_blank" on one of the planner's own pages - the symbology
+        // sheet - opens a second window inside the app. Sending it to the real
+        // browser instead handed it https://planner.assets/..., a hostname that
+        // only exists in here, and the browser reported a dead site.
+        //
+        // Anything genuinely external still leaves, rather than replacing the
+        // planner with a page it cannot navigate back from.
         core.NewWindowRequested += (_, e) =>
         {
             e.Handled = true;
-            OpenExternally(e.Uri);
+            if (IsAppUri(e.Uri)) ShowSecondWindow(e.Uri);
+            else OpenExternally(e.Uri);
         };
         core.NavigationStarting += (_, e) =>
         {
@@ -142,6 +160,67 @@ internal sealed class PlannerWindow : Form
         if (File.Exists(Path.Combine(source, "index.html"))) return source;
 
         return null;
+    }
+
+    private bool IsAppUri(string uri) =>
+        uri.StartsWith($"https://{VirtualHost}/", StringComparison.OrdinalIgnoreCase);
+
+    // A plain second window on the same content. It shares the environment and
+    // repeats the host mapping, so the page it shows can fetch the same files
+    // the main window can.
+    private async void ShowSecondWindow(string uri)
+    {
+        if (_env is null || _content is null) return;
+
+        var web = new WebView2 { Dock = DockStyle.Fill };
+        var form = new Form
+        {
+            Text = Text,
+            Icon = Icon,
+            BackColor = BackColor,
+            StartPosition = FormStartPosition.CenterParent,
+            ClientSize = new Size(1100, 800),
+        };
+        form.Controls.Add(web);
+        form.Show(this);
+
+        try
+        {
+            await web.EnsureCoreWebView2Async(_env);
+            web.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                VirtualHost, _content, CoreWebView2HostResourceAccessKind.Allow);
+            web.CoreWebView2.Settings.IsStatusBarEnabled = false;
+            // Links out of this window behave like links out of the main one.
+            web.CoreWebView2.NewWindowRequested += (_, e) =>
+            {
+                e.Handled = true;
+                if (IsAppUri(e.Uri)) ShowSecondWindow(e.Uri);
+                else OpenExternally(e.Uri);
+            };
+            web.CoreWebView2.Navigate(uri);
+        }
+        catch (Exception ex)
+        {
+            form.Close();
+            MessageBox.Show(this, "Could not open that page.\n\n" + ex.Message,
+                            Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    // The icon is embedded in the executable by ApplicationIcon, so it is read
+    // back from there rather than shipped a second time as a loose file that
+    // could go missing or drift out of step with the one Explorer shows.
+    private static Icon? LoadAppIcon()
+    {
+        try
+        {
+            var exe = Environment.ProcessPath;
+            return exe is null ? null : Icon.ExtractAssociatedIcon(exe);
+        }
+        catch
+        {
+            return null;   // a missing icon is not worth failing to start over
+        }
     }
 
     private static void OpenExternally(string uri)

@@ -139,7 +139,7 @@ canvas.addEventListener('mousemove', (e) => {
         w.x = at.x; w.z = at.z;
         updateStatus(e.offsetX, e.offsetY);
         renderFlights();
-        if (currentMission) draw(currentMission);
+        requestDraw();
         return;
     }
 
@@ -1073,7 +1073,7 @@ canvas.addEventListener('wheel', (e) => {
     view.panY = my - (my - view.panY) * actual;
     view.scale = clamped;
 
-    if (currentMission) draw(currentMission);
+    requestDraw();
 });
 
 
@@ -1156,7 +1156,7 @@ window.addEventListener('mousemove', (e) => {
     view.panY += e.clientY - lastY;
     lastX = e.clientX;
     lastY = e.clientY;
-    if (currentMission) draw(currentMission);
+    requestDraw();
 });
 
 window.addEventListener('mouseup', () => {
