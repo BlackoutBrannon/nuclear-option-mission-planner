@@ -60,25 +60,44 @@ that is the work still to do.
 
 ## How to use it
 
-1. **Get a mission file.** Use the Mission Scanner, or take one from
-   `steamapps/workshop/content/2168680`.
-2. **Open it** - click the drop zone, or drag the file onto it.
-3. **Pick your side** in *Your faction*. Everything hostile and friendly is
-   decided from this.
-4. **Set your aircraft** at the bottom: RCS preset and altitude. Every threat
-   ring is drawn against these two numbers.
-5. **Ring the threats** in the *Rings* panel. Tick **Hostile > Air Defence**
-   in the tree; that is the layer that matters and it keeps the map readable.
-6. **Draw a route** in *Flights* - New flight, then click along the map.
-   Double-click or Escape to finish. Drag a waypoint to move it.
-7. **Mark targets** by right-clicking a unit, or the map for a point target.
-8. **Add a release point**: tick a waypoint as RP, choose the munition, and
-   pick which targets it services. You get a time of flight for each.
-9. **Export** from the Plan section: Plan, Sheet, Image or Card.
+**First run only:** the app asks where your missions live and offers the places
+it found — the mission loaded in game, your subscribed workshop missions, the
+scanner's output — or Browse for anywhere else. That is only where the Open
+dialog starts; you can open a mission from anywhere, and dragging one onto the
+window ignores it entirely. Change it later with **Mission folder…** under the
+drop zone.
 
-Right-click a unit for its details and to place the bullseye. Hover anything to
-identify it. The status bar shows your position, the ground elevation under the
-cursor and your height above it.
+### The short version
+
+1. **Open a mission** — click the drop zone. It opens straight at your missions.
+2. **Pick your side** in *Your faction*.
+3. **Set your aircraft** at the bottom: RCS preset and altitude.
+4. **Ring the threats** — tick **Hostile > Air Defence** in the *Rings* panel.
+
+That is a usable threat picture. Everything below adds a route to it.
+
+### Planning against it
+
+5. **Draw a route** in *Flights* — New flight, then click along the map.
+   Double-click or Escape to finish. Drag a waypoint to move it. Each waypoint
+   carries its own altitude, and every leg is coloured by what can see and shoot
+   you along it.
+6. **Mark targets** — right-click a unit, or the map for a point target.
+7. **Add a release point** — tick a waypoint as RP, choose the munition, and
+   pick which targets it services. You get a time of flight for each, and what
+   happens to the weapon on the way in.
+8. **Export** from the Plan section: Plan, Sheet, Image or Card.
+
+### Worth knowing early
+
+- **Right-click is where most things live** — designating targets, placing the
+  bullseye, measuring, manual rings. It changes depending on whether you
+  right-clicked a unit, empty map, or an existing ring.
+- **Hover anything to identify it.** The status bar shows your position, the
+  ground elevation under the cursor and your height above it — including a red
+  **BELOW GROUND** when a route dips into a hill.
+- **The RCS and altitude in the bottom bar drive every ring on screen.** If a
+  ring looks wrong, check those two first.
 
 ## Reading the threat picture
 
