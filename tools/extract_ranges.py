@@ -44,7 +44,7 @@ MonoBehaviour is regenerated from Assembly-CSharp.dll at read time. That means
 this script reads whatever is installed - after a patch, just re-run it.
 """
 
-import json, math, os, sys, collections
+import json, math, os, sys, time, collections
 
 try:
     import UnityPy
@@ -248,6 +248,179 @@ def load():
     env = UnityPy.load(os.path.join(DATA, "resources.assets"))
     env.typetree_generator = gen
     return env
+
+
+# --- build fingerprint, and checking a new build against the committed data --
+
+# Flight models the planner implements, in timeOfFlight in src/08-flights.js.
+# A weapon whose model is not one of these gets no time of flight at all, so a
+# new kind is a code change rather than merely new data.
+KNOWN_FLIGHT_KINDS = {"gun", "ballistic", "glide", "motor"}
+
+# How far a number may move between builds before it is worth looking at. A
+# balance pass moves ranges by a few percent. A field this script has stopped
+# reading correctly moves them to zero, which is the case this exists to catch.
+DRIFT = 0.25
+
+
+def fingerprint():
+    """Which game build this data came from.
+
+    Nuclear Option ships no version string of its own - the executable carries
+    only Unity's. resources.assets changes size and timestamp with every patch
+    that touches unit data, which is exactly what matters here, so that is what
+    gets recorded.
+    """
+    st = os.stat(os.path.join(DATA, "resources.assets"))
+    return {
+        "unity": UNITY_VERSION,
+        "resourcesBytes": st.st_size,
+        "resourcesModified": time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                                           time.gmtime(st.st_mtime)),
+        "extracted": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
+def envelope_values(payload):
+    """The numbers that actually size a ring, flattened so two runs compare.
+
+    Deliberately not every field. These are the ones where a wrong reading
+    changes nothing visible except the answer: get maxRange or minSignal wrong
+    and the ring is simply a different size, with nothing to suggest it should
+    not be.
+    """
+    out = {}
+    for key, u in (payload.get("units") or {}).items():
+        out[key + " rcs"] = u.get("rcs", 0)
+        for i, r in enumerate(u.get("radars") or []):
+            out["%s radar[%d] maxRange" % (key, i)] = r.get("maxRange", 0)
+            out["%s radar[%d] minSignal" % (key, i)] = r.get("minSignal", 0)
+        for i, o in enumerate(u.get("optical") or []):
+            out["%s optical[%d] visualRange" % (key, i)] = o.get("visualRange", 0)
+            out["%s optical[%d] magnification" % (key, i)] = o.get("magnification", 0)
+        for i, w in enumerate(u.get("weapons") or []):
+            out["%s weapon[%d] maxRange" % (key, i)] = w.get("maxRange", 0)
+            out["%s weapon[%d] maxSpeed" % (key, i)] = w.get("maxSpeed", 0)
+    for key, a in (payload.get("arsenal") or {}).items():
+        out["arsenal %s maxRange" % key] = a.get("maxRange", 0)
+    for key, a in (payload.get("airframes") or {}).items():
+        out["airframe %s rcs" % key] = a.get("rcs", 0)
+    return out
+
+
+def sensor_counts(payload):
+    """How many radars, optical detectors and weapons each unit carries."""
+    return {k: (len(u.get("radars") or []),
+                len(u.get("optical") or []),
+                len(u.get("weapons") or []))
+            for k, u in (payload.get("units") or {}).items()}
+
+
+def flight_kinds_in(payload):
+    kinds = set()
+    for a in (payload.get("arsenal") or {}).values():
+        kinds.add((a.get("flight") or {}).get("kind"))
+    for u in (payload.get("units") or {}).values():
+        for w in u.get("weapons") or []:
+            kinds.add((w.get("flight") or {}).get("kind"))
+    return {k for k in kinds if k}
+
+
+def check(fresh):
+    """Compare a fresh extraction against the committed ranges.json.
+
+    Additions are reported and forgiven - a patch that adds units is the normal
+    case and needs no thought. Losses and drift are not. A unit that stops
+    having a radar, or a range that moves by a quarter, is either a real
+    balance change worth knowing about or a field this script no longer reads
+    correctly, and from here those two look identical. Both want a human.
+
+    Nothing is written in this mode. Exit status is 0 when clean and 2 when
+    something needs a look, so it can gate a script.
+    """
+    if not os.path.exists(OUT):
+        print("no ranges.json to compare against - run without --check first")
+        return 1
+
+    with open(OUT, encoding="utf-8") as f:
+        old = json.load(f)
+
+    problems, notes = [], []
+
+    # --- provenance ---------------------------------------------------------
+    was, now = old.get("_build") or {}, fresh["_build"]
+    if not was:
+        print("the committed ranges.json predates build fingerprinting")
+    elif (was.get("resourcesBytes") == now["resourcesBytes"] and
+          was.get("resourcesModified") == now["resourcesModified"]):
+        print("game data unchanged since the last extraction")
+    else:
+        print("game data CHANGED since the last extraction")
+        print("   was  %s  %s bytes" % (was.get("resourcesModified", "?"),
+                                        was.get("resourcesBytes", "?")))
+        print("   now  %s  %s bytes" % (now["resourcesModified"],
+                                        now["resourcesBytes"]))
+
+    # --- things appearing or vanishing --------------------------------------
+    for section in ("units", "arsenal", "airframes"):
+        before, after = set(old.get(section) or {}), set(fresh.get(section) or {})
+        new, gone = sorted(after - before), sorted(before - after)
+        if new:
+            notes.append("%s added: %s" % (section, ", ".join(new)))
+        if gone:
+            problems.append("%s DISAPPEARED: %s" % (section, ", ".join(gone)))
+
+    # --- sensors lost off a unit that still exists --------------------------
+    was_counts, now_counts = sensor_counts(old), sensor_counts(fresh)
+    labels = ("radars", "optical", "weapons")
+    for key in sorted(set(was_counts) & set(now_counts)):
+        a, b = was_counts[key], now_counts[key]
+        if a == b:
+            continue
+        moved = ", ".join("%s %d->%d" % (labels[i], a[i], b[i])
+                          for i in range(3) if a[i] != b[i])
+        if any(b[i] < a[i] for i in range(3)):
+            problems.append("%s LOST: %s" % (key, moved))
+        else:
+            notes.append("%s gained: %s" % (key, moved))
+
+    # --- a flight model the planner cannot fly ------------------------------
+    unknown = sorted(flight_kinds_in(fresh) - KNOWN_FLIGHT_KINDS)
+    if unknown:
+        problems.append("flight models the planner does not implement: %s"
+                        % ", ".join(unknown))
+        problems.append("      add them to timeOfFlight in src/08-flights.js")
+
+    # --- numbers that moved -------------------------------------------------
+    was_vals, now_vals = envelope_values(old), envelope_values(fresh)
+    drifted = []
+    for k in sorted(set(was_vals) & set(now_vals)):
+        a, b = was_vals[k], now_vals[k]
+        if a == b:
+            continue
+        # A value arriving at or leaving zero always counts: that is what a
+        # field falling out of the extraction looks like.
+        if a == 0 or b == 0 or abs(b - a) / abs(a) > DRIFT:
+            drifted.append("%s  %g -> %g" % (k, a, b))
+    if drifted:
+        problems.append("%d values moved more than %d%% or to/from zero:"
+                        % (len(drifted), int(DRIFT * 100)))
+        problems.extend("      " + d for d in drifted[:25])
+        if len(drifted) > 25:
+            problems.append("      ... and %d more" % (len(drifted) - 25))
+
+    # --- verdict ------------------------------------------------------------
+    for n in notes:
+        print("  note: " + n)
+    if not problems:
+        print("\nnothing lost and nothing drifted - safe to regenerate")
+        return 0
+
+    print("\nNEEDS A LOOK:")
+    for p in problems:
+        print(p if p.startswith("      ") else "  " + p)
+    print("\nranges.json NOT written. Re-run without --check to accept these.")
+    return 2
 
 
 def main():
@@ -488,6 +661,7 @@ def main():
             break
 
     payload = {
+        "_build": fingerprint(),
         "_source": "extracted from resources.assets - see extract_ranges.py",
         "_formula": "radar detection_range = maxRange / minSignal * RCS**0.25",
         "_optical": "optical/IR range = min(visualRange, target.visibleRange * magnification) "
@@ -498,8 +672,13 @@ def main():
         "arsenal": dict(sorted(arsenal.items())),
         "airframes": dict(sorted(airframes.items(), key=lambda kv: kv[1]["rcs"])),
     }
-    with open(OUT, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=1)
+    # --check extracts exactly as normal but writes nothing, so a
+    # comparison can never be the thing that overwrites what it compared
+    # against.
+    checking = "--check" in sys.argv
+    if not checking:
+        with open(OUT, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=1)
 
     # --- report ------------------------------------------------------------
     no = sum(len(v["optical"]) for v in armed.values())
@@ -536,6 +715,10 @@ def main():
     if rcs:
         print(f"\nRCS spread across {len(rcs)} types: "
               f"min {rcs[0]}, median {rcs[len(rcs)//2]}, max {rcs[-1]}")
+
+    # The counts above are the context for the comparison, so it runs last.
+    if checking:
+        sys.exit(check(payload))
 
     print(f"\nwrote {OUT}")
 

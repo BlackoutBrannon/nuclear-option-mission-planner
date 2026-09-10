@@ -1,4 +1,10 @@
 {
+ "_build": {
+  "unity": "2022.3.62f2",
+  "resourcesBytes": 139435912,
+  "resourcesModified": "2026-08-31T11:50:30Z",
+  "extracted": "2026-09-10T04:04:51Z"
+ },
  "_source": "extracted from resources.assets - see extract_ranges.py",
  "_formula": "radar detection_range = maxRange / minSignal * RCS**0.25",
  "_optical": "optical/IR range = min(visualRange, target.visibleRange * magnification) - independent of RCS",

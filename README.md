@@ -457,6 +457,62 @@ and provides the global `ms`.
 | `11-input.js` | Hover, status bar, menus, panel rendering, pointer input. |
 | `12-briefing.js` | Briefing sheet, image and kneeboard exports, and start-up. |
 
+## After a game patch
+
+Most of the planner's data is read out of your own game install, so a patch that
+changes ranges, adds units or rebalances weapons is a re-run rather than a code
+change. Check first:
+
+```
+python tools/extract_ranges.py --check
+```
+
+That extracts exactly as normal but **writes nothing**. It compares what it
+found against the committed `ranges.json` and tells you whether the difference
+is the boring kind or not:
+
+- **Additions are forgiven.** New units, new munitions, new airframes are the
+  normal result of a patch and are reported as notes.
+- **Losses and drift are not.** A unit that has stopped having a radar, a
+  munition that has vanished, or a range that moved more than 25% is either a
+  real balance change worth knowing about, or a field this extractor no longer
+  reads correctly. From the outside those look identical, so both are raised.
+- **A value arriving at or leaving zero always counts**, because that is exactly
+  what a field falling out of the extraction looks like.
+
+It exits `0` when clean and `2` when something wants a look, so it can gate a
+script. If it is happy, accept the changes:
+
+```
+python tools/extract_ranges.py          # writes ranges.json
+python tools/extract_units.py           # display names, if unit types changed
+```
+
+`ranges.json` records a `_build` block — the size and timestamp of
+`resources.assets`, plus the Unity version — so you can always tell which game
+build the data came from. Nuclear Option ships no version string of its own; the
+executable carries only Unity's.
+
+### What a re-run cannot fix
+
+**The detection maths is ported code, not data.** The signal formula, the radar
+horizon, the slant-to-ground projection and the four flight models live in
+`src/`, and `ranges.json` only records them as `_formula` strings for reference.
+If the developers change *how* detection works rather than *what the numbers
+are*, the planner will keep producing confident, plausible, wrong answers and no
+check will notice. That needs someone reading the decompiled assembly again.
+
+`--check` does catch one corner of this: a weapon whose flight model is not one
+the planner implements is reported by name, because such a weapon gets no time
+of flight at all.
+
+Two other things are code rather than data:
+
+- **Map extents and terrain names** in `src/01-boot.js`. A new official map needs
+  an entry there, plus a capture.
+- **Terrain and imagery** come from the F10 capture, which needs the game
+  running — see *Basemaps* below.
+
 ## Regenerating the unit catalogue
 
 After a game patch adds or renames units:
