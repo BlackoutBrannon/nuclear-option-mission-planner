@@ -15,7 +15,16 @@ caching them anyway.
 
 import http.server, os, socketserver, sys, webbrowser
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+# A bare number sets the port; --no-browser suppresses the tab. Parsed by hand
+# rather than with argparse because there are two options and one of them is
+# positional.
+ARGS = [a for a in sys.argv[1:] if not a.startswith("-")]
+PORT = int(ARGS[0]) if ARGS else 8000
+
+# start.bat wants a browser; a script driving the server does not, and having
+# one appear over whatever the user is doing is worse than an inconvenience -
+# it steals focus.
+OPEN_BROWSER = "--no-browser" not in sys.argv
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -60,7 +69,8 @@ if __name__ == "__main__":
                  f"  Another server is probably already using it.\n")
 
     print(f"\n  Nuclear Option Mission Planner\n  {url}\n  Ctrl+C to stop.\n")
-    webbrowser.open(url)
+    if OPEN_BROWSER:
+        webbrowser.open(url)
     try:
         with httpd:
             httpd.serve_forever()

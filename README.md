@@ -368,8 +368,11 @@ Or by hand:
 
 ```
 cd "path/to/Mission planner"
-python -m http.server 8000
+python tools/serve.py 8000
 ```
+
+Add `--no-browser` to start the server without opening a tab, which is what you
+want when a script is driving it rather than a person.
 
 Then open <http://localhost:8000>.
 
