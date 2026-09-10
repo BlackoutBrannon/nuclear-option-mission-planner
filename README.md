@@ -350,6 +350,24 @@ certificate costs several hundred a year. SmartScreen will say "Windows
 protected your PC" - *More info* then *Run anyway*. If that is not a trade you
 want to make, run it in a browser instead.
 
+**Scanned.** The v0.2.0 zip on VirusTotal:
+<https://www.virustotal.com/gui/file/6af152bbcabc24f03ed660521ffc44d44f0b47983999e369fc116d063cc2b0b5>
+
+**1 of 66 engines flags it**, and that one is worth understanding rather than
+ignoring. Zillya reports `Trojan.Agent.Win32.4629592` - an auto-numbered generic
+signature, not a named malware family. Every major engine is clean.
+
+The likely cause is the build shape rather than anything in the code. This is a
+self-contained single-file .NET application: the executable carries the runtime
+inside it and unpacks itself on launch, which is behaviourally the same thing a
+packer does, and heuristic engines flag that pattern. Being unsigned makes it
+likelier still. The same build published as loose files instead of one bundle
+would probably score zero, at the cost of shipping several hundred files.
+
+You do not have to take that on trust. The hash above is the file the release
+serves; build it yourself and compare, or run the planner in a browser and never
+execute anything.
+
 **Checksums** for `v0.2.0`, so you can confirm the download is the file that was
 published:
 
