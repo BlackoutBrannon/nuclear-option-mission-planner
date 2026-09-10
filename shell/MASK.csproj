@@ -16,8 +16,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>NOMissionPlanner</AssemblyName>
-    <RootNamespace>NOMissionPlanner</RootNamespace>
+    <AssemblyName>MASK</AssemblyName>
+    <RootNamespace>Mask</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>app.ico</ApplicationIcon>
@@ -25,13 +25,13 @@
 
   <!--
     What Explorer, the taskbar and the file properties dialog show. Without
-    these the executable identifies itself as "NOMissionPlanner 1.0.0" with no
+    these the executable identifies itself as "MASK 1.0.0" with no
     description, which reads like a debug build.
   -->
   <PropertyGroup>
     <Version>0.1.0</Version>
-    <Product>Nuclear Option Mission Planner</Product>
-    <AssemblyTitle>Nuclear Option Mission Planner</AssemblyTitle>
+    <Product>MASK - Mission Analysis &amp; Strike Kit</Product>
+    <AssemblyTitle>MASK - Mission Analysis &amp; Strike Kit</AssemblyTitle>
     <Description>Mission planning for Nuclear Option: threat rings from the game's own detection model, terrain masking, routes, release points and printable briefings.</Description>
     <Authors>BlackoutBrannon</Authors>
     <Company>BlackoutBrannon</Company>

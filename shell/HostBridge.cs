@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
 
-namespace NOMissionPlanner;
+namespace Mask;
 
 /// <summary>
 /// The things a browser will not do: read a file the user picks, and write one
@@ -125,7 +125,7 @@ internal sealed class HostBridge
     // a real file first and that is what gets opened.
     private object OpenTemp(JsonElement p)
     {
-        var dir = Path.Combine(Path.GetTempPath(), "NOMissionPlanner");
+        var dir = Path.Combine(Path.GetTempPath(), "MASK");
         Directory.CreateDirectory(dir);
 
         var name = Safe(Str(p, "name", "briefing")) + ".html";

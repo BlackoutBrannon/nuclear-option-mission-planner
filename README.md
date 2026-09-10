@@ -1,4 +1,6 @@
-# Nuclear Option Mission Planner
+# MASK
+
+**Mission Analysis & Strike Kit** - mission planning for [Nuclear Option](https://store.steampowered.com/app/2168680/Nuclear_Option/).
 
 Plan a strike before you fly it.
 
@@ -326,7 +328,7 @@ relative path to a file in `app/` - `units.json`, `ranges.json`, `terrain/` and
 `tiles/`, and that is the complete list. There is no telemetry, no analytics and
 no auto-update. WebView2 itself is Microsoft's component and behaves as it does
 anywhere else on Windows; it keeps its profile in
-`%LOCALAPPDATA%\NOMissionPlanner`.
+`%LOCALAPPDATA%\MASK`.
 
 **Build it yourself** and compare, if you would rather:
 
@@ -372,7 +374,7 @@ What makes a report easy to act on:
   change every envelope on screen.
 - **A screenshot**, or the exported briefing image, which records the RCS,
   altitude and whether terrain masking was on.
-- **Which build**: right-click `NOMissionPlanner.exe` and read the version from
+- **Which build**: right-click `MASK.exe` and read the version from
   Properties, or say if you ran it in a browser instead.
 
 If the app fails to start, run it once from a terminal with `--debug` and say
@@ -417,7 +419,7 @@ dotnet run                     # runs against the working tree, no copy needed
 dotnet publish -c Release -o ./publish
 ```
 
-`publish/` holds `NOMissionPlanner.exe` and an `app/` folder beside it. That is
+`publish/` holds `MASK.exe` and an `app/` folder beside it. That is
 the whole distributable - about 127 MB, most of it map imagery. The build is
 self-contained, so it runs on a machine with no .NET installed; add
 `-p:SelfContained=false` for a much smaller build that needs the .NET 8 Desktop

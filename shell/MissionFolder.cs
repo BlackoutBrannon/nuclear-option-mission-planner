@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace NOMissionPlanner;
+namespace Mask;
 
 /// <summary>
 /// Where this machine keeps Nuclear Option missions, and how the app remembers
@@ -21,7 +21,7 @@ internal static class MissionFolder
 
     private static string SettingsPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "NOMissionPlanner", "settings.json");
+        "MASK", "settings.json");
 
     internal sealed record Candidate(string Label, string Path, string Note);
 

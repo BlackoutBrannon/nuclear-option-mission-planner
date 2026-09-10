@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
-namespace NOMissionPlanner;
+namespace Mask;
 
 internal static class Program
 {
@@ -16,6 +16,10 @@ internal static class Program
 
 internal sealed class PlannerWindow : Form
 {
+    // MASK: Mission Analysis and Strike Kit. The mark is a threat ring
+    // with terrain bitten out of it, which is what masking means here.
+    private const string APP_NAME = "MASK - Mission Analysis & Strike Kit";
+
     // The planner's files are served from a made-up host rather than loaded as
     // file:// URLs. A file:// page is its own opaque origin, so fetch is blocked
     // across it and units.json never loads - the same failure the README warns
@@ -33,7 +37,7 @@ internal sealed class PlannerWindow : Form
 
     public PlannerWindow()
     {
-        Text = "Nuclear Option Mission Planner";
+        Text = APP_NAME;
 
         // ApplicationIcon in the csproj is what Explorer reads off the file.
         // The taskbar and the title bar read Form.Icon, which defaults to the
@@ -58,7 +62,7 @@ internal sealed class PlannerWindow : Form
         if (content is null)
         {
             Fail("Could not find the planner's files.\n\n" +
-                 "Expected an 'app' folder next to NOMissionPlanner.exe " +
+                 "Expected an 'app' folder next to MASK.exe " +
                  "containing index.html.");
             return;
         }
@@ -69,7 +73,7 @@ internal sealed class PlannerWindow : Form
             // next to the executable, which may sit in Program Files.
             var profile = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "NOMissionPlanner", "WebView2");
+                "MASK", "WebView2");
             Directory.CreateDirectory(profile);
 
             // --debug opens the DevTools protocol on 9222 so the page can be
@@ -277,7 +281,7 @@ internal sealed class PlannerWindow : Form
 
     private void Fail(string message)
     {
-        MessageBox.Show(this, message, "Nuclear Option Mission Planner",
+        MessageBox.Show(this, message, APP_NAME,
                         MessageBoxButtons.OK, MessageBoxIcon.Error);
         Close();
     }
