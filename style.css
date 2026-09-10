@@ -600,3 +600,11 @@ select {
   cursor: pointer; font-size: 14px; line-height: 1; padding: 0 3px;
 }
 .wpRow .del:hover { color: #f3b3b3; }
+
+/* A button that reads as a link: used where an action belongs beside a control
+   rather than in a row of its own. */
+.linkish {
+  background: none; border: 0; padding: 2px 0; margin: 0 0 6px;
+  color: #8ecbff; font: inherit; font-size: 11px; cursor: pointer;
+}
+.linkish:hover { color: #ffffff; text-decoration: underline; }

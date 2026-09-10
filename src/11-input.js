@@ -1199,6 +1199,21 @@ drop.addEventListener('drop', async (e) => {
 if (onDesktop) {
     drop.style.cursor = 'pointer';
     drop.title = 'Click to choose a mission file';
+
+    // Somewhere to change the mission folder after first run. Without it,
+    // answering "Not now" once would be permanent, which is a trap rather than
+    // a choice.
+    const folderLink = document.createElement('button');
+    folderLink.type = 'button';
+    folderLink.className = 'linkish';
+    folderLink.textContent = 'Mission folder…';
+    folderLink.title = 'Where the Open dialog starts';
+    folderLink.addEventListener('click', async (e) => {
+        e.stopPropagation();           // the drop zone opens a file on click
+        const picked = await hostCall('missionFolder').catch(() => null);
+        if (picked) folderLink.textContent = 'Missions: ' + picked.label;
+    });
+    drop.insertAdjacentElement('afterend', folderLink);
     drop.addEventListener('click', async () => {
         const picked = await hostCall('openFile', {
             kind: 'mission',

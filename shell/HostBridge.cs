@@ -60,6 +60,7 @@ internal sealed class HostBridge
         "openFile" => OpenFile(payload),
         "saveFile" => SaveFile(payload),
         "openTemp" => OpenTemp(payload),
+        "missionFolder" => PickMissionFolder(),
         _ => throw new InvalidOperationException($"unknown action '{action}'"),
     };
 
@@ -135,10 +136,31 @@ internal sealed class HostBridge
         return new { path = file };
     }
 
+    // Returns { path, label } for whatever the mission folder now is, or null
+    // if the user declined to change it.
+    private object? PickMissionFolder()
+    {
+        var chosen = MissionFolder.Choose(_owner, firstRun: false);
+        if (chosen is null) return null;
+        MissionFolder.Save(chosen);
+        _lastFolder.Remove("mission");     // the new choice should win at once
+        return new { path = chosen, label = FolderLabel(chosen) };
+    }
+
     private string StartFolder(string kind, string preferred)
     {
         if (_lastFolder.TryGetValue(kind, out var last) && Directory.Exists(last)) return last;
         if (preferred.Length > 0 && Directory.Exists(preferred)) return preferred;
+
+        // Where this machine keeps missions, if it has been established. Only a
+        // fallback: once you have opened one from somewhere, that is where you
+        // are working and the dialog should go back there.
+        if (kind == "mission")
+        {
+            var configured = MissionFolder.Saved();
+            if (configured is not null) return configured;
+        }
+
         return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
     }
 
@@ -146,6 +168,16 @@ internal sealed class HostBridge
     {
         var dir = Path.GetDirectoryName(file);
         if (!string.IsNullOrEmpty(dir)) _lastFolder[kind] = dir;
+    }
+
+    // The last path segment, for showing in the page. A trailing separator
+    // would otherwise make GetFileName return an empty string.
+    internal static string FolderLabel(string path)
+    {
+        var trimmed = path.TrimEnd(Path.DirectorySeparatorChar,
+                                   Path.AltDirectorySeparatorChar);
+        var name = Path.GetFileName(trimmed);
+        return name.Length > 0 ? name : trimmed;
     }
 
     private static string Safe(string name)

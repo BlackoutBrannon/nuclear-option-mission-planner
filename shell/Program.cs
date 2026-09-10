@@ -144,6 +144,34 @@ internal sealed class PlannerWindow : Form
         };
 
         core.Navigate($"https://{VirtualHost}/index.html");
+
+        // Asked once, after the planner is on screen rather than in front of a
+        // blank window, and never again - "Not now" is remembered as an answer
+        // so it does not turn into a prompt on every launch. Dragging a file in
+        // never needed a folder, so declining costs nothing.
+        if (!MissionFolder.AlreadyAsked())
+        {
+            // Wrapped because this runs at the tail of an async void event
+            // handler, where an exception is swallowed without trace - the
+            // prompt would simply never appear and nothing would say why.
+            BeginInvoke(() =>
+            {
+                try
+                {
+                    var chosen = MissionFolder.Choose(this, firstRun: true);
+                    MissionFolder.Save(chosen);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"mission folder prompt failed: {ex}");
+                    MessageBox.Show(this,
+                        "Could not ask where your missions are.\n\n" + ex.Message +
+                        "\n\nDragging a mission onto the window still works.",
+                        Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MissionFolder.Save(null);   // do not ask again every launch
+                }
+            });
+        }
     }
 
     // Packaged, the planner sits in 'app' beside the executable. Run from
@@ -155,9 +183,21 @@ internal sealed class PlannerWindow : Form
         var packaged = Path.Combine(AppContext.BaseDirectory, "app");
         if (File.Exists(Path.Combine(packaged, "index.html"))) return packaged;
 
-        var source = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
-        if (File.Exists(Path.Combine(source, "index.html"))) return source;
+        // Run from source, the planner is somewhere above the build output -
+        // but how far up depends on the build. Adding a RuntimeIdentifier to
+        // the project inserted a win-x64 folder and moved it from four levels
+        // to five, which counting could not survive. So it is searched for
+        // rather than counted to.
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var i = 0; i < 8 && dir is not null; i++, dir = dir.Parent)
+        {
+            var candidate = Path.Combine(dir.FullName, "index.html");
+            if (File.Exists(candidate) &&
+                Directory.Exists(Path.Combine(dir.FullName, "src")))
+            {
+                return dir.FullName;
+            }
+        }
 
         return null;
     }
