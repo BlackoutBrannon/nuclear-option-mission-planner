@@ -23,3 +23,7 @@ shell/publish/
 # which is where a 100 MB+ binary belongs - git rejects files over 100 MB and
 # would carry every past build forever even if it did not.
 shell/*.zip
+
+# Release notes are written per release and handed to gh; the release page is
+# where they live afterwards, not the working tree.
+shell/notes.md
