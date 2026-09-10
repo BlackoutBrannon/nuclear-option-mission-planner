@@ -46,7 +46,8 @@ function showTip(unit, clientX, clientY) {
 
     tip.innerHTML =
         '<div class="n">' + unitName(unit.type) + '</div>' +
-        '<div class="r">' + unit.group + ' &middot; ' + unit.role + '</div>' +
+        '<div class="r">' + unit.group + ' &middot; ' + unit.role +
+            (entry.code ? ' &middot; ' + entry.code : '') + '</div>' +
         '<div>' + factionLabel(unit.faction) + ' &middot; ' + affil + '</div>' +
         (bullseye ? '<div style="color:' + BULL_HEX + ';margin-top:4px;">BULLSEYE '
                     + fmtBullseye(unit) + '</div>' : '') +

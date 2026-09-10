@@ -44,10 +44,6 @@ GAME = r"C:\Program Files (x86)\Steam\steamapps\common\Nuclear Option\NuclearOpt
 MISSIONS = r"C:\Program Files (x86)\Steam\steamapps\workshop\content\2168680"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "units.json")
 
-# A plausible name or description: starts alphanumeric, contains only characters
-# you would expect in English prose. Filters out the binary padding that sits
-# between fields in the asset file.
-CLEAN = re.compile(r"[A-Za-z0-9][A-Za-z0-9 \-\.,'()/:%+&!?]{2,}")
 
 
 def unit_types_in_missions():
@@ -68,39 +64,35 @@ def unit_types_in_missions():
     return types
 
 
-def strings_after(blob, pos, span=500):
-    """Printable runs following a position, in order."""
-    return [s.decode("ascii", "ignore")
-            for s in re.findall(rb"[ -~]{3,}", blob[pos:pos + span])]
+def definitions():
+    """Every UnitDefinition in the game, keyed by the jsonKey missions use.
 
+    Read through UnityPy with a regenerated type tree, exactly as
+    extract_ranges.py does - which is why this module imports it rather than
+    setting up a second copy of the same machinery.
 
-def find_entry(blob, key):
+    This used to scrape raw bytes out of resources.assets and pick out runs of
+    plausible-looking text. That worked well enough to be believed and was
+    quietly wrong: it truncated 40 of the 85 descriptions, several of them mid
+    word, because a byte scan has no way to know where a string actually ends.
+    A type tree does.
     """
-    Locate a unit's name and description.
+    import extract_ranges
 
-    Two passes, because the asset file is not consistent:
-      strict - key, key, name, description with nothing between
-      loose  - allow binary padding and differing capitalisation between fields
-               (the file contains both "RadarSam1" and "RadarSAM1")
-    """
-    pattern = re.escape(key.encode() + b"\x00")
-
-    # strict
-    for m in re.finditer(pattern, blob):
-        s = strings_after(blob, m.start())
-        if len(s) >= 4 and s[0] == key and s[1] == key:
-            return s[2], s[3]
-
-    # loose - a shorter window, because a wide one wanders into the NEXT record
-    # and returns its neighbour's name (this is how radarStation1 came back as
-    # "Refinery Structure").
-    for m in re.finditer(pattern, blob, re.IGNORECASE):
-        s = strings_after(blob, m.end(), span=200)
-        cand = [x for x in s if CLEAN.fullmatch(x) and x.lower() != key.lower()]
-        for i in range(len(cand) - 1):
-            if len(cand[i]) < 40 and len(cand[i + 1]) > 35:
-                return cand[i], cand[i + 1]
-    return None
+    env = extract_ranges.load()
+    out = {}
+    for o in env.objects:
+        if o.type.name != "MonoBehaviour":
+            continue
+        try:
+            d = o.read_typetree()
+        except Exception:
+            continue          # unrelated classes the generator cannot lay out
+        # UnitDefinition identified by the fields it carries rather than by
+        # script name, which lives in a different asset file.
+        if "jsonKey" in d and "radarSize" in d and d.get("jsonKey"):
+            out[d["jsonKey"]] = d
+    return out
 
 
 def prettify(key):
@@ -147,21 +139,26 @@ def main():
     types = unit_types_in_missions()
     print(f"{len(types)} distinct unit types across installed missions")
 
-    path = os.path.join(GAME, "resources.assets")
-    if not os.path.exists(path):
-        sys.exit(f"not found: {path}")
-    blob = open(path, "rb").read()
-    print(f"scanning {os.path.basename(path)} ({len(blob)/1048576:.0f} MB)\n")
+    if not os.path.isdir(GAME):
+        sys.exit(f"game data not found: {GAME}")
+
+    defs = definitions()
+    print(f"{len(defs)} unit definitions in the game's assets")
 
     catalogue, missing = {}, []
     for key in sorted(types):
-        hit = find_entry(blob, key)
-        if hit:
-            catalogue[key] = {
-                "name": hit[0],
-                "description": hit[1],
+        d = defs.get(key)
+        if d and d.get("unitName"):
+            entry = {
+                "name": d["unitName"],
+                "description": d.get("description") or "",
                 "category": types[key],
             }
+            # The short designator the game shows on unit lists - "SAM IR",
+            # "MBT". Cheap to carry and the only compact label available.
+            if d.get("code"):
+                entry["code"] = d["code"]
+            catalogue[key] = entry
         else:
             missing.append(key)
             catalogue[key] = {

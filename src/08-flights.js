@@ -568,8 +568,13 @@ function drawTargets(ctx) {
         if (!w) return;
         const p = toScreen(w.x, w.z);
 
+        // White, not the target red. Most designated units are hostile and
+        // hostile symbols are red, so red brackets on a red diamond in a field
+        // of red diamonds is the one combination that cannot be seen - and it
+        // fails hardest for anyone who does not separate red well. White reads
+        // against the hostile red, the friendly blue and the terrain alike.
         const R = 13, ARM = 6;
-        for (const pass of [{ c: '#0b1014', lw: 5 }, { c: TARGET_COLOUR, lw: 2.4 }]) {
+        for (const pass of [{ c: '#0b1014', lw: 5.5 }, { c: '#ffffff', lw: 2.6 }]) {
             ctx.strokeStyle = pass.c;
             ctx.lineWidth   = pass.lw;
             ctx.beginPath();
@@ -581,18 +586,24 @@ function drawTargets(ctx) {
             ctx.stroke();
         }
 
-        // The number is how a target is referred to everywhere else, so it is
-        // on the map rather than only in the panel.
-        const bx = p.x + R + 7, by = p.y - R - 3;
+        // Labelled T1, T2 - the same numbers the panel and every export use,
+        // with the letter so the tag says what it is rather than leaving a
+        // bare digit to be guessed at. The plate keeps the target red, which
+        // is what ties it to the target list; the bracket above does the work
+        // of being visible.
+        const label = 'T' + (i + 1);
+        const w2 = ctx.measureText(label).width / 2 + 5;
+        const bx = p.x + R + w2 + 2, by = p.y - R - 3;
+
         ctx.beginPath();
-        ctx.arc(bx, by, 8, 0, Math.PI * 2);
+        ctx.roundRect(bx - w2, by - 8, w2 * 2, 16, 4);
         ctx.fillStyle   = TARGET_COLOUR;
         ctx.strokeStyle = '#0b1014';
         ctx.lineWidth   = 2;
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = '#0b1014';
-        ctx.fillText(String(i + 1), bx, by + 0.5);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(label, bx, by + 0.5);
     });
 
     ctx.restore();
