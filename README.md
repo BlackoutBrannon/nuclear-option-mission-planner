@@ -15,17 +15,19 @@ From there you can lay out a route, mark targets, place release points, and get
 times of flight for the munition you are actually carrying - then export a
 briefing your flight can read on a second monitor or on paper.
 
-## Planned: waypoints on the HUD
+## Flying it: MASK Steerpoints
 
-The next piece is a BepInEx mod that reads a plan straight into the cockpit, so
-the steerpoints and targets you set here appear on the pilot's HUD in game
-instead of being memorised or kept on a kneeboard.
+The plan you make here can go straight onto the HUD in game.
+**[MASK Steerpoints](https://github.com/BlackoutBrannon/mask-steerpoints)** is a
+companion BepInEx plugin that reads the newest plan in `Documents\MASK` and draws
+the steerpoints over the pilot's HUD: the active one marked with name and
+distance, a flashing arrow to it when it is off screen, and automatic hand-off
+to the next as you pass each - so at the release point there is already an
+arrow on the egress heading.
 
-The groundwork is already in place. Every exported plan carries a `nav` block
-using the game's own coordinate layout, so the mod needs no conversion, and the
-desktop app can write that file to a folder the mod watches. The game has no
-native pilot navigation system, so the mod has to draw the symbology itself -
-that is the work still to do.
+It patches nothing and touches no network; your plan is a local file drawn on
+your own screen, and nobody else in a lobby can tell it is running. Export from
+here, drop the DLL in your plugins folder, fly. Everything else is in its README.
 
 ## What it does
 
