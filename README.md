@@ -103,6 +103,17 @@ That is a usable threat picture. Everything below adds a route to it.
 - **The RCS and altitude in the bottom bar drive every ring on screen.** If a
   ring looks wrong, check those two first.
 
+**The map has radars the mission file does not.** A mission file holds what its
+author placed. The map itself comes with more - on Heartland, nine radar stations
+on hilltops, plus airbase structures and industry; on Ignus, two - and the game
+adds them when the mission loads. MASK ships that list (`builtin/<Map>.json`)
+and merges it into every mission, so what you plan against is what the game
+runs. A built-in gets a side only when the mission file gives it a reason: a
+ground vehicle parked beside it, which the game treats as a capture within a
+minute of spawn, or for airbase buildings, the airbase it stands in. Otherwise
+it shows as unknown, in yellow - nobody's yet, either side's the moment a truck
+parks by it. The sidebar says how many were added and why they got their sides.
+
 ## Reading the threat picture
 
 Everything on the map is drawn against **one aircraft at one altitude** — the RCS

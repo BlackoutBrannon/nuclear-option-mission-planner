@@ -1,0 +1,1390 @@
+{
+ "_format": "mask-builtin",
+ "_map": "Ignus",
+ "_from": "Free Flight - Ignus Archipelago.survey.json",
+ "_surveyTakenUtc": "2026-09-11T09:07:14.3566095Z",
+ "_note": "Units the map itself provides, absent from every mission file. Merged into any mission on this map. faction is deliberately blank: the planner gives a unit a side only when the mission file offers a reason - a ground vehicle parked beside it, or the airbase whose capture ring it stands in when attached is true. observedSide is what one survey saw.",
+ "aircraft": [],
+ "vehicles": [],
+ "ships": [],
+ "buildings": [
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "hangar_med@210,843",
+   "globalPosition": {
+    "x": 1050.9,
+    "y": 7.7,
+    "z": 4213.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "hangar_med@791,926",
+   "globalPosition": {
+    "x": 3957.3,
+    "y": 6.2,
+    "z": 4628.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "hangar_med@193,811",
+   "globalPosition": {
+    "x": 962.6,
+    "y": 8.1,
+    "z": 4055.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "controlTower1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "controlTower1@14954,-5686",
+   "globalPosition": {
+    "x": 74770.6,
+    "y": 30.1,
+    "z": -28429.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "controlTower1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "controlTower1@-14964,6533",
+   "globalPosition": {
+    "x": -74818.2,
+    "y": 27.7,
+    "z": 32664.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@14764,-5978",
+   "globalPosition": {
+    "x": 73821.0,
+    "y": 13.1,
+    "z": -29891.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@14923,-5790",
+   "globalPosition": {
+    "x": 74614.4,
+    "y": 13.0,
+    "z": -28949.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@14900,-5841",
+   "globalPosition": {
+    "x": 74499.9,
+    "y": 13.1,
+    "z": -29206.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@14942,-5624",
+   "globalPosition": {
+    "x": 74712.3,
+    "y": 10.4,
+    "z": -28122.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@14886,-6103",
+   "globalPosition": {
+    "x": 74427.5,
+    "y": 11.6,
+    "z": -30515.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "hangar_med@-15477,6959",
+   "globalPosition": {
+    "x": -77385.9,
+    "y": 8.8,
+    "z": 34794.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "hangar_med@-15415,6864",
+   "globalPosition": {
+    "x": -77077.0,
+    "y": 11.6,
+    "z": 34318.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "hangar_med@-15388,6837",
+   "globalPosition": {
+    "x": -76942.0,
+    "y": 11.8,
+    "z": 34183.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "hangar_med@179,803",
+   "globalPosition": {
+    "x": 892.8,
+    "y": 8.1,
+    "z": 4015.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@14783,-5759",
+   "globalPosition": {
+    "x": 73916.6,
+    "y": 14.8,
+    "z": -28795.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@14815,-5775",
+   "globalPosition": {
+    "x": 74077.2,
+    "y": 14.8,
+    "z": -28874.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@14801,-6031",
+   "globalPosition": {
+    "x": 74007.1,
+    "y": 13.6,
+    "z": -30153.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@14854,-6106",
+   "globalPosition": {
+    "x": 74268.9,
+    "y": 11.6,
+    "z": -30529.6
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@14991,-5234",
+   "globalPosition": {
+    "x": 74954.2,
+    "y": 11.7,
+    "z": -26171.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@14784,-5724",
+   "globalPosition": {
+    "x": 73920.1,
+    "y": 14.8,
+    "z": -28621.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15501,6937",
+   "globalPosition": {
+    "x": -77506.4,
+    "y": 9.6,
+    "z": 34684.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15454,6952",
+   "globalPosition": {
+    "x": -77268.8,
+    "y": 9.2,
+    "z": 34761.6
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15164,6748",
+   "globalPosition": {
+    "x": -75817.7,
+    "y": 10.1,
+    "z": 33742.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15171,6771",
+   "globalPosition": {
+    "x": -75854.7,
+    "y": 10.4,
+    "z": 33854.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15071,6805",
+   "globalPosition": {
+    "x": -75352.6,
+    "y": 6.3,
+    "z": 34025.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@14966,-5474",
+   "globalPosition": {
+    "x": 74830.0,
+    "y": 12.5,
+    "z": -27371.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-15053,6640",
+   "globalPosition": {
+    "x": -75265.4,
+    "y": 7.8,
+    "z": 33198.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-14975,6577",
+   "globalPosition": {
+    "x": -74874.5,
+    "y": 7.2,
+    "z": 32882.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "controlTower1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "controlTower1@8492,47",
+   "globalPosition": {
+    "x": 42462.4,
+    "y": 25.4,
+    "z": 237.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "revetment1@8481,39",
+   "globalPosition": {
+    "x": 42405.4,
+    "y": 7.1,
+    "z": 193.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "revetment1@8474,31",
+   "globalPosition": {
+    "x": 42368.7,
+    "y": 7.6,
+    "z": 155.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "revetment1@8506,62",
+   "globalPosition": {
+    "x": 42527.9,
+    "y": 5.3,
+    "z": 308.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@8442,1",
+   "globalPosition": {
+    "x": 42208.4,
+    "y": 8.3,
+    "z": 5.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@8427,-15",
+   "globalPosition": {
+    "x": 42133.2,
+    "y": 9.4,
+    "z": -72.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15156,-5725",
+   "globalPosition": {
+    "x": -75779.0,
+    "y": 9.5,
+    "z": -28626.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15143,-5712",
+   "globalPosition": {
+    "x": -75717.3,
+    "y": 9.8,
+    "z": -28559.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-14766,-5658",
+   "globalPosition": {
+    "x": -73831.3,
+    "y": 7.1,
+    "z": -28287.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-14748,-5653",
+   "globalPosition": {
+    "x": -73739.8,
+    "y": 7.5,
+    "z": -28266.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-15025,-5682",
+   "globalPosition": {
+    "x": -75127.4,
+    "y": 11.4,
+    "z": -28408.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "hangar_med@-15118,-5739",
+   "globalPosition": {
+    "x": -75588.3,
+    "y": 8.9,
+    "z": -28697.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "hangar_med@-14837,-5672",
+   "globalPosition": {
+    "x": -74184.0,
+    "y": 6.6,
+    "z": -28359.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "hangar_med@-15065,-5675",
+   "globalPosition": {
+    "x": -75326.9,
+    "y": 11.2,
+    "z": -28373.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-15041,-5718",
+   "globalPosition": {
+    "x": -75206.0,
+    "y": 10.2,
+    "z": -28590.6
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-15069,-5696",
+   "globalPosition": {
+    "x": -75346.3,
+    "y": 10.0,
+    "z": -28481.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-14801,-5662",
+   "globalPosition": {
+    "x": -74005.7,
+    "y": 7.0,
+    "z": -28307.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "controlTower1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "controlTower1@-15008,-5714",
+   "globalPosition": {
+    "x": -75042.1,
+    "y": 31.2,
+    "z": -28568.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-15390,6920",
+   "globalPosition": {
+    "x": -76948.5,
+    "y": 12.0,
+    "z": 34598.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@14987,-5355",
+   "globalPosition": {
+    "x": 74937.4,
+    "y": 12.8,
+    "z": -26773.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "revetment1@-7652,2253",
+   "globalPosition": {
+    "x": -38259.4,
+    "y": 15.8,
+    "z": 11264.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "revetment1@-7615,2254",
+   "globalPosition": {
+    "x": -38074.5,
+    "y": 14.2,
+    "z": 11268.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "revetment1@-7660,2252",
+   "globalPosition": {
+    "x": -38300.3,
+    "y": 16.1,
+    "z": 11258.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-7596,2259",
+   "globalPosition": {
+    "x": -37979.0,
+    "y": 12.3,
+    "z": 11293.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-7572,2262",
+   "globalPosition": {
+    "x": -37861.7,
+    "y": 12.1,
+    "z": 11308.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@14918,-5740",
+   "globalPosition": {
+    "x": 74591.7,
+    "y": 13.3,
+    "z": -28699.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "radarStation1",
+   "faction": "",
+   "observedSide": "",
+   "attached": false,
+   "UniqueName": "radarStation1@-15132,7000",
+   "globalPosition": {
+    "x": -75660.0,
+    "y": 19.9,
+    "z": 35000.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@13746,5056",
+   "globalPosition": {
+    "x": 68728.5,
+    "y": 10.9,
+    "z": 25282.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@14033,5307",
+   "globalPosition": {
+    "x": 70163.1,
+    "y": 9.4,
+    "z": 26532.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "hangar_med",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "hangar_med@14076,5327",
+   "globalPosition": {
+    "x": 70379.6,
+    "y": 9.4,
+    "z": 26634.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@13788,5230",
+   "globalPosition": {
+    "x": 68939.7,
+    "y": 8.4,
+    "z": 26148.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@13811,5224",
+   "globalPosition": {
+    "x": 69056.2,
+    "y": 8.9,
+    "z": 26117.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@13864,5018",
+   "globalPosition": {
+    "x": 69318.1,
+    "y": 10.2,
+    "z": 25090.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@13938,5076",
+   "globalPosition": {
+    "x": 69690.6,
+    "y": 10.0,
+    "z": 25381.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@13939,5104",
+   "globalPosition": {
+    "x": 69695.3,
+    "y": 10.4,
+    "z": 25519.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@13744,5168",
+   "globalPosition": {
+    "x": 68717.8,
+    "y": 11.3,
+    "z": 25841.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@13957,5260",
+   "globalPosition": {
+    "x": 69784.2,
+    "y": 10.5,
+    "z": 26300.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@13908,5125",
+   "globalPosition": {
+    "x": 69539.6,
+    "y": 11.3,
+    "z": 25625.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "shelter1@-2700,6270",
+   "globalPosition": {
+    "x": -13500.4,
+    "y": 10.9,
+    "z": 31351.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "revetment1@-2667,6198",
+   "globalPosition": {
+    "x": -13334.3,
+    "y": 12.9,
+    "z": 30991.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "revetment1@-2677,6183",
+   "globalPosition": {
+    "x": -13384.9,
+    "y": 12.7,
+    "z": 30916.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-2704,6218",
+   "globalPosition": {
+    "x": -13519.1,
+    "y": 11.4,
+    "z": 31090.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-2669,6120",
+   "globalPosition": {
+    "x": -13346.9,
+    "y": 10.5,
+    "z": 30598.6
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "Helipad@-2648,6007",
+   "globalPosition": {
+    "x": -13237.7,
+    "y": 9.2,
+    "z": 30033.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "controlTower1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "controlTower1@14001,5280",
+   "globalPosition": {
+    "x": 70006.6,
+    "y": 30.5,
+    "z": 26397.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "shelter1@10993,-5495",
+   "globalPosition": {
+    "x": 54966.9,
+    "y": 10.7,
+    "z": -27474.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "revetment1@11044,-5495",
+   "globalPosition": {
+    "x": 55220.2,
+    "y": 11.3,
+    "z": -27473.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@11040,-5472",
+   "globalPosition": {
+    "x": 55200.3,
+    "y": 9.3,
+    "z": -27359.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "Helipad@11145,-5395",
+   "globalPosition": {
+    "x": 55724.8,
+    "y": 7.4,
+    "z": -26975.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "revetment1",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "revetment1@11175,-5376",
+   "globalPosition": {
+    "x": 55877.2,
+    "y": 10.5,
+    "z": -26879.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "radarStation1",
+   "faction": "",
+   "observedSide": "",
+   "attached": false,
+   "UniqueName": "radarStation1@12056,-6704",
+   "globalPosition": {
+    "x": 60282.1,
+    "y": 408.7,
+    "z": -33518.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "shelter1@512,511",
+   "globalPosition": {
+    "x": 2561.1,
+    "y": 7.9,
+    "z": 2552.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "shelter1@509,535",
+   "globalPosition": {
+    "x": 2544.4,
+    "y": 7.3,
+    "z": 2674.6
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "shelter1@536,535",
+   "globalPosition": {
+    "x": 2678.8,
+    "y": 7.9,
+    "z": 2675.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "shelter1@542,568",
+   "globalPosition": {
+    "x": 2712.4,
+    "y": 8.4,
+    "z": 2839.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "shelter1@526,591",
+   "globalPosition": {
+    "x": 2629.7,
+    "y": 8.3,
+    "z": 2954.6
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "shelter1@725,888",
+   "globalPosition": {
+    "x": 3625.8,
+    "y": 7.9,
+    "z": 4439.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "shelter1",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "shelter1@767,901",
+   "globalPosition": {
+    "x": 3835.8,
+    "y": 7.3,
+    "z": 4505.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "Helipad",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "Helipad@375,744",
+   "globalPosition": {
+    "x": 1877.0,
+    "y": 8.3,
+    "z": 3719.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@14827,-5851",
+   "globalPosition": {
+    "x": 74136.7,
+    "y": 16.6,
+    "z": -29257.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@14822,-5887",
+   "globalPosition": {
+    "x": 74112.5,
+    "y": 15.5,
+    "z": -29437.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@14818,-5924",
+   "globalPosition": {
+    "x": 74088.1,
+    "y": 15.0,
+    "z": -29618.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@424,629",
+   "globalPosition": {
+    "x": 2121.7,
+    "y": 10.4,
+    "z": 3143.0
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@448,588",
+   "globalPosition": {
+    "x": 2237.9,
+    "y": 9.3,
+    "z": 2937.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@436,608",
+   "globalPosition": {
+    "x": 2179.7,
+    "y": 9.6,
+    "z": 3040.6
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-15039,6497",
+   "globalPosition": {
+    "x": -75195.6,
+    "y": 10.9,
+    "z": 32486.3
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-15023,6481",
+   "globalPosition": {
+    "x": -75114.4,
+    "y": 11.2,
+    "z": 32405.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-15006,6464",
+   "globalPosition": {
+    "x": -75030.3,
+    "y": 11.4,
+    "z": 32320.9
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-7528,2268",
+   "globalPosition": {
+    "x": -37640.4,
+    "y": 12.1,
+    "z": 11340.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-2653,6218",
+   "globalPosition": {
+    "x": -13265.7,
+    "y": 12.6,
+    "z": 31090.8
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@11195,-5389",
+   "globalPosition": {
+    "x": 55976.3,
+    "y": 11.5,
+    "z": -26943.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-15155,-5687",
+   "globalPosition": {
+    "x": -75774.0,
+    "y": 11.8,
+    "z": -28434.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-15173,-5664",
+   "globalPosition": {
+    "x": -75866.3,
+    "y": 11.3,
+    "z": -28321.7
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Primeva",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@-15188,-5687",
+   "globalPosition": {
+    "x": -75941.5,
+    "y": 11.9,
+    "z": -28437.4
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@14074,5365",
+   "globalPosition": {
+    "x": 70372.2,
+    "y": 10.9,
+    "z": 26827.1
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@14135,5407",
+   "globalPosition": {
+    "x": 70677.4,
+    "y": 9.6,
+    "z": 27033.2
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@14167,5345",
+   "globalPosition": {
+    "x": 70835.0,
+    "y": 9.8,
+    "z": 26727.5
+   },
+   "placement": "BuiltIn"
+  },
+  {
+   "type": "ammunitionBunker",
+   "faction": "",
+   "observedSide": "Boscali",
+   "attached": true,
+   "UniqueName": "ammunitionBunker@8459,13",
+   "globalPosition": {
+    "x": 42295.7,
+    "y": 9.3,
+    "z": 63.3
+   },
+   "placement": "BuiltIn"
+  }
+ ]
+}

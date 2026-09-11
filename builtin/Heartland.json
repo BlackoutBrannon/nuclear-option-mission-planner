@@ -1,8 +1,8 @@
 {
  "_format": "mask-builtin",
  "_map": "Heartland",
- "_from": "Escalation (0.32) NO BALLISTIC MISSILE LAUNCHERS.survey.json",
- "_surveyTakenUtc": "2026-09-11T07:49:33.2560848Z",
+ "_from": "Free Flight - Heartland.survey.json",
+ "_surveyTakenUtc": "2026-09-11T09:06:57.1074835Z",
  "_note": "Units the map itself provides, absent from every mission file. Merged into any mission on this map. faction is deliberately blank: the planner gives a unit a side only when the mission file offers a reason - a ground vehicle parked beside it, or the airbase whose capture ring it stands in when attached is true. observedSide is what one survey saw.",
  "aircraft": [],
  "vehicles": [],
@@ -479,7 +479,7 @@
   {
    "type": "revetment1",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "Primeva",
    "attached": true,
    "UniqueName": "revetment1@-2072,-1296",
    "globalPosition": {
@@ -492,7 +492,7 @@
   {
    "type": "revetment1",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "Primeva",
    "attached": true,
    "UniqueName": "revetment1@-2062,-1294",
    "globalPosition": {
@@ -505,7 +505,7 @@
   {
    "type": "revetment1",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "Primeva",
    "attached": true,
    "UniqueName": "revetment1@-2099,-1304",
    "globalPosition": {
@@ -687,7 +687,7 @@
   {
    "type": "radarStation1",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "",
    "attached": false,
    "UniqueName": "radarStation1@-1863,2066",
    "globalPosition": {
@@ -700,7 +700,7 @@
   {
    "type": "radarStation1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "",
    "attached": false,
    "UniqueName": "radarStation1@5919,-1281",
    "globalPosition": {
@@ -765,7 +765,7 @@
   {
    "type": "radarStation1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "",
    "attached": false,
    "UniqueName": "radarStation1@1536,-2475",
    "globalPosition": {
@@ -778,7 +778,7 @@
   {
    "type": "radarStation1",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "",
    "attached": false,
    "UniqueName": "radarStation1@-3069,-1021",
    "globalPosition": {
@@ -791,7 +791,7 @@
   {
    "type": "radarStation1",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "",
    "attached": false,
    "UniqueName": "radarStation1@-362,4064",
    "globalPosition": {
@@ -804,7 +804,7 @@
   {
    "type": "radarStation1",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "",
    "attached": false,
    "UniqueName": "radarStation1@2702,1327",
    "globalPosition": {
@@ -817,7 +817,7 @@
   {
    "type": "radarStation1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "",
    "attached": false,
    "UniqueName": "radarStation1@-1173,-4869",
    "globalPosition": {
@@ -869,7 +869,7 @@
   {
    "type": "hangar_med",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "Primeva",
    "attached": true,
    "UniqueName": "hangar_med@-2026,-1286",
    "globalPosition": {
@@ -960,7 +960,7 @@
   {
    "type": "controlTower1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "controlTower1@-6799,-2272",
    "globalPosition": {
@@ -973,7 +973,7 @@
   {
    "type": "hangar_med",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "hangar_med@-6886,-2505",
    "globalPosition": {
@@ -986,7 +986,7 @@
   {
    "type": "hangar_med",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "hangar_med@-6821,-2376",
    "globalPosition": {
@@ -999,12 +999,12 @@
   {
    "type": "shelter1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "shelter1@-6870,-2506",
    "globalPosition": {
     "x": -34350.9,
-    "y": 20.1,
+    "y": 20.0,
     "z": -12531.9
    },
    "placement": "BuiltIn"
@@ -1012,7 +1012,7 @@
   {
    "type": "shelter1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "shelter1@-6860,-2507",
    "globalPosition": {
@@ -1025,7 +1025,7 @@
   {
    "type": "shelter1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "shelter1@-6823,-2391",
    "globalPosition": {
@@ -1038,7 +1038,7 @@
   {
    "type": "shelter1",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "shelter1@-6824,-2403",
    "globalPosition": {
@@ -1246,7 +1246,7 @@
   {
    "type": "Helipad",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "Helipad@-6819,-2434",
    "globalPosition": {
@@ -1259,7 +1259,7 @@
   {
    "type": "Helipad",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "Helipad@-6806,-2316",
    "globalPosition": {
@@ -1272,7 +1272,7 @@
   {
    "type": "Helipad",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "Helipad@-6826,-2493",
    "globalPosition": {
@@ -1311,7 +1311,7 @@
   {
    "type": "Helipad",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "Primeva",
    "attached": true,
    "UniqueName": "Helipad@-1977,-1288",
    "globalPosition": {
@@ -1324,7 +1324,7 @@
   {
    "type": "Helipad",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "Primeva",
    "attached": true,
    "UniqueName": "Helipad@-1902,-1114",
    "globalPosition": {
@@ -1506,7 +1506,7 @@
   {
    "type": "ammunitionBunker",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "ammunitionBunker@-6822,-2305",
    "globalPosition": {
@@ -1519,7 +1519,7 @@
   {
    "type": "ammunitionBunker",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "ammunitionBunker@-6820,-2281",
    "globalPosition": {
@@ -1532,7 +1532,7 @@
   {
    "type": "ammunitionBunker",
    "faction": "",
-   "observedSide": "Primeva",
+   "observedSide": "Boscali",
    "attached": true,
    "UniqueName": "ammunitionBunker@-6817,-2258",
    "globalPosition": {
@@ -1571,7 +1571,7 @@
   {
    "type": "ammunitionBunker",
    "faction": "",
-   "observedSide": "Boscali",
+   "observedSide": "Primeva",
    "attached": true,
    "UniqueName": "ammunitionBunker@-2085,-1299",
    "globalPosition": {
