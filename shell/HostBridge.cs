@@ -152,6 +152,30 @@ internal sealed class HostBridge
         if (_lastFolder.TryGetValue(kind, out var last) && Directory.Exists(last)) return last;
         if (preferred.Length > 0 && Directory.Exists(preferred)) return preferred;
 
+        // Plans go where MASK Steerpoints reads them. The mod watches
+        // Documents\MASK for the newest plan file, so a plan saved anywhere else
+        // is one that silently never reaches the HUD - both READMEs would be
+        // correct and the thing would not work. The folder is created here
+        // because nothing else creates it, and a Save dialog cannot start in a
+        // folder that does not exist. Last-used still wins above, so choosing
+        // somewhere else once is respected for the session without being
+        // remembered as the new default.
+        if (kind == "plan")
+        {
+            var plans = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MASK");
+            try
+            {
+                Directory.CreateDirectory(plans);
+                return plans;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Fall through to Documents. The dialog still works, just not
+                // from the right place, and the user sees where they are.
+            }
+        }
+
         // Where this machine keeps missions, if it has been established. Only a
         // fallback: once you have opened one from somewhere, that is where you
         // are working and the dialog should go back there.

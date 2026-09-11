@@ -55,7 +55,7 @@ here, drop the DLL in your plugins folder, fly. Everything else is in its README
   aircraft is not
 
 **Exports**
-- Plan file to share or reload, carrying a `nav` block for external tools
+- Plan file for the HUD mod, to share, or to reload - saved to `Documents\MASK`, where MASK Steerpoints reads it
 - Printable briefing sheet: route table, detection events, times of flight,
   targets and the threat basis
 - High-resolution map image with a caption recording what it was measured
@@ -297,7 +297,7 @@ Four buttons under **Export**, for four different jobs:
 
 | Export | Use it for |
 |---|---|
-| **Plan** | Sharing the plan, or reloading it later. Needs the same mission file at the other end. |
+| **Plan** | Flying it with [MASK Steerpoints](https://github.com/BlackoutBrannon/mask-steerpoints), sharing it, or reloading it later. Saves to `Documents\MASK` by default - that is where the HUD mod looks. Needs the same mission file at the other end to reload. |
 | **Sheet** | The full briefing, printable. Route table, detection events, times of flight, targets. |
 | **Image** | A picture of the map as framed, at 3×. Pan and zoom to the shot you want *first*. |
 | **Card** | A 52-column text block, copied to the clipboard, sized to paste into chat. |

@@ -1245,6 +1245,11 @@ function planFile() {
         version: PLAN_VERSION,
         exported: new Date().toISOString(),
         mission: currentMission ? (currentMission._name || '') : '',
+        // Which terrain the plan is for. The mission name above is what the
+        // HUD mod matches on, but a plan made from the game's CurrentMission
+        // copy has no real name, and the map is the next best thing. An empty
+        // Path is Heartland - measured, not assumed - so it is written as such.
+        map: currentMission ? ((currentMission.MapKey && currentMission.MapKey.Path) || 'Terrain1') : '',
         nav: navView(),
         plan: planState(),
     };
