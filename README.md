@@ -380,6 +380,31 @@ exe  746e3d9f1042818a8a913eeaccc2d000caa2d9a658b32ec45397ae1cd1b0399b
 
 Check yours with `Get-FileHash <file>` in PowerShell.
 
+### The one network call
+
+Every time MASK opens it makes exactly one request to the internet: a `GET` to
+`https://api.github.com/repos/BlackoutBrannon/nuclear-option-mission-planner/releases/latest`
+to ask what the newest version is. It sends nothing but that request and a
+`User-Agent` naming the app and its version. If the answer is a newer release, a
+strip appears across the top of the window saying so, with three buttons:
+
+- **Download and install** asks first - what file, how big, from where, into
+  which folder - and does nothing until you say yes. The download is checked
+  against the size GitHub advertises and its SHA-256 is shown to you before a
+  second confirmation. MASK then closes, replaces its own files, and reopens.
+  Your plans and settings live elsewhere and are not touched.
+- **What changed** opens the release page in your browser.
+- **Not today** quiets the strip until tomorrow. The check still runs.
+
+If GitHub cannot be reached, nothing happens and nothing is shown. MASK never
+downloads anything on its own, never runs anything it downloaded without the
+two confirmations above, and makes no other request of any kind. The whole of
+it is in [`shell/Updater.cs`](shell/Updater.cs), which is short and meant to be
+read.
+
+Running from source, or installed somewhere MASK cannot write such as Program
+Files, the install button becomes **Open release page** instead.
+
 ## Reporting a bug
 
 Open an issue:

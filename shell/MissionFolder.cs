@@ -1,6 +1,3 @@
-using System.Text;
-using System.Text.Json;
-
 namespace Mask;
 
 /// <summary>
@@ -18,10 +15,6 @@ internal static class MissionFolder
     // Nuclear Option's Steam app id. Workshop content sits under
     // <library>/steamapps/workshop/content/<id>.
     private const string WorkshopId = "2168680";
-
-    private static string SettingsPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "MASK", "settings.json");
 
     internal sealed record Candidate(string Label, string Path, string Note);
 
@@ -102,47 +95,19 @@ internal static class MissionFolder
 
     internal static string? Saved()
     {
-        try
-        {
-            if (!File.Exists(SettingsPath)) return null;
-            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsPath));
-            if (doc.RootElement.TryGetProperty("missionFolder", out var v) &&
-                v.ValueKind == JsonValueKind.String)
-            {
-                var path = v.GetString();
-                // A folder that has since been deleted is worse than none: the
-                // dialog would open somewhere arbitrary with no explanation.
-                return Directory.Exists(path) ? path : null;
-            }
-        }
-        catch { /* unreadable settings are the same as none */ }
-        return null;
+        var path = Settings.GetString("missionFolder");
+        // A folder that has since been deleted is worse than none: the dialog
+        // would open somewhere arbitrary with no explanation.
+        return path is not null && Directory.Exists(path) ? path : null;
     }
 
     internal static void Save(string? folder, bool asked = true)
     {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-            var json = JsonSerializer.Serialize(
-                new { missionFolder = folder, asked },
-                new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(SettingsPath, json, new UTF8Encoding(false));
-        }
-        catch { /* not being able to remember is not worth an error */ }
+        Settings.Set("missionFolder", folder);
+        Settings.Set("asked", asked);
     }
 
-    internal static bool AlreadyAsked()
-    {
-        try
-        {
-            if (!File.Exists(SettingsPath)) return false;
-            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsPath));
-            return doc.RootElement.TryGetProperty("asked", out var v) &&
-                   v.ValueKind == JsonValueKind.True;
-        }
-        catch { return false; }
-    }
+    internal static bool AlreadyAsked() => Settings.GetBool("asked");
 
     /// <summary>
     /// Offer the folders that were found. Returns the chosen path, or null if

@@ -7,10 +7,17 @@ namespace Mask;
 internal static class Program
 {
     [STAThread]
-    private static void Main()
+    private static int Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+
+        // Started by a previous MASK to finish installing an update. Runs from
+        // a temp copy of this executable, never shows the planner, and exits.
+        if (args.Length > 0 && args[0] == "--apply-update")
+            return Updater.RunApply(args);
+
         Application.Run(new PlannerWindow());
+        return 0;
     }
 }
 
@@ -35,6 +42,18 @@ internal sealed class PlannerWindow : Form
     private CoreWebView2Environment? _env;
     private string? _content;
 
+    // The update notice. A strip across the top of the window rather than a
+    // dialog: it says its piece every launch without getting in the way of
+    // the map, and it can show download progress in place.
+    private readonly Panel _notice = new() { Dock = DockStyle.Top, Height = 40, Visible = false };
+    private readonly Label _noticeText = new() { AutoSize = true, ForeColor = Color.White };
+    private readonly Button _btnInstall = new() { Text = "Download and install", AutoSize = true };
+    private readonly Button _btnNotes = new() { Text = "What changed", AutoSize = true };
+    private readonly Button _btnLater = new() { Text = "Not today", AutoSize = true };
+    private readonly ProgressBar _progress = new() { Width = 220, Height = 14, Visible = false, Style = ProgressBarStyle.Continuous };
+    private Updater.Release? _release;
+    private CancellationTokenSource? _updateCts;
+
     public PlannerWindow()
     {
         Text = APP_NAME;
@@ -52,8 +71,46 @@ internal sealed class PlannerWindow : Form
         MinimumSize = new Size(900, 600);
         WindowState = FormWindowState.Maximized;
 
+        BuildNotice();
+        Controls.Add(_notice);
         Controls.Add(_web);
+        // Docking is resolved from the back of the z-order forward, so the
+        // Fill control has to be in front for the Top strip to take its space
+        // off the top rather than being painted over.
+        _web.BringToFront();
+
         Load += async (_, _) => await StartWebView();
+        FormClosing += (_, _) => _updateCts?.Cancel();
+    }
+
+    private void BuildNotice()
+    {
+        _notice.BackColor = Color.FromArgb(28, 52, 70);
+        _notice.Padding = new Padding(10, 0, 10, 0);
+
+        var row = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            AutoSize = false,
+        };
+        _noticeText.Margin = new Padding(0, 11, 14, 0);
+        foreach (var b in new[] { _btnInstall, _btnNotes, _btnLater })
+        {
+            b.Margin = new Padding(0, 7, 8, 0);
+            b.FlatStyle = FlatStyle.Flat;
+            b.ForeColor = Color.White;
+            b.FlatAppearance.BorderColor = Color.FromArgb(120, 170, 200);
+        }
+        _progress.Margin = new Padding(0, 13, 8, 0);
+
+        row.Controls.AddRange(new Control[] { _noticeText, _progress, _btnInstall, _btnNotes, _btnLater });
+        _notice.Controls.Add(row);
+
+        _btnNotes.Click += (_, _) => { if (_release is not null) OpenExternally(_release.PageUrl); };
+        _btnLater.Click += (_, _) => { Updater.SnoozeUntilTomorrow(); _notice.Visible = false; };
+        _btnInstall.Click += async (_, _) => await InstallUpdate();
     }
 
     private async Task StartWebView()
@@ -103,6 +160,21 @@ internal sealed class PlannerWindow : Form
         core.SetVirtualHostNameToFolderMapping(
             VirtualHost, content, CoreWebView2HostResourceAccessKind.Allow);
 
+        // No HTTP cache. Everything on the virtual host is a file on this disk,
+        // so caching saves nothing - and the profile persists across launches,
+        // which meant an edited script could keep running as its previous
+        // self with no sign of it. Run from source that is a debugging trap;
+        // after an update it would be a planner half on the old version.
+        try
+        {
+            await core.CallDevToolsProtocolMethodAsync(
+                "Network.setCacheDisabled", "{\"cacheDisabled\":true}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"could not disable the cache: {ex.Message}");
+        }
+
         // Opening and saving files. Held in a field so it lives as long as the
         // window rather than being collected with its event handler attached.
         _bridge = new HostBridge(core, this);
@@ -149,6 +221,10 @@ internal sealed class PlannerWindow : Form
 
         core.Navigate($"https://{VirtualHost}/index.html");
 
+        // Every launch, after the planner is up so a slow answer never delays
+        // it. Not awaited: nothing here depends on the result.
+        _ = CheckForUpdate();
+
         // Asked once, after the planner is on screen rather than in front of a
         // blank window, and never again - "Not now" is remembered as an answer
         // so it does not turn into a prompt on every launch. Dragging a file in
@@ -176,6 +252,130 @@ internal sealed class PlannerWindow : Form
                 }
             });
         }
+    }
+
+    // --- updates ---------------------------------------------------------------
+
+    private async Task CheckForUpdate()
+    {
+        try
+        {
+            _updateCts = new CancellationTokenSource();
+            var r = await Updater.CheckAsync(_updateCts.Token);
+            if (r is null || r.Version <= Updater.Current) return;
+            _release = r;
+
+            // "Not today" quiets the banner, not the check - so a download that
+            // was already staged before the snooze is still offered, because
+            // installing it costs no bandwidth and the user already said yes
+            // to fetching it.
+            var staged = Updater.AlreadyStaged(r.Tag);
+            if (staged is null && Updater.SnoozedToday()) return;
+
+            var size = r.AssetSize > 0 ? $" - {r.AssetSize / (1024.0 * 1024.0):0} MB from GitHub" : "";
+            if (staged is not null)
+            {
+                _noticeText.Text = $"MASK {r.Tag} is downloaded and ready to install (you have v{Updater.Current}).";
+                _btnInstall.Text = "Install now";
+            }
+            else
+            {
+                _noticeText.Text = $"MASK {r.Tag} is available (you have v{Updater.Current}){size}.";
+                _btnInstall.Text = Updater.CanSelfInstall && r.AssetUrl is not null
+                    ? "Download and install" : "Open release page";
+            }
+            _notice.Visible = true;
+        }
+        catch (Exception ex)
+        {
+            // Never let the update path take the planner down with it.
+            Debug.WriteLine($"update check: {ex}");
+        }
+    }
+
+    private async Task InstallUpdate()
+    {
+        var r = _release;
+        if (r is null) return;
+
+        // Can't replace ourselves here - run from source, in Program Files, or
+        // a release with nothing to download. The page is the honest fallback.
+        if (!Updater.CanSelfInstall || r.AssetUrl is null)
+        {
+            OpenExternally(r.PageUrl);
+            return;
+        }
+
+        try
+        {
+            var staged = Updater.AlreadyStaged(r.Tag);
+            if (staged is null)
+            {
+                var ok = MessageBox.Show(this,
+                    $"Download MASK {r.Tag} and install it?\n\n" +
+                    $"From:  github.com/BlackoutBrannon/nuclear-option-mission-planner\n" +
+                    $"File:  {r.AssetName} ({r.AssetSize / (1024.0 * 1024.0):0} MB)\n" +
+                    $"Into:  {AppContext.BaseDirectory}\n\n" +
+                    "When the download has been checked, MASK will ask once more, " +
+                    "then close, replace its own files, and reopen. Your plans and " +
+                    "settings are not in that folder and are not touched.",
+                    "Update MASK", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (ok != DialogResult.Yes) return;
+
+                SetBusy(true);
+                var progress = new Progress<(long done, long total)>(p =>
+                {
+                    if (p.total <= 0) return;
+                    _progress.Value = (int)Math.Clamp(p.done * 100 / p.total, 0, 100);
+                    _noticeText.Text = $"Downloading MASK {r.Tag}: {p.done / (1024.0 * 1024.0):0} of {p.total / (1024.0 * 1024.0):0} MB";
+                });
+
+                var dl = await Updater.DownloadAsync(r, progress, _updateCts?.Token ?? CancellationToken.None);
+                _noticeText.Text = $"Unpacking MASK {r.Tag}...";
+                staged = await Task.Run(() => Updater.Stage(dl.ZipPath, r.Tag));
+                SetBusy(false);
+
+                var verified = dl.ShaVerified
+                    ? "The SHA-256 matches the one published with the release."
+                    : "This release did not publish a SHA-256, so only the size was checked.";
+                var go = MessageBox.Show(this,
+                    $"MASK {r.Tag} is downloaded and checked.\n\n" +
+                    $"SHA-256:  {dl.Sha256}\n{verified}\n\n" +
+                    "Install now? MASK will close and reopen. Anything unsaved in the " +
+                    "planner is kept by its autosave.",
+                    "Update MASK", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (go != DialogResult.Yes)
+                {
+                    _noticeText.Text = $"MASK {r.Tag} is downloaded and ready to install.";
+                    _btnInstall.Text = "Install now";
+                    return;
+                }
+            }
+
+            Updater.LaunchApply(staged);
+            Close();
+        }
+        catch (OperationCanceledException)
+        {
+            // Window closing mid-download; nothing to report.
+        }
+        catch (Exception ex)
+        {
+            SetBusy(false);
+            _noticeText.Text = $"MASK {r.Tag} is available (you have v{Updater.Current}).";
+            MessageBox.Show(this,
+                "The update could not be installed.\n\n" + ex.Message + "\n\n" +
+                "Nothing has been changed. You can try again, or download it from the release page.",
+                "Update MASK", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    private void SetBusy(bool busy)
+    {
+        _btnInstall.Enabled = !busy;
+        _btnLater.Enabled = !busy;
+        _progress.Visible = busy;
+        if (!busy) _progress.Value = 0;
     }
 
     // Packaged, the planner sits in 'app' beside the executable. Run from
