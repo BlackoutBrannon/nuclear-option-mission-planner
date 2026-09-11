@@ -27,3 +27,6 @@ shell/*.zip
 # Release notes are written per release and handed to gh; the release page is
 # where they live afterwards, not the working tree.
 shell/notes.md
+
+# Python bytecode from running the tools
+__pycache__/
