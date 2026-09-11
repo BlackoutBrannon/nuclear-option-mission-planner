@@ -141,6 +141,11 @@ let myFaction = null;
 
 function affiliationOf(unit) {
     if (!myFaction) return 'unknown';
+    // No faction is not the enemy. A survey reports the game's built-in
+    // structures - factories, tanks, an uncaptured radar station - with a
+    // blank side until someone takes them, and painting those hostile put
+    // red squares in the middle of friendly airbases.
+    if (!unit.faction) return 'unknown';
     return unit.faction === myFaction ? 'friend' : 'hostile';
 }
 
