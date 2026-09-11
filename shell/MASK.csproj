@@ -29,7 +29,7 @@
     description, which reads like a debug build.
   -->
   <PropertyGroup>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Product>MASK - Mission Analysis &amp; Strike Kit</Product>
     <AssemblyTitle>MASK - Mission Analysis &amp; Strike Kit</AssemblyTitle>
     <Description>Mission planning for Nuclear Option: threat rings from the game's own detection model, terrain masking, routes, release points and printable briefings.</Description>
