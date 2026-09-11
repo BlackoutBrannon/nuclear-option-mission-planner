@@ -72,7 +72,9 @@ function terrainAt(x, z) {
     return (a + (b - a) * tx) * (1 - tz) + (c + (e - c) * tx) * tz;
 }
 
-const MASK_STEP    = 100;    // metres between profile samples
+const MASK_STEP    = 50;     // metres between profile samples - the terrain
+                             // post spacing. At 100 m the walk stepped over
+                             // ridge crests the game's raycast does not.
 const MASK_RADIALS = 180;    // one every two degrees
 
 // Fallback antenna height, used only when a unit has no extracted figure.
@@ -91,30 +93,73 @@ function sensorHeight(unit) {
     return Math.max(unit.y || 0, terrain ? terrainAt(unit.x, unit.z) : 0) + mast;
 }
 
-// Distance along one radial at which an aircraft at `alt` passes behind
-// terrain, or maxR if it never does.
+// Whether a sensor at (ox, oz, obsH) has a straight line to a point at
+// (x, z, alt) with no terrain across it. This is the test the game runs - a
+// raycast from the scanner to the target against the terrain colliders - and
+// it is what every DECISION in the planner uses: route colouring, detection
+// events, weapon-flight exposure. The drawn ring profile below is for drawing.
+//
+// Sampled at the terrain post spacing. Finer would be sampling the bilinear
+// interpolation between posts, which adds cost and no information.
+function losClear(ox, oz, obsH, x, z, alt) {
+    const dx = x - ox, dz = z - oz;
+    const range = Math.hypot(dx, dz);
+    const n = Math.max(2, Math.ceil(range / LOS_STEP));
+    for (let i = 1; i < n; i++) {
+        const t = i / n;
+        if (terrainAt(ox + dx * t, oz + dz * t) > obsH + (alt - obsH) * t) return false;
+    }
+    return true;
+}
+const LOS_STEP = 50;   // metres; the terrain post spacing
+
+// The straight-line test from a unit's sensor to a point.
+function sensorSees(unit, x, z, alt) {
+    return losClear(unit.x, unit.z, sensorHeight(unit), x, z, alt);
+}
+
+// Farthest distance along one radial at which an aircraft at `alt` is still
+// visible, or maxR if it is visible all the way out. For DRAWING the ring.
 //
 // The altitude is a parameter rather than read from the bar, because a route
 // leg is evaluated at its own altitude, which is not the one on screen.
 //
 // Compares ANGLES, not heights: a low ridge close in blocks more sky than a
-// tall peak far out. The running maximum of terrain angle only rises with
-// distance while the aircraft's angle only falls, so the two cross exactly
-// once - one cutoff per radial, and the walk can stop there.
+// tall peak far out. A sample is visible when the aircraft's angle from the
+// sensor is at least the steepest terrain angle of everything closer.
+//
+// The first version stopped at the first hidden sample and called everything
+// beyond it masked, on the reasoning that the aircraft's angle only falls with
+// distance while the terrain's running maximum only rises, so they cross
+// once. That holds only for an aircraft ABOVE the sensor. Below it - a jet at
+// 300 m past a radar station whose antenna is at 700 m - the aircraft's angle
+// is negative and RISES toward zero with distance: the shoulder of the hill
+// hides it close in, and further out along the same radial it comes back into
+// view as the line flattens. One cutoff per radial cannot represent that, and
+// stopping at the first one said "clear" for the whole valley the radar was
+// looking straight down into. Measured on a real route: a quarter of all
+// in-range samples wrong, every one of them in the dangerous direction.
+//
+// So the walk runs the whole radial and the ring edge is the FARTHEST visible
+// distance. Pockets closer in that are actually hidden are drawn as visible -
+// a conservative picture, and the point tests above are exact anyway. The
+// alternative, a ring with holes in it, is not a shape a pilot can read at a
+// glance.
 function maskedDistance(ox, oz, obsH, bearing, maxR, alt) {
     const sin = Math.sin(bearing), cos = Math.cos(bearing);
     let maxAngle = -Infinity;
+    let farthest = 0;
 
     for (let d = MASK_STEP; d <= maxR; d += MASK_STEP) {
         // Tested against terrain strictly closer than d, so a sample does not
         // block the aircraft sitting on top of it.
-        if ((alt - obsH) / d < maxAngle) return d - MASK_STEP;
+        if ((alt - obsH) / d >= maxAngle) farthest = d;
 
         const h = terrainAt(ox + sin * d, oz + cos * d);
         const angle = (h - obsH) / d;
         if (angle > maxAngle) maxAngle = angle;
     }
-    return maxR;
+    return farthest === 0 ? 0 : Math.min(farthest, maxR);
 }
 
 // Profiles are keyed by unit, altitude and radius. Panning and zooming reuse
@@ -124,7 +169,12 @@ const maskCache = new Map();
 // Altitudes are bucketed before they reach the cache. A climbing leg passes
 // through a continuum of altitudes, and keying on each one exactly would mean a
 // fresh profile - some milliseconds of ray walking - for every sample along it.
-const MASK_ALT_BUCKET = 250;   // metres
+//
+// Was 250 m. At low level that is not a rounding error but a different
+// flight: a 300 m route evaluated at 250 m sat behind ridges it actually
+// cleared, and half the measured under-warnings came from that alone. The
+// terrain posts are 50 m apart, so 50 m is where finer stops meaning anything.
+const MASK_ALT_BUCKET = 50;    // metres
 
 // Coverage from any point on the ground. Units are the common caller, but a
 // hand-placed coverage ring uses the same walk - the terrain does not care what

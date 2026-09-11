@@ -252,14 +252,21 @@ function exposureAt(x, z, alt, hostileOnly) {
         if (br.range > widest) continue;          // outside everything this unit has
 
         const side = affiliationOf(u);
-        let profile = null;
-        if (showRings.mask && terrain) profile = maskProfileFor(u, widest, alt);
+        // A straight line to the sensor, not the drawn profile. The profile
+        // is a ring edge per radial and cannot say "hidden here, seen further
+        // out" - which is the normal case for a jet below a hilltop radar.
+        // losClear() in 07-terrain.js has the full account. Computed once per
+        // unit, and only if some ring of its actually needs it.
+        const masking = showRings.mask && terrain;
+        let sight = null;
 
         for (const ring of rings) {
-            const reach = (ring.los && profile)
-                ? ringRadiusAt(ring, profile, br.bearing * Math.PI / 180)
-                : ring.r;
+            const reach = ring.r;
             if (br.range > reach) continue;
+            if (ring.los && masking) {
+                if (sight === null) sight = sensorSees(u, x, z, alt);
+                if (!sight) continue;
+            }
 
             if (ring.kind === 'weapon') {
                 if (ring.inBand !== false) canShoot.add(side);
@@ -1018,14 +1025,21 @@ function munitionStateAt(x, z, alt, rcs, speed, hostileOnly) {
         if (br.range > widest) continue;
 
         const side = affiliationOf(u);
-        let profile = null;
-        if (showRings.mask && terrain) profile = maskProfileFor(u, widest, alt);
+        // A straight line to the sensor, not the drawn profile. The profile
+        // is a ring edge per radial and cannot say "hidden here, seen further
+        // out" - which is the normal case for a jet below a hilltop radar.
+        // losClear() in 07-terrain.js has the full account. Computed once per
+        // unit, and only if some ring of its actually needs it.
+        const masking = showRings.mask && terrain;
+        let sight = null;
 
         for (const ring of rings) {
-            const reach = (ring.los && profile)
-                ? ringRadiusAt(ring, profile, br.bearing * Math.PI / 180)
-                : ring.r;
+            const reach = ring.r;
             if (br.range > reach) continue;
+            if (ring.los && masking) {
+                if (sight === null) sight = sensorSees(u, x, z, alt);
+                if (!sight) continue;
+            }
 
             if (ring.kind === 'weapon') {
                 // The speed ceiling is what excludes a fast missile outright.
