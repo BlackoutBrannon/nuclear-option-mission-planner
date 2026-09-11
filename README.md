@@ -381,13 +381,13 @@ You do not have to take that on trust. The hash above is the file the release
 serves; build it yourself and compare, or run the planner in a browser and never
 execute anything.
 
-**Checksums** for `v0.3.0`, so you can confirm the download is the file that was
+**Checksums** for `v0.3.1`, so you can confirm the download is the file that was
 published. The `.sha256` file beside the zip on the release page holds the same
 zip sum, and the in-app updater checks against it:
 
 ```
-zip  c7dcc028459097e0ce08015e0c027b14498f523c888270171d6088e06cd23d32
-exe  c1b8bb4ecd927c3353c017880b457ab482d64cc844f4c312abbed0d9caea41ae
+zip  ed3c40881b85ab508357cce3a3e339db9b1d795a51ee30906193f60a3b2b8f3a
+exe  77635420f177963c61668a941731aa3b40565e620ffde3a411147776bcebb19f
 ```
 
 Check yours with `Get-FileHash <file>` in PowerShell.
