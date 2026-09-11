@@ -62,6 +62,23 @@ internal static class Updater
         Version Version, string Tag, string PageUrl, string Notes,
         string? AssetName, string? AssetUrl, long AssetSize, string? ShaUrl);
 
+    // --- housekeeping ----------------------------------------------------------
+
+    /// <summary>
+    /// Remove the helper copy left by the last install. It could not delete
+    /// itself while it was the running process; the next MASK to start can.
+    /// 63 MB per update otherwise, forever.
+    /// </summary>
+    internal static void SweepHelper()
+    {
+        try
+        {
+            var helper = Path.Combine(Work, "apply");
+            if (Directory.Exists(helper)) Directory.Delete(helper, recursive: true);
+        }
+        catch { /* still running, or locked by the scanner - next time */ }
+    }
+
     // --- the check -----------------------------------------------------------
 
     /// <summary>

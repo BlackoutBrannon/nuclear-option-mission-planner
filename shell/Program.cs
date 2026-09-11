@@ -16,6 +16,7 @@ internal static class Program
         if (args.Length > 0 && args[0] == "--apply-update")
             return Updater.RunApply(args);
 
+        Updater.SweepHelper();
         Application.Run(new PlannerWindow());
         return 0;
     }
