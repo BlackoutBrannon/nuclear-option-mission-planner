@@ -1240,6 +1240,81 @@ async function acceptMission(name, text) {
   }
 }
 
+// Units the map provides and no mission file mentions - on Heartland, nine
+// radar stations on hilltops among them. Extracted once from a survey with
+// tools/make_builtin.py and shipped in builtin/<Map>.json. Merged into every
+// mission on that map, so a workshop file opens with the picture the game
+// will actually run. A file unit standing on a built-in's spot - a mission
+// can override one - wins, and the shipped copy is skipped.
+async function mergeBuiltIn(mission) {
+    mission._builtin = null;
+    const map = mapName((mission.MapKey && mission.MapKey.Path) || '');
+    if (!map) return;
+
+    let list;
+    try {
+        const res = await fetch('builtin/' + map + '.json');
+        if (!res.ok) return;                   // no list for this map yet
+        list = await res.json();
+    } catch (e) { return; }
+
+    const posKey = u => u.type + '@' + Math.round(u.globalPosition.x / 5) + ',' +
+                                      Math.round(u.globalPosition.z / 5);
+    const taken = new Set();
+    for (const cat of ['aircraft', 'vehicles', 'ships', 'buildings']) {
+        for (const u of mission[cat] || []) taken.add(posKey(u));
+    }
+
+    // A built-in starts with no side. The shipped list never carries one -
+    // sides in a survey are one mission's front line, not the map's - so the
+    // mission file has to give a reason. Two hold up, measured against a
+    // survey:
+    //   a ground vehicle parked beside it (within 100 m) - 24 right, 0 wrong.
+    //     That is the game's own capture mechanic: it changes hands within a
+    //     minute of spawn. Mission authors use it deliberately.
+    //   the airbase whose capture ring it stands in, but only for airbase
+    //     furniture - hangars, shelters, towers - 87 right, 0 wrong. Applied to
+    //     radars and industry the same rule was wrong 16 times: those stay
+    //     neutral in the game until a vehicle claims them.
+    // Anything else is neutral, and shows as such. A neutral radar is still a
+    // radar: nobody's today, either side's the moment a truck parks by it.
+    const vehicles = (mission.vehicles || [])
+        .filter(v => v.faction && v.globalPosition)
+        .map(v => ({ f: v.faction, x: v.globalPosition.x, z: v.globalPosition.z }));
+    const bases = (mission.airbases || [])
+        .filter(a => a.faction && a.Center)
+        .map(a => ({ f: a.faction, x: a.Center.x, z: a.Center.z, r: Number(a.CaptureRange) || 0 }));
+
+    function sideFor(u) {
+        const x = u.globalPosition.x, z = u.globalPosition.z;
+        for (const v of vehicles) {
+            if (Math.hypot(v.x - x, v.z - z) <= 100) return { faction: v.f, reason: 'vehicle' };
+        }
+        if (u.attached) {
+            for (const b of bases) {
+                if (Math.hypot(b.x - x, b.z - z) <= b.r) return { faction: b.f, reason: 'airbase' };
+            }
+        }
+        return { faction: '', reason: 'neutral' };
+    }
+
+    const counts = { vehicle: 0, airbase: 0, neutral: 0 };
+    let added = 0;
+    for (const cat of ['aircraft', 'vehicles', 'ships', 'buildings']) {
+        for (const u of list[cat] || []) {
+            if (taken.has(posKey(u))) continue;
+            const side = sideFor(u);
+            counts[side.reason]++;
+            if (!mission[cat]) mission[cat] = [];
+            mission[cat].push(Object.assign({}, u, {
+                placement: 'BuiltIn', faction: side.faction, sideReason: side.reason,
+            }));
+            added++;
+        }
+    }
+    mission._builtin = { added: added, counts: counts, surveyedUtc: list._surveyTakenUtc || null };
+}
+
 async function loadMissionText(name, text) {
   const mission = JSON.parse(text);
 
@@ -1251,8 +1326,22 @@ async function loadMissionText(name, text) {
   // from affiliations - so the faction has to be settled before anything is
   // counted or drawn.
   myFaction      = mission.factions[0].factionName;
-  // The file's own name identifies which mission a saved plan belongs to.
-  mission._name  = name;
+  // The file's own name identifies which mission a saved plan belongs to. A
+  // survey - the same mission as the game is running it, written by the HUD
+  // mod - is that mission, not a new one: the plan, its rings and its autosave
+  // all carry over, because units are keyed by identity rather than by their
+  // position in the file.
+  const survey = /^(.*)\.survey\.json$/i.exec(name);
+  if (survey) {
+      mission._name   = survey[1] + '.json';
+      mission._survey = { file: name, takenUtc: mission.takenUtc || null };
+  } else {
+      mission._name   = name;
+      mission._survey = null;
+      // The map's own units, which no mission file carries. A survey already
+      // has them, as they stand; a file gets the shipped list.
+      await mergeBuiltIn(mission);
+  }
   currentMission = mission;
   populateFactions(mission);
 
@@ -1295,7 +1384,25 @@ async function loadMissionText(name, text) {
   renderSnapshots();
 
   const count = k => (mission[k] || []).length;
-  out.textContent = `${name}
+  // A survey is shown as the mission it is of, with the time it was taken -
+  // the difference between "what the author placed" and "what is out there".
+  const builtIn = unitsOf(mission).filter(x => x.placement === 'BuiltIn').length;
+  let source = '';
+  if (mission._survey) {
+      source = `
+survey:    ${mission._survey.takenUtc ? new Date(mission._survey.takenUtc).toLocaleString() : 'yes'}` +
+               (builtIn ? `
+           ${builtIn} built into the map, not in the file` : '');
+  } else if (mission._builtin && mission._builtin.added) {
+      const c = mission._builtin.counts;
+      source = `
+built-in:  ${mission._builtin.added} units the map provides, added` +
+               `
+           ${c.vehicle} sided by a vehicle parked at them, ${c.airbase} by their airbase,` +
+               `
+           ${c.neutral} neutral - a survey (F10) has the current picture`;
+  }
+  out.textContent = `${mission._name}${source}
 
 map:       ${mapName(mission.MapKey.Path)}
 aircraft:  ${count('aircraft')}

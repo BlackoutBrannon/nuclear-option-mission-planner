@@ -1131,7 +1131,14 @@ function applyPlan(p) {
     activeFlight = Math.min(p.activeFlight ?? -1, flights.length - 1);
 
     targets.length = 0;
-    for (const t of p.targets || []) targets.push(Object.assign({}, t));
+    for (const t of p.targets || []) {
+        const c = Object.assign({}, t);
+        if (c.kind === 'unit' && c.path) {
+            c.path = migratePath(c.path);
+            if (!c.path) continue;
+        }
+        targets.push(c);
+    }
     nextTargetId = p.nextTargetId || (targets.length + 1);
 
     rings.length = 0;
@@ -1139,7 +1146,10 @@ function applyPlan(p) {
     bullseye = p.bullseye ? { x: p.bullseye.x, z: p.bullseye.z } : null;
 
     ringUnits.clear();
-    for (const path of p.ringUnits || []) ringUnits.add(path);
+    for (const path of p.ringUnits || []) {
+        const m = migratePath(path);
+        if (m) ringUnits.add(m);
+    }
     bumpRingEpoch();
 
     Object.assign(showRings, p.showRings || {});

@@ -59,7 +59,18 @@ const AFF_LABEL = { hostile: 'Hostile', friend: 'Friendly', unknown: 'Unknown' }
 // The leaf is an individual unit, not a type - so a single emplacement can be
 // switched off when another flight is tasked to clear it.
 function unitPath(u) {
-    return typePath(u) + '/' + u.uid;
+    return typePath(u) + '/' + u.key;
+}
+
+// Plans written before keys existed end their paths in the unit's position
+// in the file. Map those onto the key of the unit that held that position,
+// so an old plan keeps its rings and targets. Anything that does not resolve
+// is dropped rather than guessed.
+function migratePath(path) {
+    const m = /^(.*)\/(\d+)$/.exec(path);
+    if (!m) return path;
+    const u = unitsOf(currentMission).find(x => x.uid === Number(m[2]));
+    return (u && typePath(u) === m[1]) ? unitPath(u) : null;
 }
 
 function groupPath(u) {

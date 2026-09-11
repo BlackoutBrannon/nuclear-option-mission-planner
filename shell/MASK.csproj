@@ -82,9 +82,11 @@
       <PlannerVendor Include="..\vendor\**\*.*" />
       <PlannerTerrain Include="..\terrain\**\*.*" />
       <PlannerTiles Include="..\tiles\**\*.*" />
+      <PlannerBuiltin Include="..\builtin\**\*.*" />
     </ItemGroup>
 
     <Copy SourceFiles="@(PlannerRoot)" DestinationFolder="$(PublishDir)app" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PlannerBuiltin)" DestinationFiles="@(PlannerBuiltin->'$(PublishDir)app\builtin\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(PlannerSrc)" DestinationFiles="@(PlannerSrc->'$(PublishDir)app\src\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(PlannerVendor)" DestinationFiles="@(PlannerVendor->'$(PublishDir)app\vendor\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(PlannerTerrain)" DestinationFiles="@(PlannerTerrain->'$(PublishDir)app\terrain\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />

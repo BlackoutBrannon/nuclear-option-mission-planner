@@ -110,16 +110,45 @@ function collectUnits(mission) {
     const units = [];
     let uid = 0;
 
+    // A unit's name in a plan has to mean the same unit in a different file:
+    // the mission as the author saved it, and a survey of the mission as the
+    // game is running it. Position in the file does not survive that - the
+    // survey has the map's built-in units the file never had, and its own
+    // order. So the key is the file's UniqueName when it has one and it is
+    // unique, which follows a unit that has driven off; otherwise the type
+    // and position on a 5 m grid, which is what the survey writes for the
+    // built-in units, and they never move.
+    const nameCount = new Map();
+    for (const category of ['aircraft', 'vehicles', 'ships', 'buildings']) {
+        for (const u of mission[category] || []) {
+            if (u.UniqueName) nameCount.set(u.UniqueName, (nameCount.get(u.UniqueName) || 0) + 1);
+        }
+    }
+    const keyCount = new Map();
+    function keyFor(u) {
+        let k = (u.UniqueName && nameCount.get(u.UniqueName) === 1)
+            ? u.UniqueName
+            : u.type + '@' + Math.round(u.globalPosition.x / 5) + ',' + Math.round(u.globalPosition.z / 5);
+        const n = (keyCount.get(k) || 0) + 1;
+        keyCount.set(k, n);
+        return n === 1 ? k : k + '#' + n;
+    }
+
     for (const category of ['aircraft', 'vehicles', 'ships', 'buildings']) {
         for (const u of mission[category] || []) {
             const { group, role } = roleOf(u.type, category);
 
             units.push({
-                // A stable per-unit id. collectUnits always walks the mission in
-                // the same order, so a given unit keeps the same uid across
-                // calls - which is what lets the tree hide one instance.
+                // uid is the unit's position in the file: stable within one
+                // file, meaningless across two. Kept for migrating old plans.
                 uid:        uid++,
-                unitName:   u.UniqueName || u.type,
+                key:        keyFor(u),
+                // Only a survey says this; a mission file never does.
+                placement:  u.placement || '',
+                // The instance name the tooltip and tree show. A built-in has
+                // only its identity key, which is not a name anyone should read.
+                unitName:   u.placement === 'BuiltIn' ? 'built into the map'
+                                                       : (u.UniqueName || u.type),
                 category:   category,
                 type:       u.type,
                 faction:    u.faction,
